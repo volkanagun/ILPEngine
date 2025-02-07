@@ -10,7 +10,7 @@ class Predicate(name:String, var array:Array[Symbol|Collection|Variable]) extend
   def getArray():Array[Symbol|Collection|Variable] =
     this.array
 
-  def isDefinite() = array.forall(a=> a.isSymbol()||a.isVariable())
+  def isDefinite() = array.forall(a=> a.isSymbol())
 
   def isNegative() = false
 
@@ -34,7 +34,7 @@ class Predicate(name:String, var array:Array[Symbol|Collection|Variable]) extend
     if obj.isInstanceOf[Predicate] then
       val p = obj.asInstanceOf[Predicate]
       p.identifier() == identifier() &&
-        p.array.forall(x => array.contains(x))
+        p.array.zip(array).forall{case(a, b)=> a.equals(b)}
     else
       false
 

@@ -27,15 +27,16 @@ class Query(var head: Predicate, var body: Array[Predicate]):
 
 
 
-class Answer(var main: Substitution, var substitutions: Array[Substitution] = Array()):
-
-  def execute(head: Predicate): Array[Predicate] =
+class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()):
+  
+  def this(main:Substitution, content:Substitution) = this(main, Set(content))
+  
+  def execute(head: Predicate): Set[Predicate] =
     val newHead = main.of(head)
     substitutions.map(sub => sub.of(newHead))
       .map(_.toPredicate())
 
   def isTrue(): Boolean =
-    //main.isTrue()
     substitutions.nonEmpty
 
   def isEmpty(): Boolean =
@@ -45,8 +46,8 @@ class Answer(var main: Substitution, var substitutions: Array[Substitution] = Ar
     this.main = main
     this
 
-  def getSubstitutions(): Array[Substitution] = substitutions
+  def getSubstitutions(): Set[Substitution] = substitutions
 
-  def setSubstitutions(substitutions: Array[Substitution]): this.type =
+  def setSubstitutions(substitutions: Set[Substitution]): this.type =
     this.substitutions = substitutions
     this

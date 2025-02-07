@@ -18,7 +18,7 @@ class Operation(val function: Variable, var query: Array[Predicate], var items: 
     Operation(definitionClone, queryClone, itemsClone)
 
   override def toString: String =
-    function.toString + " :: " + query.toString + " ==> " + items.mkString(" && ")
+    function.toString + " :: " + query.map(_.toString).mkString(" && ") + " ==> " + items.mkString(" && ")
 
   def execute(instance: Predicate): Option[Operation] =
     val call = Substitution().of(function, instance)
