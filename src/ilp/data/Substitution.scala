@@ -15,6 +15,9 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def isEmpty():Boolean =
     variables.isEmpty
 
+  def nonEmpty():Boolean =
+    variables.nonEmpty
+
   def add(variable: Variable, symbol: Variable): this.type =
     variables = variables :+ variable
     symbols = symbols :+ symbol

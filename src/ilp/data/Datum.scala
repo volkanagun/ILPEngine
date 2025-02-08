@@ -16,6 +16,12 @@ class Variable(var name: String):
   def toPredicate(): Predicate =
     this.asInstanceOf[Predicate]
 
+  def toVariable(): Variable =
+    this.asInstanceOf[Variable]
+
+  def candidates(names:Array[String]): Array[Variable] =
+    names.map(name=> Variable(name)) 
+
   def contains(item: Variable) = false
 
   def isSymbol() = false
@@ -50,7 +56,6 @@ class Symbol(name: String, var value: String) extends Variable(name):
   override def toString: String = value.toLowerCase(Settings.locale)
 
 class Collection(name: String, var values: Set[Symbol]) extends Symbol(name, name):
-
 
   override def hashCode(): Int = name.hashCode()
 
