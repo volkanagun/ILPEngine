@@ -1,109 +1,55 @@
 package ilp.data
 
-class Engine(val database:Database):
+import ilp.concepts.Invention
 
-  def names():Array[String] =
+import java.util.Random
+import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
+
+class Engine(val database: Database) extends Serializable :
+
+  def names(): Array[String] =
     Array("X", "Y", "Z", "P", "K")
 
-  def candidates(rule:Rule):Set[Predicate] =
-    database.templates.values
-      .flatMap(set=> set.head.candidates(rule.head.getLiterals(), names()))
-      .toSet
+  def candidates(rule: Rule): Set[Rule] =
+    Invention.singleBind(database, rule)
 
-  def greedy(query: Rule):Array[Rule] =
-    val samples = candidates(query)
-    val filteredRules = samples.toArray.map(predicate => {
-      val qCopy = query.copy()
-      (qCopy, qCopy.addPredicate(predicate))
-    }).filter(_._2)
+  private def greedy(query: Rule): Array[Rule] =
+    val filteredRules = candidates(query)
 
-    val result = filteredRules.map(_._1)
+    val result = filteredRules
       .map(rule => {
         val crrFacts = database.facts(rule)
-        (rule, rule.ig(crrFacts))})
+        (rule, rule.ig(crrFacts))
+      }).toArray
       .sortBy(_._2)
       .map(_._1)
       .reverse
 
     result
 
-  def induction(query:Rule, width:Int = 100):Rule=
+  def induction(query: Rule, width: Int = 100): Rule =
     var testRules = Array(query)
     var foundRules = Array(query)
     var isFinished = false
     while testRules.nonEmpty && !isFinished do
       foundRules = testRules
-      testRules = foundRules.flatMap(foundRule => greedy(foundRule).take(width))
+      testRules = foundRules.par.flatMap(foundRule => greedy(foundRule))
+        .toArray
       isFinished = testRules.exists(_.isFinished())
 
     if testRules.nonEmpty then testRules.sortBy(_.score).last
     else foundRules.last
 
 
-  def induction(positives:Set[Predicate], negatives:Set[Predicate]):Rule=
+  def induction(positives: Set[Predicate], negatives: Set[Predicate]): Rule =
     val crrPositives = positives
     val crrNegatives = negatives -- positives.intersect(negatives)
-    val generic = crrPositives.head.toGeneric()
+    val generic = crrPositives.head.toGeneric(database.uppercases)
     val crrRule = Rule(generic, Array())
       .setPositives(crrPositives).setNegatives(crrNegatives)
 
     induction(crrRule)
 
-
-
-class Rule(crr_head:Predicate, crr_body:Array[Predicate]) extends Query(crr_head, crr_body):
-
-  var posRate:Double = 0
-  var negRate:Double = 0
-  var positives = Set[Predicate]()
-  var negatives = Set[Predicate]()
-  var score = 0.0
-
-  def isFinished():Boolean =
-    posRate == 1.0 && negRate == 0.0
-
-
-  def literals():Array[String] =
-    head.array.filter(_.isSymbol()).map(_.name)
-
-  def substitutes(items:Set[Predicate], facts:Set[Predicate]):Set[Predicate] =
-    items.filter(positive=> facts.exists(variable=> Substitution().of(variable, positive).isDefined))
-
-  def ig(facts:Set[Predicate]):Double =
-
-    posRate = substitutes(positives, facts).size.toDouble / positives.size
-    negRate = substitutes(negatives, facts).size.toDouble / negatives.size
-
-    score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate)/math.log(2)
-    score
-
-  override def hashCode(): Int =
-    body.foldRight(head.hashCode()){case(a, m)=> a.hashCode() + 7 * m}
-
-  override def equals(obj: Any): Boolean =
-    obj.isInstanceOf[Rule] && obj.asInstanceOf[Rule].hashCode() == hashCode()
-
-  def setPositives(positives:Set[Predicate]):this.type =
-    this.positives = positives
-    this
-
-  def setNegatives(negatives:Set[Predicate]):this.type =
-    this.negatives = negatives
-    this
-
-  def setPosRate(rate:Double):this.type =
-    this.posRate = rate
-    this
-
-  def setNegRate(rate:Double):this.type =
-    this.negRate = rate
-    this
-
-  override def copy():Rule =
-    val r = Rule(head.copy().toPredicate(), body.map(_.copy().toPredicate()))
-      .setPositives(positives).setNegatives(negatives)
-      .setPosRate(posRate).setNegRate(negRate)
-    r
 
 object Engine {
 

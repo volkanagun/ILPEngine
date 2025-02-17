@@ -18,6 +18,11 @@ class Query(var head: Predicate, var body: Array[Predicate]):
 
     r
 
+  def add(predicate: Predicate):this.type =
+    if !body.contains(predicate) then
+      body :+= predicate    
+    this
+
   override def hashCode(): Int =
     body.foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
 
@@ -31,7 +36,7 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     head.toString + " :- " + body.map(_.toString).mkString(" & ")
 
   def copy():Query =
-    Query(head.copy().toPredicate(), body.map(_.copy().toPredicate()))
+    Query(head.copy().asPredicate(), body.map(_.copy().asPredicate()))
 
 
 
@@ -42,7 +47,7 @@ class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set(
   def execute(head: Predicate): Set[Predicate] =
     val newHead = main.of(head)
     substitutions.map(sub => sub.of(newHead))
-      .map(_.toPredicate())
+      .map(_.asPredicate())
 
   def isTrue(): Boolean =
     substitutions.nonEmpty

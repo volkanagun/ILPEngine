@@ -13,7 +13,7 @@ class Operation(val function: Variable, var query: Array[Predicate], var items: 
 
   def copy(): Operation =
     val definitionClone = function.copy()
-    val queryClone = query.map(_.copy().toPredicate())
+    val queryClone = query.map(_.copy().asPredicate())
     val itemsClone = items.map(_.copy())
     Operation(definitionClone, queryClone, itemsClone)
 
@@ -31,7 +31,7 @@ class Operation(val function: Variable, var query: Array[Predicate], var items: 
     if call.isDefined then
       val main = call.get
       val newFunction = main.of(function)
-      val newQuery = query.map(variable => main.of(variable).toPredicate())
+      val newQuery = query.map(variable => main.of(variable).asPredicate())
       (call, Operation(newFunction, newQuery, items))
     else
       (None, Operation(function, query, items))

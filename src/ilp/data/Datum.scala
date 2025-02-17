@@ -10,14 +10,30 @@ class Variable(var name: String):
 
   override def toString: String = name.toUpperCase
 
+  def getName():String = name
+  
+  def setName(name:String):this.type =
+    this.name = name
+    this
+  
+  def getComplexity():Double = 1.0
+
+  def substitution(substitution: Substitution): Variable =
+    val newVariable = substitution.of(this)
+    newVariable
+  
   def toSymbol(value: String): Symbol =
     new Symbol(name, value)
 
-  def toPredicate(): Predicate =
+  def asPredicate(): Predicate =
     this.asInstanceOf[Predicate]
 
-  def toVariable(): Variable =
+  def asVariable(): Variable =
     this.asInstanceOf[Variable]
+
+  
+  def toVariable(): Variable =
+    Variable(name)
 
   def candidates(names:Array[String]): Array[Variable] =
     names.map(name=> Variable(name)) 
@@ -35,6 +51,8 @@ class Variable(var name: String):
   def of(name: String) = new Variable(name)
 
 class Symbol(name: String, var value: String) extends Variable(name):
+
+  override def getComplexity(): Double = 0
 
   override def isSymbol() = true
 
@@ -91,6 +109,6 @@ class Update(var head: Array[Predicate], var body: Array[Predicate]):
     head.mkString(" & ") + " ==> " + body.mkString(" & ")
 
   def copy(): Update =
-    val headCopy = head.map(_.copy().toPredicate())
-    val bodyCopy = body.map(_.copy().toPredicate())
+    val headCopy = head.map(_.copy().asPredicate())
+    val bodyCopy = body.map(_.copy().asPredicate())
     Update(headCopy, bodyCopy)
