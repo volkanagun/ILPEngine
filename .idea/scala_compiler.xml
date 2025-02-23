@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <option name="experimental" value="true" />
+    <option name="warnings" value="false" />
+    <option name="optimiseBytecode" value="true" />
+    <option name="specialization" value="false" />
+  </component>
+</project>

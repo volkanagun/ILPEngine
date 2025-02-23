@@ -3,27 +3,30 @@ package ilp.data
 import java.util.Random
 
 
-class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
+class Rule(crr_head: Predicate, crr_body: Set[Predicate]) extends Query(crr_head, crr_body):
 
   var posRate: Double = 0
   var negRate: Double = 0
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
-  var recursive = false
+  var genfacts = Set[Predicate]()
   var score = 0.0
 
+  def this(crr_head:Predicate, atom:Predicate)  = this(crr_head, Set(atom))
 
-  def getAritry():Int =
-    head.getArity()
+  def invalid():Boolean =
+    (crr_body.size == 1 && crr_body.head.getName().equals(crr_head.getName()))
+
 
   def getScore(): Double =
     score
-  
+
+
   def doGeneralize():Boolean =
-    posRate < 1.0 && negRate == 0
+    posRate <= 1.0 && negRate == 0
 
   def doSpecify():Boolean =
-    posRate == 1.0 && negRate > 0
+    posRate == 1.0 && negRate >= 0
 
   def setRecursion(recursive:Boolean): this.type =
     this.recursive = recursive
@@ -36,29 +39,33 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this.head.setName(name)
     this
 
-  def boundHead():Set[Variable] =
-    crr_head.array.filter(variable=> body.exists(predicate=> predicate.contains(variable)))
-      .toSet
+  def newName(name:String): Rule =
+    val newHead = this.head.copy().setName(name)
+      .asPredicate()
+    Rule(newHead, body)
 
-  def unboundHead():Set[Variable] =
-    crr_head.array.filter(variable=> !body.exists(predicate=> predicate.contains(variable)))
-      .toSet
+  def asRule():Rule =
+    this.asInstanceOf[Rule]
 
-  def unboundBody():Set[Variable] =
-    crr_body.flatMap(predicate=> predicate.array)
-      .toSet.filter(variable=> !crr_head.contains(variable))
+  def call(predicate: Predicate):Rule = {
+    val new_variables = predicate.array.filter(_.isVariable())
+    val crr_variables = head.array.filter(_.isVariable())
+    val substitution = Substitution(crr_variables, new_variables)
+    val newHead = head.substitution(substitution).asPredicate()
+    val newBody = body.map(item=> item.substitution(substitution).asPredicate())
+    Rule(newHead, newBody)
+  }
 
-  def unboundAll():Set[Variable] =
-    val set = Set(crr_head) ++ crr_body.toSet
-    set.map(predicate=> (predicate, set.filter(! _.equals(predicate))))
-      .flatMap{case(predicate, others)=>{predicate.array.filter(variable => !others.exists(other=> other.contains(variable)))}}
+
 
 
   def isFinished(): Boolean =
     posRate == 1.0 && negRate == 0.0
 
-  def isRecursive(): Boolean =
-    recursive
+
+  def getFacts(): Set[Predicate] =
+    genfacts
+
 
   def getPositives(): Set[Predicate] =
     positives
@@ -74,10 +81,27 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     val index = new Random(17).nextInt(positives.size)
     positives.toSeq(index)
 
-  def substitution(substitution: Substitution):Rule=
-    val newHead = head.substitution(substitution)
-    val newBody = body.map(_.substitution(substitution))
-    Rule(newHead, newBody)
+
+  def abstraction(): Hypothesis =
+    val newName = body.map(_.getName()).mkString("_")
+    val substitution = Substitution(head.getName(), newName)
+    //Rule(head.setName(newName), getBody())
+    this.substitution(substitution, true)
+
+
+  def substitution(substitution: Substitution, doRecursion:Boolean = false):Hypothesis =
+
+    val newHead = head.substitution(substitution).asPredicate()
+    val newBody = body.map(_.substitution(substitution).asPredicate())
+    val recursiveRule = Rule(newHead, newBody)
+    if doRecursion && isRecursive() then
+      val atoms = body.zip(newBody).filter{case(original, named)=>{
+        original.identifier() == head.identifier()
+      }}.map{case(original, named)=> Rule(named, original)}.toSet
+      Hypothesis(newHead, atoms + recursiveRule.setRecursion(isRecursive()))
+    else
+      Hypothesis(newHead, recursiveRule.setRecursion(isRecursive()))
+
 
   def toRule(headName: String): Rule =
     val newHead = head.toPredicate(headName)
@@ -87,45 +111,33 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
       .setNegatives(negatives)
       .setPosRate(posRate)
       .setNegRate(negRate)
-/*
-
-  def toRecursion():Array[Hypothesis] =
-    toRecursion(crr_head.name)
-
-  def toRecursion(name: String): Array[Hypothesis] =
-    val newHead = crr_head.toPredicate(name)
-    val substitution = crr_head
-    body.map(item => {
-      val boundHead = newHead.bind(item)
-      val newBody = body.filter(! _.equals(item)) :+ item.toPredicate(name)
-      val rule1 = Rule(boundHead, Array(item))
-      val rule2 = Rule(newHead, newBody)
-      Hypothesis(crr_head, rule1, rule2)
-        .setRecursion(true)
-    })
-*/
 
 
+  def matches(test: Set[Predicate], facts: Set[Predicate]): Set[Predicate] =
+    val testName = test.head.getName()
+    val testFacts = facts.map(_.toPredicate(testName))
+    testFacts & test
 
-  def literals(): Array[String] =
-    head.array.filter(_.isSymbol()).map(_.name)
 
-  def substitutes(items: Set[Predicate], facts: Set[Predicate]): Set[Predicate] =
-    items.filter(positive => facts.exists(variable => Substitution().of(variable, positive).isDefined))
+  def ig(facts: Set[Predicate], posItems:Set[Predicate], negItems:Set[Predicate]): Double =
 
-  def ig(facts: Set[Predicate]): Double =
+    genfacts = facts
+    positives = matches(posItems, facts)
+    negatives = matches(negItems, facts)
 
-    posRate = substitutes(positives, facts).size.toDouble / positives.size
-    negRate = substitutes(negatives, facts).size.toDouble / negatives.size
-
+    posRate = positives.size.toDouble / math.max(posItems.size, 1.0)
+    negRate = negatives.size.toDouble / math.max(negItems.size, 1.0)
+    
     score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
     score
 
   override def hashCode(): Int =
-    body.foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
+    body.foldRight(identifier()) { case (a, m) => a.hashCode() + 7 * m }
 
   override def equals(obj: Any): Boolean =
-    obj.isInstanceOf[Rule] && obj.asInstanceOf[Rule].hashCode() == hashCode()
+    val other = obj.asInstanceOf[Rule]
+    other.getBody().forall(predicate=> contains(predicate)) &&
+      getBody().forall(predicate=> other.contains(predicate))
 
 
   def setPositives(positives: Set[Predicate]): this.type =
@@ -147,6 +159,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   override def copy(): Rule =
     val r = Rule(head.copy().asPredicate(), body.map(_.copy().asPredicate()))
       .setPositives(positives).setNegatives(negatives)
+      .setRecursion(recursive)
       .setPosRate(posRate).setNegRate(negRate)
     r
 
