@@ -1,6 +1,7 @@
 package ilp.data.variables
 
-import ilp.data.{Predicate, Substitution}
+import ilp.data.Substitution
+import ilp.data.predicates.Predicate
 
 class Variable(var name: String):
 
@@ -25,6 +26,7 @@ class Variable(var name: String):
 
   def getValue():Variable= this
 
+
   def substitution(substitution: Substitution): Variable =
     if substitution.hasVariable(this) then
       substitution.valueByVariable(this).get
@@ -46,7 +48,7 @@ class Variable(var name: String):
   def asNumber(): Num =
     this.asInstanceOf[Num]
 
-  def asNumberList(): NumList =
+  def asNumList(): NumList =
     this.asInstanceOf[NumList]
 
   def asVariableList(): VariableList =
@@ -69,6 +71,7 @@ class Variable(var name: String):
   def isList() = false
   def isNumber() = false
   def isNumberList() = false
+  def isEmpty() = true
 
   def copy(): Variable = new Variable(name)
 

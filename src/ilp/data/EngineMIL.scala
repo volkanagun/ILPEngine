@@ -1,6 +1,7 @@
 package ilp.data
 
 import ilp.concepts.Invention
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.variables.Sym
 

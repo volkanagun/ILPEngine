@@ -1,5 +1,7 @@
 package ilp.data
 
+import ilp.data.predicates.Predicate
+
 import java.util.Random
 
 
@@ -12,6 +14,7 @@ class Rule(crr_head: Predicate, crr_body: Set[Predicate]) extends Query(crr_head
   var genfacts = Set[Predicate]()
   var score = 0.0
 
+  def this(crr_head:Predicate) = this(crr_head, Set())
   def this(crr_head:Predicate, atom:Predicate)  = this(crr_head, Set(atom))
 
   def invalid():Boolean =
@@ -44,19 +47,14 @@ class Rule(crr_head: Predicate, crr_body: Set[Predicate]) extends Query(crr_head
       .asPredicate()
     Rule(newHead, body)
 
-  def asRule():Rule =
-    this.asInstanceOf[Rule]
-
-  def call(predicate: Predicate):Rule = {
+  /*override def call(predicate: Predicate): Rule = {
     val new_variables = predicate.array.filter(_.isVariable())
     val crr_variables = head.array.filter(_.isVariable())
     val substitution = Substitution(crr_variables, new_variables)
     val newHead = head.substitution(substitution).asPredicate()
-    val newBody = body.map(item=> item.substitution(substitution).asPredicate())
+    val newBody = body.map(item => item.substitution(substitution).asPredicate())
     Rule(newHead, newBody)
-  }
-
-
+  }*/
 
 
   def isFinished(): Boolean =
@@ -130,15 +128,6 @@ class Rule(crr_head: Predicate, crr_body: Set[Predicate]) extends Query(crr_head
     
     score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
     score
-
-  override def hashCode(): Int =
-    body.foldRight(identifier()) { case (a, m) => a.hashCode() + 7 * m }
-
-  override def equals(obj: Any): Boolean =
-    val other = obj.asInstanceOf[Rule]
-    other.getBody().forall(predicate=> contains(predicate)) &&
-      getBody().forall(predicate=> other.contains(predicate))
-
 
   def setPositives(positives: Set[Predicate]): this.type =
     this.positives = positives

@@ -1,6 +1,6 @@
 package ilp.data.variables
 
-import ilp.data.Predicate
+import ilp.data.predicates.Predicate
 
 
 class Update(var head: Array[Predicate], var body: Array[Predicate]):

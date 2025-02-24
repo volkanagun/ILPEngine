@@ -1,6 +1,7 @@
 package ilp.experiments
 
-import ilp.data.{Database, Engine, Parser, Predicate}
+import ilp.data.predicates.Predicate
+import ilp.data.{Database, Engine, Parser}
 
 import java.util.regex.Pattern
 import scala.io.Source

@@ -1,9 +1,10 @@
 package ilp.data
 
+import ilp.data.predicates.{Negative, Predicate}
 import ilp.data.variables.Variable
 import ilp.data.variables.Sym
 
-class Operation(val function: Variable, var query: Set[Predicate], var items: Array[Variable]):
+class Operation(val function: Predicate, var query: Set[Predicate], var items: Array[Variable]) extends Query(function, query):
 
   override def hashCode(): Int =
     var r = function.hashCode()
@@ -14,8 +15,8 @@ class Operation(val function: Variable, var query: Set[Predicate], var items: Ar
     val other = obj.asInstanceOf[Operation]
     other.hashCode() == hashCode()
 
-  def copy(): Operation =
-    val definitionClone = function.copy()
+  override def copy(): Query =
+    val definitionClone = function.copy().asPredicate()
     val queryClone = query.map(_.copy().asPredicate())
     val itemsClone = items.map(_.copy())
     Operation(definitionClone, queryClone, itemsClone)
@@ -26,14 +27,12 @@ class Operation(val function: Variable, var query: Set[Predicate], var items: Ar
     else
       function.toString + " ==> " + items.mkString(" && ")
 
-  def isAtom(): Boolean =
-    query.isEmpty
 
   def execute(instance: Predicate): (Option[Substitution], Operation) =
     val call = Substitution().of(function, instance)
     if call.isDefined then
       val main = call.get
-      val newFunction = function.substitution(main) //main.of(function)
+      val newFunction = function.substitution(main).asPredicate()
       val newQuery = query.map(variable => variable.substitution(main).asPredicate() /*main.of(variable).asPredicate()*/)
       (call, Operation(newFunction, newQuery, items))
     else

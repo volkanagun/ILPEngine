@@ -1,5 +1,6 @@
 package ilp.data
 
+import ilp.data.predicates.{Equal, Head, Mod, Negative, Predicate, Tail}
 import ilp.data.variables.{Collection, Num, NumList, Sym, Variable, VariableList}
 
 import scala.collection.parallel.CollectionConverters.SetIsParallelizable
@@ -137,11 +138,6 @@ class Database(name: String):
   def containsTemplate(predicate: Predicate): Boolean =
     templates.contains(predicate.identifier())
 
-  /*
-    def containsData(predicate: Predicate): Boolean =
-      sets.contains(predicate)
-  */
-
   def containsData(set: Set[Predicate], predicate: Predicate): Boolean =
     val isFound = set.contains(predicate) || sets.contains(predicate)
     (predicate.isNegative() && !isFound) || (!predicate.isNegative() && isFound)
@@ -221,25 +217,18 @@ class Database(name: String):
     result
 
 
-  protected def execute(set: Set[Predicate], predicate: Predicate, main: Substitution): Answer =
-    if (predicate.isList() && predicate.isDefinite()){
-      val sub = Substitution().of(predicate.getVariable(0), predicate.getValue())
-      if sub.isDefined then Answer(main, sub.get)
-      else Answer(main)
+  protected def lookup(set: Set[Predicate], predicate: Predicate, main: Substitution): Answer =
+    val substitution = predicate.execute()
+    if(substitution.isDefined){
+      Answer(main, substitution.get)
     }
-    else if(predicate.isMath() && predicate.isDefinite()){
-      Answer(main, main)
-    }
-    else if(predicate.isList() && predicate.isDefinite()){
-      Answer(main, main)
-    }  
     else if (predicate.isDefinite()) {
       val check = containsData(set, predicate)
       if check then Answer(main, main)
       else Answer(main)
     }
     else {
-      val instances = getTemplates(predicate)
+      val instances = set ++ getTemplates(predicate)
       val foundList = instances.flatMap(instance => {
         new Substitution().of(predicate, instance)
       }).filter(subs => {
@@ -254,22 +243,33 @@ class Database(name: String):
         Answer(main)
     }
 
-  protected def execute(set: Set[Predicate], elements: Set[Predicate], main: Substitution): Set[Answer] =
+  protected def execute(query:Query, set: Set[Predicate], elements: Set[Predicate], main: Substitution): Set[Answer] =
     if elements.isEmpty && main.nonEmpty() then Set(Answer(main, main))
     else if elements.isEmpty then Set()
     else
       val head = elements.head.substitution(main).asPredicate()
-      val answer = execute(set, head, main)
-      val substitutions = answer.getCombinedSubstituions()
-      //lost this main, combine main and current subtituions
-      substitutions.flatMap(crrSubstitution => {
-        execute(set, elements.tail, crrSubstitution)
-      }).toArray.toSet
+      if query.doRecursion(head)  then
+        val callRule = query.call(head)
+        val stackAnswers = execute(set, callRule)
+        stackAnswers
+      else
+        val answer = lookup(set, head, main)
+        val substitutions = answer.getCombinedSubstituions()
+        //lost this main, combine main and current subtituions
+        substitutions.flatMap(crrSubstitution => {
+          execute(query, set, elements.tail, crrSubstitution)
+        }).toArray.toSet
 
   protected def execute(set: Set[Predicate], query: Query, main: Substitution): Set[Answer] =
-    if query.isAtom() then Set(execute(set, query.body.head, main))
+    if query.isAtom() then
+      val crrSubstitution = Substitution().of(query.getHead())
+      Set(Answer(main, crrSubstitution))
+    else if query.isRecursive() then
+      val crrSubstitution = Substitution().of(query.getHead())
+      val answers = execute(query, set, query.body, crrSubstitution)
+      answers
     else
-      execute(set, query.body, main)
+      execute(query, set, query.body, main)
 
 
   def execute(set: Set[Predicate], query: Query): Set[Answer] =
@@ -277,20 +277,15 @@ class Database(name: String):
 
   def execute(bufferSet: Set[Predicate], operation: Operation, call: Predicate): Boolean =
     val (headSubstitution, unifiedOperation) = operation.execute(call)
-    val answers = execute(bufferSet, unifiedOperation.query, Substitution())
+    val answers = execute(operation.asRule(), bufferSet, unifiedOperation.query, Substitution())
     val op = unifiedOperation.execute(headSubstitution, answers.map(_.main))
     val r = execute(op)
     r
 
-  def retrieve(set:Set[Predicate], rule: Rule): Set[Predicate] =
-    val answers = execute(set, rule)
-    var predicates = Set[Predicate]()
-    answers.flatMap(answer => answer.execute(rule.head))
+  def retrieve(set:Set[Predicate], query: Query): Set[Predicate] =
+    val answers = execute(set, query)
+    answers.flatMap(answer => answer.execute(query.head))
 
-  def retrieveRecursive(set:Set[Predicate], rule: Rule): Set[Predicate] =
-    val answers = execute(set, rule)
-    var predicates = Set[Predicate]()
-    answers.flatMap(answer => answer.execute(rule.head))
 
 
   def retrieve(set:Set[Predicate], hypothesis: Hypothesis): Set[Predicate] =
@@ -305,17 +300,23 @@ class Database(name: String):
 
   def facts(query: Query): Set[Predicate] =
     val answers = execute(Set(), query)
-    answers.flatMap(answer => answer.execute(query.head))
+    val results = answers.flatMap(answer => answer.execute(query.head))
+    results
 
   def facts(hypothesis: Hypothesis): Set[Predicate] =
-    facts(Set(), hypothesis)
+    val results = facts(Set(), hypothesis)
+    results
 
   def facts(set:Set[Predicate], hypothesis: Hypothesis): Set[Predicate] =
-    hypothesis.getSorted().
-      foldRight(Set[Predicate]()){case(rule, set) =>
-        set ++ retrieve(set, rule)}
+    var results = Set[Predicate]()
+    var intermediate = Set[Predicate]()
+    hypothesis.getSorted().foreach(query=>{
+      val crr = retrieve(intermediate, query)
+      if !query.isAtom() then results ++= crr
+      intermediate ++= crr
+    })
 
-  
+    results
 
   def execute(bufferSet:Set[Predicate], operations: Array[Operation], call: Predicate): this.type = {
     var affected = true
@@ -328,7 +329,7 @@ class Database(name: String):
 
   def expand(bufferSet: Set[Predicate], operation: Operation, call: Predicate): Array[Predicate] =
     val (headSubstitution, unifiedOperation) = operation.execute(call)
-    val answers = execute(bufferSet, unifiedOperation.query, Substitution())
+    val answers = execute(operation.asRule(), bufferSet, unifiedOperation.query, Substitution())
     val op = unifiedOperation.execute(headSubstitution, answers.map(_.main))
     val r = expand(op)
     r
@@ -497,28 +498,68 @@ object Database {
     d.facts(q).foreach(predicate => println(predicate))
   }
 
- def test9(): Unit = {
-    val list = NumList("T", 4.0, 2.0, 8.0).toVariableList()
+ def testRecursion(): Unit = {
+    val list = NumList("L", 4.0, 2.0, 8.0)
     val h = Variable("H")
-    val t = VariableList("T", Array[Variable]())
+    val t = NumList("T")
+    val b = NumList("L")
+
+    val n1 = Sym("A","n1")
+    val n2 = Sym("A","n2")
+    val n3 = Sym("A","n3")
+
+    val varA = Variable("A")
     val head = Head(h, list)
     val tail = Tail(t, list)
+
+    val functionHead = Predicate("f", list, varA)
+    val functionRecursive = Predicate("f", t, varA)
+    val a1 = Predicate("f", b, n1)
+    val a2 = Predicate("f", b, n2)
+    val a3 = Predicate("f", b, n3)
+
+    val q1 = Rule(a1)
+    val q2 = Rule(a2)
+    val q3 = Rule(a3)
+
+    val body = Rule(functionHead, Set(head, tail, functionRecursive))
+      .setRecursion(true)
+   val rules =  Set(body, q1, q2, q3)
+   val hypothesis = Hypothesis(functionHead, rules)
+
+    val d = Database("test")
+    d.facts(hypothesis).foreach(predicate => println("Predicate: " + predicate))
+  }
+
+  def testEven(): Unit = {
+    val inputList = NumList("L", 8.0, 2.0)
+    val baseList = NumList("L")
+    val h = Variable("H")
+    val t = NumList("T")
+
+    val head = Head(h, inputList)
+    val tail = Tail(t, inputList)
     val n1 = Num("modBy", 2)
     val n2 = Num("equalBy", 0)
-    val equal = Equal(Mod(h, n1), n2)
+    val equal = Equal("E", Mod("M", h, n1), n2)
 
-    val functionHead = Predicate("f", list)
+    val functionAtom = Predicate("f", baseList)
+    val functionHead = Predicate("f", inputList)
     val functionRecursive = Predicate("f", t)
-    val functionCase = Rule(functionHead, Set(head, equal, tail, functionRecursive))
-    val hypothesis = Hypothesis(functionHead, functionCase)
+
+    val query = Rule(functionHead, Set(head, equal, tail, functionRecursive))
       .setRecursion(true)
+    val atom = Rule(functionAtom)
+
+    val hypothesis = Hypothesis(functionHead, query, atom)
     val d = Database("test")
     d.facts(hypothesis).foreach(predicate => println("Predicate: " + predicate))
   }
 
 
   def main(args: Array[String]): Unit = {
-    test9()
+    testEven()
+
   }
 
 }

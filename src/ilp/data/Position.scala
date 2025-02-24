@@ -1,5 +1,7 @@
 package ilp.data
 
+import ilp.data.predicates.Predicate
+
 class Position(val predicate:Predicate, val index:Int) {
   override def hashCode(): Int = predicate.identifier().hashCode() * 7 + index
 

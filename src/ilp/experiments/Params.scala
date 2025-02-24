@@ -1,6 +1,7 @@
 package ilp.experiments
 
-import ilp.data.{Database, Engine, EngineMIL, Parser, Predicate, Rule}
+import ilp.data.predicates.Predicate
+import ilp.data.{Database, Engine, EngineMIL, Parser, Rule}
 
 class Params:
 

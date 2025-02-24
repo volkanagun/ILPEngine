@@ -1,6 +1,6 @@
 package ilp.data
-import ilp.data.variables.{Collection, NumList, Variable, VariableList, Sym}
-
+import ilp.data.predicates.{Count, Equal, Mod, Negative, Predicate, Sum}
+import ilp.data.variables.{Collection, NumList, Sym, Variable, VariableList}
 
 import scala.util.parsing.combinator.*
 
@@ -15,6 +15,7 @@ object Parser extends JavaTokenParsers {
   def numVar: Parser[String] = "([+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?|[A-Z]+)".r
 
   def negative: Parser[String] = "\\~[a-z0-9\\_]+".r
+  def varstr: Parser[String] = "[A-Z0-9\\_]+".r
 
   /** Parser for a variable (starts with an uppercase letter) */
   def variable: Parser[Variable] =
@@ -69,10 +70,9 @@ object Parser extends JavaTokenParsers {
     }
 
   def modCall: Parser[Variable] =
-    "Mod(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Mod(" ~ args ~ ")" => {
-        Mod(args.head.asNumber(), args.last.asNumber())
-      }
+    "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "Mod("~ result ~ "," ~ args ~ ")" =>
+        Mod(result, args.head, args.last)
     }
 
   def sumCall: Parser[Variable] =
@@ -83,8 +83,8 @@ object Parser extends JavaTokenParsers {
     }
 
   def equalCall: Parser[Variable] =
-    "Equal(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Equal(" ~ args ~ ")" => Equal(args.head, args.last)
+    "Equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "Equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
     }
 
   /** Parser for an argument, which can be a variable or a function call */
@@ -118,13 +118,13 @@ object Parser extends JavaTokenParsers {
     }
 
   def single_equal: Parser[Predicate] =
-    "Equal(" ~ repsep(argument, ",") ~ ")." ^^ {
-      case "Equal(" ~ args ~ ")." => Equal(args.head, args.last)
+    "Equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
+      case "Equal(" ~ result ~ "," ~  args ~ ")." => Equal(result, args.head, args.last)
     }
 
   def single_mod: Parser[Predicate] =
-    "Mod(" ~ repsep(argument, ",") ~ ")." ^^ {
-      case "Mod(" ~ args ~ ")." => Mod(args.head.asNumber(), args.last.asNumber())
+    "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
+      case "Mod(" ~ result ~ "," ~ args ~ ")." => Mod(result, args.head.asNumber(), args.last.asNumber())
     }
 
 
@@ -149,13 +149,13 @@ object Parser extends JavaTokenParsers {
     }
 
   def predicate_equal: Parser[Equal] =
-    "Equal(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Equal(" ~ args ~ ")" => Equal(args.head, args.last)
+    "Equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "Equal("~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
     }
 
   def predicate_mod: Parser[Mod] =
-    "Mod(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Mod(" ~ args ~ ")" => Mod(args.head.asNumber(), args.last.asNumber())
+    "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "Mod(" ~ result ~ "," ~ args ~ ")" => Mod(result, args.head, args.last)
     }
 
   def predicate_input: Parser[Predicate] =

@@ -1,8 +1,10 @@
 package ilp.data
 
 import ilp.concepts.Invention
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.variables.Sym
+
 import java.util.Random
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 

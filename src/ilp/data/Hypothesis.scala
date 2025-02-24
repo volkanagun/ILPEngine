@@ -1,5 +1,6 @@
 package ilp.data
 
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
 
@@ -27,15 +28,18 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
   def getSorted():Array[Rule] =
     val callMap = rules.map(rule=> {
       val count = rules.filter(otherRule=> rule.calledFrom(otherRule)).size
-      rule -> count
+      val bias = if rule.isAtom() then 2.0 else 1.0
+      rule -> count * bias
     }).toMap
 
-    rules.map(rule => {
+    val sorted = rules.map(rule => {
       val crr = callMap(rule)
       val count = rules.filter(otherRule => rule.calledFrom(otherRule)).map(otherRule=> callMap(otherRule)).sum
       rule -> (count + crr)
     }).toArray.sortBy(_._2).reverse
       .map(_._1)
+
+    sorted
 
   override def abstraction(): Hypothesis =
 

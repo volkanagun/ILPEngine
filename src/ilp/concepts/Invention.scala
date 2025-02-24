@@ -1,7 +1,8 @@
 package ilp.concepts
 
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import ilp.data.{Database, Hypothesis, Position, Predicate, Rule, Substitution}
+import ilp.data.{Database, Hypothesis, Position, Rule, Substitution}
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, SetIsParallelizable}
 

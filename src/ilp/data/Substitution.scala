@@ -1,27 +1,28 @@
 package ilp.data
 
 import ilp.data
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.variables.Sym
-
 
 
 class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) {
 
   def this() = this(Array[Variable](), Array[Variable]())
-  def this(replacements:Array[(Variable, Variable)]) = this(replacements.map(_._1), replacements.map(_._2))
+
+  def this(replacements: Array[(Variable, Variable)]) = this(replacements.map(_._1), replacements.map(_._2))
 
   def this(variable: Variable, symbol: Variable) = this(Array(variable), Array(symbol))
 
-  def this(variable:String, symbol:String) = this(Variable(variable), Variable(symbol))
+  def this(variable: String, symbol: String) = this(Variable(variable), Variable(symbol))
 
-  def length():Int =
+  def length(): Int =
     variables.length
 
-  def isEmpty():Boolean =
+  def isEmpty(): Boolean =
     variables.isEmpty
 
-  def nonEmpty():Boolean =
+  def nonEmpty(): Boolean =
     variables.nonEmpty
 
   def add(variable: Variable, symbol: Variable): this.type =
@@ -29,7 +30,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     symbols = symbols :+ symbol
     this
 
-  def append(substitution: Substitution) : this.type =
+  def append(substitution: Substitution): this.type =
     substitution.variables.zipWithIndex.foreach(pair => {
       if (!hasVariable(pair._1))
         variables :+= pair._1
@@ -43,7 +44,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def hasValue(variable: Variable): Boolean =
     this.symbols.indexOf(variable) != -1
 
-  def variableByValue(variable:Variable):Option[Variable] = {
+  def variableByValue(variable: Variable): Option[Variable] = {
     val index = symbols.indexOf(variable)
     if index != -1 then
       Some(variables(index))
@@ -63,12 +64,12 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     s"The pattern ${pattern} must have compatible value in ${instance}"
 
 
-  def composition(substitution: Substitution):Substitution =
-    val left =  symbols.filter(variable=> !substitution.hasVariable(variable))
-      .map(symbol=> (variableByValue(symbol).get, symbol))
+  def composition(substitution: Substitution): Substitution =
+    val left = symbols.filter(variable => !substitution.hasVariable(variable))
+      .map(symbol => (variableByValue(symbol).get, symbol))
     val right = substitution.variables.filter(variable => !hasVariable(variable))
-      .map(variable=> (variable, substitution.valueByVariable(variable).get))
-    val assignLeft = symbols.filter(variable=> variable.isVariable() && substitution.hasVariable(variable))
+      .map(variable => (variable, substitution.valueByVariable(variable).get))
+    val assignLeft = symbols.filter(variable => variable.isVariable() && substitution.hasVariable(variable))
       .map(variable => (variableByValue(variable).get, substitution.valueByVariable(variable).get))
     val assignRight = substitution.symbols.filter(variable => variable.isVariable() && hasVariable(variable))
       .map(variable => (substitution.variableByValue(variable).get, valueByVariable(variable).get))
@@ -79,24 +80,31 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
     Substitution(unionVar, unionSym)
 
-  def merge(substitution: Substitution):Substitution =
+  def merge(substitution: Substitution): Substitution =
     val composed = composition(substitution)
     this.variables = composed.variables
     this.symbols = composed.symbols
     this
 
+  def of(pattern: Variable): Substitution =
+    add(pattern, pattern)
+
+
   def of(pattern: Variable, instance: Variable): Option[Substitution] =
 
-    if (pattern.isList() && instance.isList() && pattern.getSize() == instance.getSize())
-    {
+    if (pattern.isList() && instance.isList() && pattern.getSize() == instance.getSize()) {
       val variables = pattern.asArray()
       val symbols = instance.asArray()
       val valid = variables.value.zip(symbols.value).map { case (p_item, i_item) => {
-          of(p_item, i_item)
-        }}.forall(_.isDefined)
+        of(p_item, i_item)
+      }
+      }.forall(_.isDefined)
 
-     if (valid) Some(this)
-     else None     
+      if (valid) Some(this)
+      else None
+    }
+    else if (pattern.isNumberList() && instance.isNumberList() && pattern.getSize() == instance.getSize()) {
+        Some(add(pattern, instance))
     }
     else if (pattern.isSymbol() && instance.isSymbol() && pattern.asSymbol().value == instance.asSymbol().value) {
       Some(this)
@@ -115,9 +123,10 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
       val i = instance.asInstanceOf[Predicate]
       val valid = p.array.zip(i.array).map { case (p_item, i_item) => {
         of(p_item, i_item)
-      }}.forall(_.isDefined)
+      }
+      }.forall(_.isDefined)
 
-      if(valid) Some(this)
+      if (valid) Some(this)
       else None
     }
     else {
@@ -159,7 +168,7 @@ object Substitution {
 
   def test2(): Unit = {
     val p = Predicate("p", Array(Variable("X"), Variable("X")))
-    val i = Predicate("p", Array[Variable](data. variables.Sym("X", "a"), data. variables.Sym("X", "a")))
+    val i = Predicate("p", Array[Variable](data.variables.Sym("X", "a"), data.variables.Sym("X", "a")))
     Substitution().of(p, i) match {
       case Some(s) => println(p.substitution(s))
     }
@@ -167,7 +176,7 @@ object Substitution {
 
   def test3(): Unit = {
     val p = Predicate("p", Array(Variable("X"), Variable("X")))
-    val i = Predicate("p", Array[Variable](data. variables.Sym("X", "a"), data. variables.Sym("X", "b")))
+    val i = Predicate("p", Array[Variable](data.variables.Sym("X", "a"), data.variables.Sym("X", "b")))
 
     Substitution().of(p, i) match {
       case Some(s) => println(p.substitution(s))
@@ -181,10 +190,10 @@ object Substitution {
     val zVar = Variable("Z")
     val vVar = Variable("V")
 
-    val aSym = new  variables.Sym("X", "a")
-    val dSym = new  variables.Sym("U", "d")
-    val eSym = new  variables.Sym("V", "e")
-    val gSym = new  variables.Sym("Z", "g")
+    val aSym = new variables.Sym("X", "a")
+    val dSym = new variables.Sym("U", "d")
+    val eSym = new variables.Sym("V", "e")
+    val gSym = new variables.Sym("Z", "g")
 
     val sub1Var = Array(xVar, yVar, zVar)
     val sub2Var = Array(uVar, vVar, zVar)

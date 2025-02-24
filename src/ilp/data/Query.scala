@@ -2,28 +2,50 @@ package ilp.data
 
 import scala.collection.parallel.CollectionConverters.SetIsParallelizable
 import ilp.data
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
 class Query(var head: Predicate, var body: Set[Predicate]):
   var recursive = false
-  
+
   def setRecursive(recursive:Boolean):this.type =
     this.recursive = recursive
     this
-  
-  def isAtom(): Boolean = body.size == 1 && body.head.isDefinite()
+
+  def doRecursion(item:Predicate):Boolean =
+    item.identifier() == head.identifier() && !item.isEmpty()
+
+  //def isAtom(): Boolean = body.size == 1 && body.head.isDefinite()
+  def isAtom():Boolean = body.isEmpty
+  def isDefinite():Boolean = head.isDefinite()
   def isNegation(): Boolean = body.size == 1 && body.head.isNegative()
-  def getBody(): Set[Predicate] = body  
+  def getBody(): Set[Predicate] = body
   def isRecursive():Boolean = recursive
+  def nonRecursive():Boolean = !recursive
   def isList():Boolean = head.isList()
+  def isEmptyList():Boolean = head.isList()
   def identifier():Int = head.identifier()
+
+
+  def asRule():Rule =
+    asInstanceOf[Rule]
+
+  def call(predicate: Predicate): Query = {
+    val new_variables = predicate.array.filter(_.isVariable())
+    val crr_variables = head.array.filter(_.isVariable())
+    val substitution = Substitution(crr_variables, new_variables)
+    val newHead = head.substitution(substitution).asPredicate()
+    val newBody = body.map(item => item.substitution(substitution).asPredicate())
+    Query(newHead, newBody)
+  }
+
 
   def contains(predicate: Predicate): Boolean =
     body.contains(predicate)
 
   def calledFrom(otherRule: Query): Boolean =
     otherRule.getBody().exists(otherPredicate => otherPredicate.identifier() == identifier())
-  
+
   def getAritry():Int =
     head.getArity()
 
@@ -33,11 +55,10 @@ class Query(var head: Predicate, var body: Set[Predicate]):
   def getAbstractName(): String =
     body.map(p => p.getName()).mkString("_")
 
-
-  def getCall(rule:Rule):Set[Rule] =
+  /*def getCall(rule:Rule):Set[Rule] =
     body.filter(target=> target.identifier() == rule.identifier()).map(target=>{
       rule.call(target)
-    })
+    })*/
 
   def expandCall(rule:Hypothesis):Rule =
     var newBody = Set[Predicate]()
@@ -71,7 +92,7 @@ class Query(var head: Predicate, var body: Set[Predicate]):
 
   def add(predicate: Predicate):this.type =
     if !body.contains(predicate) then
-      body += predicate    
+      body += predicate
     this
 
   override def hashCode(): Int =
@@ -79,12 +100,16 @@ class Query(var head: Predicate, var body: Set[Predicate]):
 
   override def equals(obj: Any): Boolean =
     if obj.isInstanceOf[Query] then
-      obj.asInstanceOf[Query].hashCode() == hashCode()
+      val other = obj.asInstanceOf[Query]
+      other.head.equals(head) && other.getBody().forall(predicate=> contains(predicate)) &&
+        getBody().forall(predicate=> other.contains(predicate))
+
     else
       false
 
   override def toString: String =
-    head.toString + " :- " + body.map(_.toString).mkString(" & ")
+    if body.nonEmpty then head.toString + " :- " + body.map(_.toString).mkString(" & ") + "."
+    else head.toString + "."
 
   def copy():Query =
     Query(head.copy().asPredicate(), body.map(_.copy().asPredicate()))
@@ -129,10 +154,19 @@ class Query(var head: Predicate, var body: Set[Predicate]):
 class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()):
   
   def this(main:Substitution, content:Substitution) = this(main, Set(content))
-  
+
   def execute(head: Predicate): Set[Predicate] =
-    val newHead = head.substitution(main)
-    substitutions.map(sub => newHead.substitution(sub).asPredicate())
+    val newPredicates = substitutions.map(sub=>{
+      val newArray =  head.getArray().map(variable => {
+        if variable.isSymbol() then variable
+        else variable.substitution(sub)
+      })
+      Predicate(head.getName(), newArray)
+    })
+
+    newPredicates
+    //val newHead = head.substitution(main)
+    //substitutions.map(sub => newHead.substitution(sub).asPredicate())
 
   def isTrue(): Boolean =
     substitutions.nonEmpty
