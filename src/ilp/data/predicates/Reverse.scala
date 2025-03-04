@@ -1,27 +1,25 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{NumList, Variable, VariableList}
+import ilp.data.variables.{NumList, Variable}
 
 
-class Head(val head: Variable, val list: NumList) extends Predicate("head", Array(head, list)):
+class Reverse(val list: NumList, val result: NumList) extends Predicate("reverse", Array[Variable](list, result)):
 
   override def isDefinite(): Boolean =  true
   override def isExecutable(): Boolean = list.nonEmpty()
 
   //override def isList(): Boolean = list.nonEmpty()
   override def getValue(): Variable = {
-    list.getHead()
+    list.reverse()
   }
   override def copy(): Variable =
-    Head(head.copy(), list.copy().asNumList())
+    Reverse(list.copy().asNumList(), result.copy().asNumList())
 
   override def substitution(substitution: Substitution): Variable =
-    val newHead = head.substitution(substitution)
     val newList = list.substitution(substitution).asNumList()
-    Head(newHead, newList).asVariable()
+    val newResult = result.substitution(substitution).asNumList()
+    Reverse(newList, newResult).asVariable()
 
   override def execute(): Option[Substitution] =
-    Some(Substitution().add(head, getValue()))
-
-
+    Some(Substitution().add(result, getValue()))

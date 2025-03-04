@@ -1,17 +1,30 @@
-package ilp.data
+package ilp.data.database
 
 import ilp.concepts.Invention
 import ilp.data.predicates.Predicate
-import ilp.data.variables.Variable
-import ilp.data.variables.Sym
+import ilp.data.variables.{Sym, Variable}
+import ilp.data.{Hypothesis, Rule}
 
 import java.util.Random
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
 class Engine(val database: Database) extends Serializable :
 
+  var positives = Set[Predicate]()
+  var negatives = Set[Predicate]()
+
+  def setPositives(positives: Set[Predicate]): this.type =
+    this.positives = positives
+    this
+
+  def setNegatives(negatives: Set[Predicate]): this.type =
+    this.negatives = negatives
+    this
+
   def names(): Array[String] =
     Array("X", "Y", "Z", "P", "K")
+
+
 
   def candidates(rule: Rule): Set[Rule] =
     Invention.transitive(database, rule)
@@ -22,7 +35,7 @@ class Engine(val database: Database) extends Serializable :
     val result = filteredRules
       .map(rule => {
         val crrFacts = database.facts(rule)
-        (rule, rule.ig(crrFacts, database.positives, database.negatives))
+        (rule, rule.ig(crrFacts, positives, negatives))
       }).toArray
       .sortBy(_._2)
       .map(_._1)
@@ -47,10 +60,10 @@ class Engine(val database: Database) extends Serializable :
 
 
   def induction(): Set[Hypothesis] =
-    val crrPositives = database.positives
-    val crrNegatives = database.negatives -- database.positives.intersect(database.negatives)
-    val generic = crrPositives.head.toGeneric(database.uppercases)
-    val crrRule = Rule(generic, Set[Predicate]())
+    val crrPositives = positives
+    val crrNegatives = negatives -- positives.intersect(negatives)
+    val generic = crrPositives.head.toGeneric(names())
+    val crrRule = Rule(generic)
       .setPositives(crrPositives).setNegatives(crrNegatives)
 
     induction(crrRule)
@@ -77,9 +90,9 @@ object Engine {
 
     val h1 = Predicate("grandparent", Array(Variable("X"), Variable("Y")))
 
-    val rule = Rule(h1, Set[Predicate]()).setPositives(pos).setNegatives(neg)
-    val d = Database("induction").add(Set(d1, d2, d3, d4, d5)).setPositives(pos).setNegatives(neg)
-    val engine = Engine(d)
+    val rule = Rule(h1).setPositives(pos).setNegatives(neg)
+    val d = Database("induction").add(Set(d1, d2, d3, d4, d5))
+    val engine = Engine(d).setPositives(pos).setNegatives(neg)
 
     println(engine.induction(rule))
   }

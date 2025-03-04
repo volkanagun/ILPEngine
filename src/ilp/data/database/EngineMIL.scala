@@ -1,9 +1,9 @@
-package ilp.data
+package ilp.data.database
 
 import ilp.concepts.Invention
 import ilp.data.predicates.Predicate
-import ilp.data.variables.Variable
-import ilp.data.variables.Sym
+import ilp.data.variables.{Sym, Variable}
+import ilp.data.{Hypothesis, Parser, Rule, database}
 
 import scala.collection.parallel.CollectionConverters.SetIsParallelizable
 
@@ -30,7 +30,7 @@ class EngineMIL(data: Database) extends Engine(data):
 
   def ig(data:Database, set:Set[Predicate], hypothesis: Hypothesis): Hypothesis =
     val crrFacts = data.facts(set, hypothesis)
-    hypothesis.ig(crrFacts, database.positives, database.negatives)
+    hypothesis.ig(crrFacts, positives, negatives)
     hypothesis
 
   private def update(hypotheses: Set[Hypothesis]):Set[Predicate] =
@@ -89,11 +89,13 @@ object EngineMIL {
     val metaHead = Predicate("p", Array(Variable("X"), Variable("Y")))
     val metaT1 = Predicate("f", Array(Variable("X"), Variable("Z")))
     val metaT2 = Predicate("f", Array(Variable("Z"), Variable("Y")))
-    val metaRule = Rule(metaHead, Set(metaT1, metaT2))
+    val metaRule = Rule(metaHead, Array(metaT1, metaT2))
 
-    val rule = Rule(h1, Set[Predicate]()).setPositives(pos).setNegatives(neg)
-    val d = Database("induction").add(Set(d1, d2, d3, d4)).setPositives(pos).setNegatives(neg)
+    val rule = Rule(h1).setPositives(pos).setNegatives(neg)
+    val d = Database("induction").add(Set(d1, d2, d3, d4))
     val engine = EngineMIL(d).add(metaRule)
+      .setPositives(pos)
+      .setNegatives(neg)
     val hypotheses = engine.induction(rule)
     println(hypotheses.mkString("\n"))
   }

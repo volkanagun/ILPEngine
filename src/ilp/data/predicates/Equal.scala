@@ -4,9 +4,12 @@ import ilp.data.{Substitution, variables}
 import ilp.data.variables.{Sym, Variable}
 
 class Equal(result:String, e1: Variable, e2: Variable) extends Predicate("equal", Array[Variable](e1, e2, Variable(result))):
-  override def isMath(): Boolean = true
+
+  override def isExecutable(): Boolean =
+    isDefinite() && e1 == e2
+
   override def isDefinite(): Boolean = {
-    e1.getValue() == e2.getValue()
+    e1.isSymbol() == e2.isSymbol()
   }
 
   override def getValue(): Variable =

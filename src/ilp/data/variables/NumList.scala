@@ -16,11 +16,14 @@ class NumList(name:String, var value:Array[Double]) extends Variable(name) :
   override def isEmpty(): Boolean = value.isEmpty
   override def copy(): Variable = NumList(name, value)
 
-  def getNumber():Array[Double] = value
-  def getLength():Num = Num(name, value.length)
+
   def nonEmpty() : Boolean = value.nonEmpty
   def getHead(): Num = Num("X", value.head)
-  def getHead(name:String): Num = Num(name, value.head)
+  def append(num:Num): NumList = NumList(name, value:+num.getNumber())
+  def prepend(num:Num): NumList = NumList(name, num.getNumber() +: value)
+  def reverse(): NumList = NumList(name, value.reverse)
+
+  //def getHead(name:String): Num = Num(name, value.head)
   def getTail(): NumList = NumList(name, value.tail)
   def getTail(name:String): NumList = NumList(name, value.tail)
 
@@ -29,16 +32,7 @@ class NumList(name:String, var value:Array[Double]) extends Variable(name) :
   def log(): NumList =
     NumList(name, value.map(item => math.log(item)))
 
-  def member(variable:Num):Variable =
-    val isFound = value.contains(variable.getNumber())
-    new Sym(variable.name, isFound.toString)
-
-  def toVariableList():VariableList =
-    VariableList(name, value.map(d=> Num("X", d).asVariable()))
-
   override def hashCode(): Int = name.hashCode()
-
   override def equals(obj: Any): Boolean =
     obj.isInstanceOf[Variable] && obj.asInstanceOf[Variable].name == name
-
   override def toString: String = value.mkString("[",",","]")

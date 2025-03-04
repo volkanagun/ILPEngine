@@ -1,14 +1,14 @@
-package ilp.data
+package ilp.data.database
 
-import ilp.data.predicates.{Equal, Head, Mod, Negative, Predicate, Tail}
-import ilp.data.variables.{Collection, Num, NumList, Sym, Variable, VariableList}
+import ilp.data.predicates.*
+import ilp.data.variables.*
+import ilp.data.*
+
 
 import scala.collection.parallel.CollectionConverters.SetIsParallelizable
 
 class Database(name: String):
 
-
-  var uppercases = Array("A", "B", "C", "D", "E", "F", "G", "H", "I")
   var symbols = Array[Collection]()
   var sets = Set[Predicate]()
   var templates = Map[Int, Set[Predicate]]()
@@ -16,16 +16,6 @@ class Database(name: String):
   var attachments = Map[Position, Set[Position]]()
   var symbolPositions = Map[Sym, Set[Position]]()
 
-  var positives = Set[Predicate]()
-  var negatives = Set[Predicate]()
-
-  def setPositives(positives: Set[Predicate]): this.type =
-    this.positives = positives
-    this
-
-  def setNegatives(negatives: Set[Predicate]): this.type =
-    this.negatives = negatives
-    this
 
   def build(): this.type =
 
@@ -36,6 +26,7 @@ class Database(name: String):
         symbolPositions = symbolPositions.updated(symbol, symbolPositions.getOrElse(symbol, Set[Position]()) + position)
 
     for predicate <- sets do
+
       val symbols = predicate.getSymbols()
       val positions = predicate.getPositions()
       for (symbol, position) <- symbols.zip(positions) do
@@ -131,7 +122,6 @@ class Database(name: String):
   def databaseComplexity(rule: Rule): Double =
     rule.getComplexity() / rule.body.map(predicate => containsTemplate(predicate)).size
 
-
   def contains(collection: Collection): Boolean =
     symbols.contains(collection)
 
@@ -151,11 +141,6 @@ class Database(name: String):
     else
       Set()
 
-  def getGeneric(predicate: Predicate): Set[Predicate] =
-    if templates.contains(predicate.identifier()) then
-      Set(templates(predicate.identifier()).head.toGeneric(uppercases))
-    else
-      Set()
 
   def getTemplates2(predicate: Predicate): Set[Predicate] =
     if templates2.contains(predicate.length()) then
@@ -163,14 +148,8 @@ class Database(name: String):
     else
       Set()
 
-  def getGeneric2(predicate: Predicate): Set[Predicate] =
-    if templates2.contains(predicate.length()) then
-      templates2(predicate.length()).map(_.toGeneric(uppercases))
-    else
-      Set()
-
   def getTemplate3(): Set[Predicate] =
-    templates.values.map(set => set.head.toGeneric(uppercases))
+    templates.values.map(set => set.head)
       .toSet
 
   def getPositions(items: Set[Position]): Set[Position] =
@@ -188,8 +167,6 @@ class Database(name: String):
 
   def copy(): Database =
     Database(name).add(sets)
-      .setPositives(positives).setNegatives(negatives)
-
 
   protected def execute(operation: Operation): Boolean =
     var affected = false
@@ -217,22 +194,22 @@ class Database(name: String):
     result
 
 
-  protected def lookup(set: Set[Predicate], predicate: Predicate, main: Substitution): Answer =
-    val substitution = predicate.execute()
-    if(substitution.isDefined){
-      Answer(main, substitution.get)
+  protected def lookup(cache: Set[Predicate], predicate: Predicate, main: Substitution): Answer =
+
+    if(predicate.isExecutable()){
+      Answer(main, predicate.execute().get)
     }
     else if (predicate.isDefinite()) {
-      val check = containsData(set, predicate)
+      val check = containsData(cache, predicate)
       if check then Answer(main, main)
       else Answer(main)
     }
     else {
-      val instances = set ++ getTemplates(predicate)
+      val instances = cache ++ getTemplates(predicate)
       val foundList = instances.flatMap(instance => {
         new Substitution().of(predicate, instance)
       }).filter(subs => {
-        containsData(set, predicate.substitution(subs).asPredicate())
+        containsData(cache, predicate.substitution(subs).asPredicate())
       })
 
       if predicate.isCount() && foundList.size >= predicate.atLeast() then
@@ -243,7 +220,7 @@ class Database(name: String):
         Answer(main)
     }
 
-  protected def execute(query:Query, set: Set[Predicate], elements: Set[Predicate], main: Substitution): Set[Answer] =
+  protected def execute(query:Query, set: Set[Predicate], elements: Array[Predicate], main: Substitution): Set[Answer] =
     if elements.isEmpty && main.nonEmpty() then Set(Answer(main, main))
     else if elements.isEmpty then Set()
     else
@@ -285,8 +262,6 @@ class Database(name: String):
   def retrieve(set:Set[Predicate], query: Query): Set[Predicate] =
     val answers = execute(set, query)
     answers.flatMap(answer => answer.execute(query.head))
-
-
 
   def retrieve(set:Set[Predicate], hypothesis: Hypothesis): Set[Predicate] =
     val predicates = hypothesis.getRules().flatMap(rule => {
@@ -363,7 +338,7 @@ object Database {
     val p4 = Predicate("p", Array[Variable](new Sym("X", "c"), new Sym("Y", "d")))
     val h = Predicate("goal", Array[Variable](Variable("Y")))
     val b = Predicate("p", Array[Variable](new Sym("X", "a"), Variable("Y")))
-    val q = Query(h, Set(b))
+    val q = Query(h, Array(b))
     d.add(p1).add(p2).add(p3).add(p4)
     d.execute(Set(), q)
       .flatMap(answer => answer.execute(q.head))
@@ -379,7 +354,7 @@ object Database {
     val h = Predicate("goal", Array[Variable](Variable("Y")))
     val b1 = Predicate("p", Array[Variable](new Sym("X", "a"), Variable("Y")))
     val b2 = Predicate("p", Array[Variable](Variable("Y"), new Sym("Z", "d")))
-    val q = Query(h, Set(b1, b2))
+    val q = Query(h, Array(b1, b2))
     d.add(p1).add(p2).add(p3).add(p4)
     d.execute(Set(), q)
       .flatMap(answer => answer.execute(q.head))
@@ -398,7 +373,7 @@ object Database {
     val b1 = Predicate("p", Array[Variable](new Sym("X", "a"), Variable("Y")))
     val b2 = Predicate("p", Array[Variable](Variable("Y"), new Sym("Z", "d")))
 
-    val q = Query(h, Set(b1, b2))
+    val q = Query(h, Array(b1, b2))
 
     d.add(p1).add(p2).add(p3).add(p4)
       .add(p5).add(p6)
@@ -420,7 +395,7 @@ object Database {
     val b1 = Predicate("p", Array[Variable](new Variable("X"), Variable("Y")))
     val b2 = Predicate("p", Array[Variable](Variable("Y"), new Sym("Z", "d")))
 
-    val q = Query(h, Set(b1, b2))
+    val q = Query(h, Array(b1, b2))
 
     d.add(p1).add(p2).add(p3).add(p4)
       .add(p5).add(p6)
@@ -439,7 +414,7 @@ object Database {
     val h = Predicate("goal", Array[Variable](Variable("Y")))
     val b1 = Predicate("p", Array[Variable](new Sym("X", "a"), Variable("Y")))
     val b2 = Negative("p", Array[Variable](Variable("Y"), new Sym("Z", "d")))
-    val q = Query(h, Set(b1, b2))
+    val q = Query(h, Array(b1, b2))
     d.add(p1).add(p2).add(p3).add(p4)
     d.execute(Set(), q)
       .flatMap(answer => answer.execute(q.head))
@@ -457,7 +432,7 @@ object Database {
     val p2 = Predicate("parent", Array(Variable("Z"), Variable("Y")))
     val h1 = Predicate("grandparent", Array(Variable("X"), Variable("Y")))
 
-    val q = Query(h1, Set(p1, p2))
+    val q = Query(h1, Array(p1, p2))
     val d = Database("test").add(Set(d1, d2, d3, d4, d5))
 
     d.execute(Set(), q)
@@ -477,8 +452,8 @@ object Database {
     val fXY = Predicate("parent", Array(Variable("X"), Variable("Y")))
     val p = Predicate("parent", Array(Variable("Z"), Variable("Y")))
 
-    val r1 = Rule(h1, Set(fXZ, p))
-    val r2 = Rule(h1, Set(fXY))
+    val r1 = Rule(h1, Array(fXZ, p))
+    val r2 = Rule(h1, Array(fXY))
 
     val hypothesis = Hypothesis(h1, Set(r1, r2))
     val d = Database("test").add(Set(d1, d2, d3, d4, d5))
@@ -492,7 +467,7 @@ object Database {
     val t = Predicate("query", new Variable("X"), Variable("Y"))
     val n1 = Negative("lower", Variable("X"), Variable("Y"))
     val n2 = Negative("greater", Variable("X"), Variable("Y"))
-    val q = Query(t, Set(n1, n2))
+    val q = Query(t, Array(n1, n2))
     val s = Set(d1, d3, d6)
     val d = Database("test").add(s)
     d.facts(q).foreach(predicate => println(predicate))
@@ -522,7 +497,7 @@ object Database {
     val q2 = Rule(a2)
     val q3 = Rule(a3)
 
-    val body = Rule(functionHead, Set(head, tail, functionRecursive))
+    val body = Rule(functionHead, Array(head, tail, functionRecursive))
       .setRecursion(true)
    val rules =  Set(body, q1, q2, q3)
    val hypothesis = Hypothesis(functionHead, rules)
@@ -532,7 +507,7 @@ object Database {
   }
 
   def testEven(): Unit = {
-    val inputList = NumList("L", 8.0, 2.0)
+    val inputList = NumList("L", 8.0, 2.0, 1.0)
     val baseList = NumList("L")
     val h = Variable("H")
     val t = NumList("T")
@@ -541,13 +516,14 @@ object Database {
     val tail = Tail(t, inputList)
     val n1 = Num("modBy", 2)
     val n2 = Num("equalBy", 0)
-    val equal = Equal("E", Mod("M", h, n1), n2)
+    val mod = Mod("M", h, n1)
+    val equal = Equal("E", mod.getResult(), n2)
 
     val functionAtom = Predicate("f", baseList)
     val functionHead = Predicate("f", inputList)
     val functionRecursive = Predicate("f", t)
 
-    val query = Rule(functionHead, Set(head, equal, tail, functionRecursive))
+    val query = Rule(functionHead, Array(head, mod, equal, tail, functionRecursive))
       .setRecursion(true)
     val atom = Rule(functionAtom)
 

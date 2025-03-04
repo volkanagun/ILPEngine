@@ -4,6 +4,7 @@ import ilp.data.variables.{Collection, NumList, Variable, VariableList}
 import ilp.data.*
 
 
+
 class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(crr_name):
 
   def this(name: String, item1: Variable) = this(name, Array(item1))
@@ -18,19 +19,18 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     this.collection = collection
     this
 
-  
-  
   def getArray(): Array[Variable] =
     this.array
 
   def getArity(): Int =
     this.array.length
 
+
+
   override def getValue(): Variable = this
 
 
-
-  def execute():Option[Substitution] = None
+  def execute(): Option[Substitution] = None
 
 
   def getVariable(index: Int): Variable =
@@ -45,13 +45,11 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def getSymbols(): Array[variables.Sym] =
     array.map(_.asSymbol())
 
-/*  def getLiterals(): Array[String] =
-    array.map(item => item.name) ++
-      array.filter(_.isSymbol()).map(_.asInstanceOf[variables.Sym].value)*/
-
   def getPositions(): Array[Position] =
     (0 until length()).map(index => Position(this, index))
       .toArray
+
+
 
   def bindTo(predicate: Predicate): Predicate =
     val otherVars = predicate.array.filter(_.isVariable())
@@ -104,14 +102,12 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     Predicate(name, names.take(getArity()).map(item => Variable(item)))
 
   def isDefinite() = array.forall(a => a.isSymbol())
-
   def isNegative() = false
-
   def isCount() = false
+  def isExecutable() = false
 
-  def isMath() = false
-
-  override def isList() = array.head.isList()
+  //def isExecutable() = isMath() && isDefinite()
+  //override def isList() = array.head.isList()
 
   override def isPredicate() = true
 
@@ -127,6 +123,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def identifier(): Int =
     name.hashCode * 7 + length()
+
+  def identifier(position:Int): Int =
+    (position * 7 + name.hashCode) * 7 + length()
 
   def combinations(elements: Array[String], length: Int): Array[Array[String]] =
     if (length == 1) elements.map(Array(_))

@@ -5,8 +5,11 @@ import ilp.data.variables.Variable
 
 
 class Mod(result:String, item: Variable, modBy: Variable) extends Predicate("mod", Array[Variable](item, modBy, Variable(result))):
-  override def isMath(): Boolean = true
-  override def isDefinite(): Boolean = true
+
+  override def isExecutable(): Boolean = isDefinite()
+  override def isDefinite(): Boolean = item.isSymbol() && modBy.isSymbol()
+  def getResult():Variable =
+    array.last
 
   override def getValue(): Variable =
     val value1 = item.getValue().asNumber().getNumber()
@@ -25,5 +28,4 @@ class Mod(result:String, item: Variable, modBy: Variable) extends Predicate("mod
     val e1new = item.substitution(substitution)
     val e2new = modBy.substitution(substitution)
     Mod(result, e1new, e2new)
-  
-  
+

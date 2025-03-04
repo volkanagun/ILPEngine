@@ -5,8 +5,9 @@ import ilp.data.variables.{Num, Variable}
 
 
 class Log(name: String, result:Variable, item:Variable, logBy:Variable ) extends Predicate(name, result, item, logBy):
-  override def isMath(): Boolean = true
-  override def isDefinite(): Boolean = true
+
+  override def isExecutable(): Boolean = isDefinite()
+  override def isDefinite(): Boolean = item.isSymbol() && logBy.isSymbol()
   override def getValue(): Variable =
     val num1 = item.getValue().asNumber().getNumber()
     val num2 = logBy.getValue().asNumber().getNumber()

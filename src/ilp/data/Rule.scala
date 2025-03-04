@@ -5,7 +5,7 @@ import ilp.data.predicates.Predicate
 import java.util.Random
 
 
-class Rule(crr_head: Predicate, crr_body: Set[Predicate]) extends Query(crr_head, crr_body):
+class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
 
   var posRate: Double = 0
   var negRate: Double = 0
@@ -14,8 +14,8 @@ class Rule(crr_head: Predicate, crr_body: Set[Predicate]) extends Query(crr_head
   var genfacts = Set[Predicate]()
   var score = 0.0
 
-  def this(crr_head:Predicate) = this(crr_head, Set())
-  def this(crr_head:Predicate, atom:Predicate)  = this(crr_head, Set(atom))
+  def this(crr_head:Predicate) = this(crr_head, Array[Predicate]())
+  def this(crr_head:Predicate, atom:Predicate)  = this(crr_head, Array(atom))
 
   def invalid():Boolean =
     (crr_body.size == 1 && crr_body.head.getName().equals(crr_head.getName()))

@@ -1,17 +1,17 @@
 package ilp.data.predicates
 
 import ilp.data.variables
-import ilp.data.variables.Variable
+import ilp.data.variables.{Num, Variable}
 
-class Divide(array: Array[Variable]) extends Predicate("divide", array):
-  
-  override def isMath(): Boolean = true
+class Divide(e1: Variable, e2:Variable) extends Predicate("divide", Array(e1, e2)):
+
+  override def isExecutable(): Boolean = e1.isSymbol() && e2.isSymbol()
   override def isDefinite(): Boolean = true
 
   override def getValue(): Variable =
-    val headNumber = array.head.asNumber().getNumber()
-    val lastNumber = array.last.asNumber().getNumber()
-    variables.Num(name, headNumber / lastNumber)
+    val headNumber = e1.asNumber().getNumber()
+    val lastNumber = e2.asNumber().getNumber()
+    Num(name, headNumber / lastNumber)
 
   override def toString: String = "Divide(" + array.mkString(",") + ")"
 

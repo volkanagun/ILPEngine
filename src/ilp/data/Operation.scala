@@ -1,10 +1,11 @@
 package ilp.data
 
+import ilp.data.database.Database
 import ilp.data.predicates.{Negative, Predicate}
 import ilp.data.variables.Variable
 import ilp.data.variables.Sym
 
-class Operation(val function: Predicate, var query: Set[Predicate], var items: Array[Variable]) extends Query(function, query):
+class Operation(val function: Predicate, var query: Array[Predicate], var items: Array[Variable]) extends Query(function, query):
 
   override def hashCode(): Int =
     var r = function.hashCode()
@@ -67,7 +68,7 @@ object Operation {
     val function = Predicate("copy", Array(Variable("X"), Variable("Y")))
     val query = Predicate("edge", Array(Variable("X"), Variable("Z")))
     val copy = Predicate("edge", Array(Variable("Y"), Variable("Z")))
-    val operation = Operation(function, Set(query), Array(copy))
+    val operation = Operation(function, Array(query), Array(copy))
     val call = Predicate("copy", Array[Variable](new variables.Sym("X", "b"), new variables.Sym("Y", "c")))
     val ops = Array(operation)
     println(d.execute(Set(), ops, call))
@@ -89,7 +90,7 @@ object Operation {
     val query = Predicate("edge", Array(Variable("X"), Variable("Y")))
     val negate = Negative("edge", Array(Variable("X"), Variable("Y")))
     val shift = Predicate("edge", Array(Variable("Y"), Variable("X")))
-    val operation = Operation(function, Set(query), Array(negate, shift))
+    val operation = Operation(function, Array(query), Array(negate, shift))
     val ops = Array(operation)
     val call = Predicate("insert", Array[Variable](new variables.Sym("X", "c")))
     println(d.execute(Set(), ops, call))
@@ -113,8 +114,8 @@ object Operation {
     val edge1 = Predicate("edge", Array(Variable("X"), Variable("Y")))
     val edge2 = Predicate("edge", Array(Variable("Y"), Variable("Z")))
     val insert = Predicate("insert", Array(Variable("X"), Variable("Z")))
-    val op1 = Operation(function1, Set(), Array(edge1))
-    val op2 = Operation(function2, Set(edge2), Array(insert))
+    val op1 = Operation(function1, Array(), Array(edge1))
+    val op2 = Operation(function2, Array(edge2), Array(insert))
     val ops = Set(op1, op2)
     val call = Predicate("insert", Array[Variable](new variables.Sym("X", "w"), new variables.Sym("X", "b")))
     println(d.expand(ops, call))

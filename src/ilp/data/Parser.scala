@@ -76,9 +76,9 @@ object Parser extends JavaTokenParsers {
     }
 
   def sumCall: Parser[Variable] =
-    "Sum(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Sum(" ~ args ~ ")" => {
-        Sum(args.toArray)
+    "Sum(" ~ numberList ~ ")" ^^ {
+      case "Sum(" ~ array ~ ")" => {
+        Sum(array)
       }
     }
 
@@ -168,7 +168,7 @@ object Parser extends JavaTokenParsers {
     head ~ ":-" ~ repsep(predicate_input, "&") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
         val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
-        Rule(headPredicate, body.toSet)
+        Rule(headPredicate, body.toArray)
           .setRecursion(isRecursive)
       }
     }

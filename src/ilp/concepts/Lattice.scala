@@ -1,7 +1,8 @@
 package ilp.concepts
 
 import ilp.data.predicates.Predicate
-import ilp.data.{Database, Hypothesis}
+import ilp.data.Hypothesis
+import ilp.data.database.Database
 import ilp.experiments.{Experiment, Params}
 
 class Lattice:

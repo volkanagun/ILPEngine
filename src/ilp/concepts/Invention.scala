@@ -1,8 +1,9 @@
 package ilp.concepts
 
+import ilp.data.database.Database
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import ilp.data.{Database, Hypothesis, Position, Rule, Substitution}
+import ilp.data.{Hypothesis, Position, Rule, Substitution}
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, SetIsParallelizable}
 
@@ -80,8 +81,7 @@ object Invention:
     var crrSubstitutions: Array[Substitution] = Array(Substitution())
     metaRule.getBody().foreach(metaPredicate => {
 
-      val predicates = database.getGeneric(metaPredicate) ++
-        database.getGeneric2(metaPredicate)
+      val predicates = generic(database, metaPredicate)
       crrSubstitutions = predicates.par.flatMap(predicate => {
         val crr = new Substitution(metaPredicate.toVariable(), predicate.toVariable())
         crrSubstitutions.map(globalSubstitution => globalSubstitution.composition(crr))
@@ -90,13 +90,16 @@ object Invention:
     })
     crrSubstitutions
 
+  def generic(database: Database, metaPredicate:Predicate) : Set[Predicate] =
+    database.getTemplates(metaPredicate).map(_.toGeneric(uppercases)) ++
+      database.getTemplates2(metaPredicate).map(_.toGeneric(uppercases))
+
   def selective(database: Database, metaRule: Rule): Array[Substitution] =
     var crrSubstitutions: Array[Substitution] = Array(Substitution())
     var crrPositions = database.getPositions()
     metaRule.getBody().foreach(metaPredicate => {
       //Get candidate predicate signutures for current meta predicate
-      val crrCandidates = database.getGeneric(metaPredicate) ++
-        database.getGeneric2(metaPredicate)
+      val crrCandidates = generic(database, metaPredicate)
       //Filter candidates
       val (newPositions, newCandidates) = softFilter(database, crrPositions, crrCandidates)
       crrPositions = newPositions
@@ -117,19 +120,6 @@ object Invention:
       crrPositions.exists(position=> !otherPositions.contains(position))
     }}
     !incomplete
-
-
-/*
-  def selection(database: Database, crrPositions: Set[Position], candidates: Set[Predicate]):(Set[Position], Set[Predicate]) =
-    val positions = candidates.map(crrPredicate => {
-      val newPositions = database.getPositions(crrPredicate)
-      val filteredPositions = newPositions.filter(newPosition => crrPositions.contains(newPosition))
-      filteredPositions
-    })
-    val predicateSet = candidates.zip(positions).filter(_._2.nonEmpty).map(_._1)
-    val posSet = positions.flatten
-    (posSet, predicateSet)
-*/
 
   def softFilter(database: Database, crrPositions: Set[Position], candidates: Set[Predicate]):(Set[Position], Set[Predicate]) =
 
@@ -155,8 +145,8 @@ object Invention:
 
     rule.body.map(item => {
       val boundHead = newHead.bindTo(item)
-      val newBody = rule.body.filter(!_.equals(item)) + item.toPredicate(newHead.name)
-      val rule1 = Rule(boundHead, Set(item))
+      val newBody = rule.body.filter(!_.equals(item)) :+ item.toPredicate(newHead.name)
+      val rule1 = Rule(boundHead, item)
       val rule2 = Rule(newHead, newBody)
       Hypothesis(newHead, rule1, rule2)
         .setRecursion(true)
@@ -166,16 +156,16 @@ object Invention:
   def call(crrRule: Rule, otherRule: Rule): Set[Hypothesis] =
     val crrHead = crrRule.head
     val otherHead = otherRule.head
-    val newRule1 = Rule(crrHead, crrRule.body + otherRule.head.bindTo(crrHead))
+    val newRule1 = Rule(crrHead, crrRule.body :+ otherRule.head.bindTo(crrHead))
     val newHypothesis1 = Hypothesis(crrHead, Set(otherRule, newRule1))
-    val newRule2 = Rule(otherHead, otherRule.body + crrRule.head.bindTo(otherHead))
+    val newRule2 = Rule(otherHead, otherRule.body :+ crrRule.head.bindTo(otherHead))
     val newHypothesis2 = Hypothesis(otherHead, Set(crrRule, newRule2))
 
     Set(newHypothesis1, newHypothesis2)
 
   def transitive(database: Database, crrRule: Rule): Set[Rule] =
     val baseSet = crrRule.unboundAll().toArray
-    val predicateSet = database.getTemplate3()
+    val predicateSet = database.getTemplate3().map(_.toGeneric(uppercases))
     predicateSet.flatMap(candidate => {
       val arity = candidate.getArity()
       val baseElements = (0 to arity).flatMap(take => combinations(baseSet, take)).toArray

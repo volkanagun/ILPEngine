@@ -4,12 +4,12 @@ import ilp.data.{Substitution, variables}
 import ilp.data.variables.Variable
 
 class Subtract(result:Variable, e1:Variable, e2:Variable) extends Predicate("subtract", e1, e2):
-  override def isMath(): Boolean = true
-  override def isDefinite(): Boolean = true
+  override def isExecutable(): Boolean = true
+  override def isDefinite(): Boolean = e1.isSymbol() && e2.isSymbol()
 
   override def getValue(): Variable =
-    val headNumber = e1.getValue().asInstanceOf[Double]
-    val lastNumber = e2.getValue().asInstanceOf[Double]
+    val headNumber = e1.getValue().asNumber().getNumber()
+    val lastNumber = e2.getValue().asNumber().getNumber()
     variables.Num(name, headNumber - lastNumber)
 
   override def execute(): Option[Substitution] =

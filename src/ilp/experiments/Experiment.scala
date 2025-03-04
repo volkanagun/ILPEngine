@@ -1,7 +1,8 @@
 package ilp.experiments
 
+import ilp.data.database.{Database, Engine}
 import ilp.data.predicates.Predicate
-import ilp.data.{Database, Engine, Parser}
+import ilp.data.Parser
 
 import java.util.regex.Pattern
 import scala.io.Source
@@ -11,6 +12,7 @@ class Experiment(params:Params):
   val name = params.experimentName
   var folder = "examples/"+name+"/"
   var database = new Database(name)
+
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
 
@@ -28,7 +30,7 @@ class Experiment(params:Params):
           if negative then negatives += predicate.toNegative() else positives += predicate
     })
     
-    database.setPositives(positives).setNegatives(negatives)
+
     this
 
   protected def loadDatabase():this.type =
@@ -48,6 +50,8 @@ class Experiment(params:Params):
 
   def induction():this.type =
     val engine = params.getEngine(database)
+      .setPositives(positives)
+      .setNegatives(negatives)
     println(engine.induction().map(_.toString).mkString("\n"))
     this
 

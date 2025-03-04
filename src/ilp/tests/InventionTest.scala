@@ -1,7 +1,8 @@
 package ilp.tests
 
 import ilp.concepts.Invention
-import ilp.data.{EngineMIL, Hypothesis, Parser, Query, Rule}
+import ilp.data.database.EngineMIL
+import ilp.data.{Hypothesis, Parser, Query, Rule}
 import ilp.experiments.{Experiment, Params}
 
 object InventionTest:
