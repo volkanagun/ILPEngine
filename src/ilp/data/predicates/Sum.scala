@@ -1,6 +1,6 @@
 package ilp.data.predicates
 
-import ilp.data.variables.{Num, NumList, Variable}
+import ilp.data.variables.{NumList, Variable}
 
 
 class Sum(array: NumList) extends Predicate("sum", array):

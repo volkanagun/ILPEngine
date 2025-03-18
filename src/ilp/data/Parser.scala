@@ -1,12 +1,12 @@
 package ilp.data
-import ilp.data.predicates.{Count, Equal, Mod, Negative, Predicate, Sum}
-import ilp.data.variables.{Collection, NumList, Sym, Variable, VariableList}
+import ilp.data.predicates.*
+import ilp.data.variables.{Collection, NumList, Variable, VariableList}
 
 import scala.util.parsing.combinator.*
 
 object Parser extends JavaTokenParsers {
 
-
+  var symbolVariableNames = Array[String]("A","B","C","D","E","F","G","H","I","J")
   /** Parser for an identifier (predicate or function name) */
   def identifier: Parser[String] = "[a-z0-9\\_]+".r
 
@@ -31,7 +31,7 @@ object Parser extends JavaTokenParsers {
 
   /** Parser for a variable (starts with an lowercase letter) */
   def symbol: Parser[variables.Sym] =
-    "[a-z\\_]+".r ^^ {
+    "[a-z\\_\\d]+".r ^^ {
       case symbol => new variables.Sym("X", symbol)
     }
 
@@ -66,7 +66,7 @@ object Parser extends JavaTokenParsers {
 
   def functionCall: Parser[Variable] =
     identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case name ~ "(" ~ args ~ ")" => Predicate(name, args.toArray)
+      case name ~ "(" ~ args ~ ")" => Predicate(name, argumentNames(args.toArray))
     }
 
   def modCall: Parser[Variable] =
@@ -101,20 +101,26 @@ object Parser extends JavaTokenParsers {
 
   }
 
+  def argumentNames(args:Array[Variable]):Array[Variable] =
+    args.zipWithIndex.map{case(variable, index)=>{
+      if variable.isSymbol() then variable.setName(symbolVariableNames(index))
+      else variable
+    }}
+
   /** Parser for a predicate (e.g., parent(X, func(y))) */
   def single_predicate: Parser[Predicate] =
     identifier ~ "(" ~ repsep(argument, ",") ~ ")" ~ "." ^^ {
-      case name ~ "(" ~ args ~ ")" ~ "." => Predicate(name, args.toArray)
+      case name ~ "(" ~ args ~ ")" ~ "." => Predicate(name, argumentNames(args.toArray))
     }
 
   def single_negative: Parser[Predicate] =
     "~" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")" ~ "." ^^ {
-      case "~" ~ name ~ "(" ~ args ~ ")" ~ "." => Negative(name, args.toArray)
+      case "~" ~ name ~ "(" ~ args ~ ")" ~ "." => Negative(name, argumentNames(args.toArray))
     }
 
   def single_count: Parser[Predicate] =
     "Count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ~ "." ^^ {
-      case "Count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" ~ "." => Count(name, args.toArray, num.toInt)
+      case "Count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" ~ "." => Count(name, argumentNames(args.toArray), num.toInt)
     }
 
   def single_equal: Parser[Predicate] =
@@ -135,17 +141,17 @@ object Parser extends JavaTokenParsers {
 
   def predicate_argument: Parser[Predicate] =
     identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case name ~ "(" ~ args ~ ")" => Predicate(name, args.toArray)
+      case name ~ "(" ~ args ~ ")" => Predicate(name, argumentNames(args.toArray))
     }
 
   def predicate_negative: Parser[Negative] =
     "~" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
-      case "~" ~ name ~ "(" ~ args ~ ")" => Negative(name, args.toArray)
+      case "~" ~ name ~ "(" ~ args ~ ")" => Negative(name, argumentNames(args.toArray))
     }
 
   def predicate_count: Parser[Count] =
     "Count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ^^ {
-      case "Count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" => Count(name, args.toArray, num.toInt)
+      case "Count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" => Count(name, argumentNames(args.toArray), num.toInt)
     }
 
   def predicate_equal: Parser[Equal] =
@@ -201,7 +207,6 @@ object Parser extends JavaTokenParsers {
       "Count(f(X,Y), 3).",
       "f(15, move).",
       "f([34, 62, 10])."
-
     )
 
     def executePredicates = Array(

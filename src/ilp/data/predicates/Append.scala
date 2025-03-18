@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{Num, NumList, Variable}
+import ilp.data.variables.{NumList, Variable}
 
 class Append(val item: Variable, val list: NumList, val result: Variable) extends Predicate("append", Array(item, list, result)):
 

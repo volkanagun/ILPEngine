@@ -64,6 +64,12 @@ class Variable(var name: String):
     names.map(name=> Variable(name)) 
 
   def contains(item: Variable) = false
+  def equalGeneric(variable: Variable) =
+    if variable.isNumber() && isNumber() then true
+    else if variable.isPredicate() && isPredicate() then true
+    else if variable.isNumberList() && isNumberList() then true
+    else if variable.isVariable() && isVariable() then true
+    else false
 
   def isSymbol() = false
   def isPredicate() = false

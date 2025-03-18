@@ -1,8 +1,8 @@
 package ilp.experiments
 
-import ilp.data.database.{Database, Engine}
-import ilp.data.predicates.Predicate
 import ilp.data.Parser
+import ilp.data.database.Database
+import ilp.data.predicates.Predicate
 
 import java.util.regex.Pattern
 import scala.io.Source
@@ -47,25 +47,11 @@ class Experiment(params:Params):
   def load(): this.type =
     loadDatabase()
     loadSamples()
-
+  /*
   def induction():this.type =
     val engine = params.getEngine(database)
       .setPositives(positives)
       .setNegatives(negatives)
     println(engine.induction().map(_.toString).mkString("\n"))
     this
-
-
-object Experiment:
-
-  def test(): Unit = {
-
-    val params = Params()
-    val experiment = new Experiment(params).load()
-    experiment.induction()
-  }
-
-  def main(args: Array[String]): Unit = {
-    test()
-  }
-
+  */

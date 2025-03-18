@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{NumList, Variable, VariableList}
+import ilp.data.variables.{NumList, Variable}
 
 
 class Head(val head: Variable, val list: NumList) extends Predicate("head", Array(head, list)):

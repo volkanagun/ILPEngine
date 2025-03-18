@@ -4,7 +4,6 @@ import ilp.data.predicates.{Predicate, Sum}
 import ilp.data.variables.{Num, NumList, Variable, VariableList}
 
 import scala.util.control.Breaks
-import scala.util.control.Breaks.breakable
 
 class Unification:
 
@@ -13,7 +12,30 @@ class Unification:
     of(substitution, x, y)
   }
 
-  def of(substitution: Substitution, xPredicate:Predicate, yPredicate:Predicate):Option[Substitution] = {
+  def ofWithout(substitution: Substitution, xPredicate: Predicate, yPredicate: Predicate): Option[Substitution] = {
+
+    val pairs = xPredicate.array.zip(yPredicate.array)
+    var substitutions = Array[Substitution]()
+    var isNone = false
+    Breaks.breakable {
+      pairs.foreach { case (xItem, yItem) => {
+        val option = Unification().of(substitution, xItem, yItem)
+        if option.isDefined then
+          substitutions :+= option.get
+        else
+          isNone = true
+          Breaks.break()
+      }
+      }
+    }
+    if !isNone then
+      substitutions.foreach(crr => substitution.merge(crr))
+      return Some(substitution)
+
+    None
+  }
+
+  def of(substitution: Substitution, xPredicate: Predicate, yPredicate: Predicate): Option[Substitution] = {
 
     if (xPredicate.identifier() == yPredicate.identifier()) {
       val pairs = xPredicate.array.zip(yPredicate.array)
@@ -37,7 +59,7 @@ class Unification:
     None
   }
 
-  def of(substitution: Substitution, x:VariableList, y:VariableList):Option[Substitution] = {
+  def of(substitution: Substitution, x: VariableList, y: VariableList): Option[Substitution] = {
     if (x.getSize() == y.getSize()) {
       var substitutions = Array[Substitution]()
       var isNone = false
@@ -91,7 +113,7 @@ class Unification:
     else if xNew.isPredicate() && yNew.isPredicate() then
       val xPredicate = xNew.asInstanceOf[Predicate]
       val yPredicate = yNew.asInstanceOf[Predicate]
-      of(xPredicate, yPredicate)
+      of(substitution, xPredicate, yPredicate)
 
     else if xNew.isVariable() && yNew.isSymbol() then
       val newSubstitution = Substitution().of(xNew, yNew).get
@@ -157,14 +179,14 @@ object Unification {
   }
 
   def test6(): Unit = {
-    val nums = VariableList("X", Num("X",1), Num("Y",2), Num("Z",3))
+    val nums = VariableList("X", Num("X", 1), Num("Y", 2), Num("Z", 3))
     val vars = VariableList("X", Variable("A"), Variable("B"), Variable("C"))
     val result = Unification().of(nums, vars).get
     println("Result : " + result)
   }
 
   def test7(): Unit = {
-    val nums = VariableList("X", Num("X",1), Num("Y",2), Variable("Z"))
+    val nums = VariableList("X", Num("X", 1), Num("Y", 2), Variable("Z"))
     val vars = VariableList("X", Variable("A"), Variable("B"), Variable("C"))
     val result = Unification().of(nums, vars).get
     println("Result : " + vars.substitution(result))

@@ -3,7 +3,6 @@ package ilp.data
 import ilp.data
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import ilp.data.variables.Sym
 
 
 class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) {
@@ -32,11 +31,21 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def append(substitution: Substitution): this.type =
     substitution.variables.zipWithIndex.foreach(pair => {
-      if (!hasVariable(pair._1))
+      if (!hasVariable(pair._1)) then
         variables :+= pair._1
         symbols :+= substitution.symbols(pair._2)
     })
     this
+
+  def appendNew(substitution: Substitution): Substitution =
+    var newvars = variables
+    var newsyms = symbols
+    substitution.variables.zipWithIndex.foreach(pair => {
+      if (!hasVariable(pair._1)) then
+        newvars :+= pair._1
+        newsyms :+= substitution.symbols(pair._2)
+    })
+    Substitution(newvars, newsyms)
 
   def hasVariable(variable: Variable): Boolean =
     this.variables.indexOf(variable) != -1
@@ -63,6 +72,8 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def explain(pattern: Variable, instance: Variable): String =
     s"The pattern ${pattern} must have compatible value in ${instance}"
 
+  def reverse():Substitution =
+    Substitution(symbols, variables)
 
   def composition(substitution: Substitution): Substitution =
     val left = symbols.filter(variable => !substitution.hasVariable(variable))
@@ -151,7 +162,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     case _ => false
 
   override def hashCode(): Int =
-    val state = Seq(variables, symbols)
+    val state = variables ++ symbols
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
 }
 

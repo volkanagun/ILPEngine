@@ -1,11 +1,4 @@
-package ilp.tests
-
-import ilp.data.Query
-import ilp.data.database.Database
-import ilp.data.predicates.{Append, Head, Negative, Predicate, Prepend}
-import ilp.data.variables.{Num, NumList, Variable}
-
-object SpeedTest:
+object SpeedTest
 
   def test8(): Unit = {
     val d1 = Predicate("greater", Num("X", 16), Num("Y", 15))
@@ -41,8 +34,4 @@ object SpeedTest:
     val d = Database("test")
     for i<-0 until 1000000 do
      d.facts(q).foreach(predicate => println(predicate))
-  }
-
-  def main(args: Array[String]): Unit = {
-    testList()
   }

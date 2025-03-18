@@ -1,55 +1,109 @@
 package ilp.data
 
-import scala.collection.parallel.CollectionConverters.SetIsParallelizable
-import ilp.data
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
+import scala.collection.parallel.CollectionConverters.SetIsParallelizable
+
 class Query(var head: Predicate, var body: Array[Predicate]):
   var recursive = false
+  var positions = Map[Position, Set[Position]]()
+  var positionsBody = Array[(String, Array[Position])]()
 
-  def setRecursive(recursive:Boolean):this.type =
+
+  def compile(): this.type =
+    val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap{case(p, pindex) =>p.getPositions(pindex)}
+    positions = allPositions.map(crr=> (crr -> allPositions.filter(other=> crr.equalsByName(other)).toSet))
+      .toMap
+
+    val crrPositions = body.zipWithIndex.flatMap{case(p, pindex)=>p.getPositions(pindex)}
+    positionsBody = crrPositions.groupBy(p=> p.getVariable().getName()).toArray
+      .sortBy{case(_, array) => array.map(p=> p.pindex).sum}
+
+    this
+
+  def setRecursive(recursive: Boolean): this.type =
     this.recursive = recursive
     this
 
-  def doRecursion(item:Predicate):Boolean =
+  def doRecursion(item: Predicate): Boolean =
     item.identifier() == head.identifier() && !item.isEmpty()
 
   //def isAtom(): Boolean = body.size == 1 && body.head.isDefinite()
-  def isAtom():Boolean = body.isEmpty
-  def isDefinite():Boolean = head.isDefinite()
+  def isAtom(): Boolean = body.isEmpty
+
+  def isDefinite(): Boolean = head.isDefinite()
+
   def isNegation(): Boolean = body.size == 1 && body.head.isNegative()
+
   def getBody(): Array[Predicate] = body
-  def isRecursive():Boolean = recursive
-  def nonRecursive():Boolean = !recursive
+  def getPositions(): Map[Position, Set[Position]] = positions
+  def getBodyPosition(): Array[(String, Array[Position])] = positionsBody
+
+  def isRecursive(): Boolean = recursive
+
+  def nonRecursive(): Boolean = !recursive
+
+  def isComplete(): Boolean =
+    val set = Set(head) ++ body
+    val zipped = set.zipWithIndex
+    !zipped.exists { case (predicate, index) => {
+      val others = zipped.filter(other => other._2 != index)
+        .flatMap(pair => pair._1.getVariables())
+      predicate.getVariables().exists(variable => !others.contains(variable))
+    }
+    }
+
   //def isList():Boolean = head.isList()
   //def isEmptyList():Boolean = head.isList()
-  def identifier():Int = head.identifier()
+  def identifier(): Int = head.identifier()
 
 
-  def asRule():Rule =
+  def asRule(): Rule =
     asInstanceOf[Rule]
 
   def call(predicate: Predicate): Query = {
-    val new_variables = predicate.array.filter(_.isVariable())
-    val crr_variables = head.array.filter(_.isVariable())
+    val new_variables = predicate.array
+    val crr_variables = head.array
     val substitution = Substitution(crr_variables, new_variables)
-    call(substitution)
+    call(substitution).compile()
   }
 
-  def call(substitution: Substitution):Query =
+  def call(substitution: Substitution): Query =
     val newHead = head.substitution(substitution).asPredicate()
     val newBody = body.map(item => item.substitution(substitution).asPredicate())
-    Query(newHead, newBody)
+    Query(newHead, newBody).compile()
 
+
+  def addCopy(predicate: Predicate): Query =
+    Query(head, body :+ predicate)
+      .compile()
+
+  /*def replace(index:Int, newHead:Predicate, predicates:Array[Predicate]):Query =
+    var newBody = Array[Predicate]()
+    body.zipWithIndex.foreach(pair=>{
+      if pair._2 == index then
+        newBody ++= predicates.map(p=> {
+          if p.name == newHead.name then p.setName(head.name)
+          else p
+        })
+      else
+        newBody :+= pair._1
+    })
+
+    Query(head, newBody)*/
 
   def contains(predicate: Predicate): Boolean =
     body.contains(predicate)
 
+  def containsByIdentifier(predicate: Predicate): Boolean =
+    body.exists(p => p.equalByIdentifier(predicate))
+
+
   def calledFrom(otherRule: Query): Boolean =
     otherRule.getBody().exists(otherPredicate => otherPredicate.identifier() == identifier())
 
-  def getAritry():Int =
+  def getAritry(): Int =
     head.getArity()
 
   def getHead(): Predicate =
@@ -58,8 +112,8 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   def getAbstractName(): String =
     body.map(p => p.getName()).mkString("_")
 
-
-  def expandCall(rule:Hypothesis):Rule =
+  /*
+  def expandCall(rule: Hypothesis): Rule =
     var newBody = Array[Predicate]()
     for target <- body do
       if target.identifier() == rule.identifier() then
@@ -67,9 +121,9 @@ class Query(var head: Predicate, var body: Array[Predicate]):
       else
         newBody :+= target
 
-    Rule(head, newBody)
+    Rule(head, newBody)*/
 
-  def expandCall(rules:Set[Hypothesis]) : Rule =
+/*  def expandCall(rules: Set[Hypothesis]): Rule =
     var newBody = Array[Predicate]()
     for target <- body do
       for rule <- rules do
@@ -79,17 +133,17 @@ class Query(var head: Predicate, var body: Array[Predicate]):
           newBody :+= target
 
 
-    Rule(head, newBody)
+    Rule(head, newBody)*/
 
-  def addPredicate(predicate: Predicate):Boolean =
+  /*def addPredicate(predicate: Predicate): Boolean =
     var r = false
     if !body.contains(predicate) then
       body :+= predicate
       r = true
 
-    r
+    r*/
 
-  def add(predicate: Predicate):this.type =
+  def add(predicate: Predicate): this.type =
     if !body.contains(predicate) then
       body :+= predicate
     this
@@ -100,9 +154,8 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   override def equals(obj: Any): Boolean =
     if obj.isInstanceOf[Query] then
       val other = obj.asInstanceOf[Query]
-      other.head.equals(head) && other.getBody().forall(predicate=> contains(predicate)) &&
-        getBody().forall(predicate=> other.contains(predicate))
-
+      other.head.equals(head) && other.getBody().forall(predicate => contains(predicate)) &&
+        getBody().forall(predicate => other.contains(predicate))
     else
       false
 
@@ -110,7 +163,7 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     if body.nonEmpty then head.toString + " :- " + body.map(_.toString).mkString(" & ") + "."
     else head.toString + "."
 
-  def copy():Query =
+  def copy(): Query =
     Query(head.copy().asPredicate(), body.map(_.copy().asPredicate()))
 
   def boundHead(): Set[Variable] =
@@ -122,14 +175,15 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     body.zipWithIndex.flatMap { case (predicate, index) => {
       val otherVariables = body.zipWithIndex.filter(_._2 != index).flatMap(_._1.getVariables()).toSet
       predicate.getVariables().filter(variable => otherVariables.contains(variable))
-    }}.toSet
+    }
+    }.toSet
 
   def boundPosition(): Set[(Int, Set[Position])] =
     val variables = body.map(predicate => predicate.getVariables())
-    body.zipWithIndex.map { case (predicate, index) => {
-      val otherVariables = body.zipWithIndex.filter(_._2 != index).flatMap(_._1.getVariables()).toSet
-      (index, predicate.getVariables().zipWithIndex.filter { case (variable, position) => otherVariables.contains(variable) }
-        .map(pair => Position(predicate, pair._2)).toSet)
+    body.zipWithIndex.map { case (predicate, pindex) => {
+      val otherVariables = body.zipWithIndex.filter(_._2 != pindex).flatMap(_._1.getVariables()).toSet
+      (pindex, predicate.getVariables().zipWithIndex.filter { case (variable, position) => otherVariables.contains(variable) }
+        .map(pair => Position(predicate,pindex, pair._2)).toSet)
     }
     }.toSet
 
@@ -149,39 +203,23 @@ class Query(var head: Predicate, var body: Array[Predicate]):
       }
       }
 
-class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()):
-  
-  def this(main:Substitution, content:Substitution) = this(main, Set(content))
 
-  def execute(head: Predicate): Set[Predicate] =
-    val newPredicates = substitutions.map(sub=>{
-      val newArray =  head.getArray().map(variable => {
-        if variable.isSymbol() then variable
-        else variable.substitution(sub)
-      })
-      Predicate(head.getName(), newArray)
-    })
+  def unboundBodyPositions(): Set[Position] =
+    val set = body
+    set.zipWithIndex.map{case(predicate, pindex) => (predicate, pindex, set.filter(!_.equals(predicate)))}
+      .flatMap { case (predicate, pindex, others) => {
+        predicate.array.zipWithIndex
+          .filter { case (variable, index) => !others.exists(other => other.contains(variable)) }
+          .map { case (_, index) => Position(predicate,pindex, index) }
+      }
+      }.toSet
 
-    newPredicates
+  def unboundHeadPositions(): Set[Position] =
+    body.zipWithIndex.flatMap { case(predicate, pindex) => {
+      predicate.getArray().zipWithIndex.filter { case (variable, index) => !head.contains(variable) }
+        .map { case (variable, index) => {
+          Position(predicate, pindex, index)
+        }
+        }
+    }}.toSet
 
-
-  def isEmpty(): Boolean =
-    substitutions.isEmpty
-
-  override def toString: String = {
-    substitutions.mkString("|")
-  }
-
-  def setMain(main: Substitution): this.type =
-    this.main = main
-    this
-
-  def getSubstitutions(): Set[Substitution] = substitutions
-
-  def getCombinedSubstituions():Set[Substitution] = substitutions.par.map(substitution=> substitution.append(main))
-    .toArray
-    .toSet
-
-  def setSubstitutions(substitutions: Set[Substitution]): this.type =
-    this.substitutions = substitutions
-    this

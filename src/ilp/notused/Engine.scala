@@ -1,11 +1,11 @@
-package ilp.data.database
+package ilp.notused
 
 import ilp.concepts.Invention
+import ilp.data.database.Database
 import ilp.data.predicates.Predicate
 import ilp.data.variables.{Sym, Variable}
 import ilp.data.{Hypothesis, Rule}
 
-import java.util.Random
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
 class Engine(val database: Database) extends Serializable :

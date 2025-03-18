@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
-import ilp.data.{Substitution, variables}
 import ilp.data.variables.Variable
+import ilp.data.{Substitution, variables}
 
 class Subtract(result:Variable, e1:Variable, e2:Variable) extends Predicate("subtract", e1, e2):
   override def isExecutable(): Boolean = true

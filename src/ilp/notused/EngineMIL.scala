@@ -1,9 +1,10 @@
-package ilp.data.database
+package ilp.notused
 
 import ilp.concepts.Invention
+import ilp.data.database.Database
 import ilp.data.predicates.Predicate
 import ilp.data.variables.{Sym, Variable}
-import ilp.data.{Hypothesis, Parser, Rule, database}
+import ilp.data.{Hypothesis, Parser, Rule}
 
 import scala.collection.parallel.CollectionConverters.SetIsParallelizable
 
@@ -11,7 +12,6 @@ class EngineMIL(data: Database) extends Engine(data):
 
   var metaRules = Set[Rule]()
   var candidateSize = 2
-
 
   def add(metaRule: Rule): this.type =
     this.metaRules = this.metaRules + metaRule
@@ -113,6 +113,6 @@ object EngineMIL {
 
 
   def main(args: Array[String]): Unit = {
-    test2()
+    test1()
   }
 }

@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
-import ilp.data.{Substitution, variables}
 import ilp.data.variables.{Sym, Variable}
+import ilp.data.{Substitution, variables}
 
 class Equal(result:String, e1: Variable, e2: Variable) extends Predicate("equal", Array[Variable](e1, e2, Variable(result))):
 
@@ -14,12 +14,12 @@ class Equal(result:String, e1: Variable, e2: Variable) extends Predicate("equal"
 
   override def getValue(): Variable =
     val r = e1.getValue() == e2.getValue()
-    new variables.Sym(result, r.toString)
+    new Sym(result, r.toString)
 
   override def execute(): Option[Substitution] =
-    val r = e1.getValue() != e2.getValue()
-    if r then None
-    else Some(Substitution().add(array.last, Sym(result, r.toString)))
+    val r = e1.getValue() == e2.getValue()
+    if r then Some(Substitution().add(array.last, Sym(result, r.toString)))
+    else None
 
   override def toString: String = e1.toString + "==" + e2.toString
 

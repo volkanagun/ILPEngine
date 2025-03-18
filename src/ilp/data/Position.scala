@@ -1,14 +1,50 @@
 package ilp.data
 
 import ilp.data.predicates.Predicate
+import ilp.data.variables.Variable
 
-class Position(val predicate:Predicate, val index:Int) {
-  override def hashCode(): Int = predicate.identifier().hashCode() * 7 + index
+class Position(val predicate:Predicate, val pindex:Int, val index:Int) {
+  override def hashCode(): Int = (predicate.identifier().hashCode() * 7 + pindex) * 7 + index
 
   override def equals(obj: Any): Boolean = {
     val other = obj.asInstanceOf[Position]
-    other.predicate.identifier() == predicate.identifier() && other.index == index
+    other.predicate.identifier() == predicate.identifier() && other.pindex == pindex && other.index == index
   }
 
-  override def toString = predicate.name + "_" + index
+  def equalsByName(obj: Any): Boolean = {
+    val other = obj.asInstanceOf[Position]
+    other.getVariable().equals(getVariable())
+  }
+
+  override def toString = predicate.name + "/"+ pindex + "_" + index
+
+  def getVariable():Variable =
+    predicate.getVariable(index)
+
+  def getName():String =
+    predicate.getVariable(index).getName()
+
+  def getPredicate():Predicate =
+    predicate
+
+  def getIdentifier():Int =
+    predicate.identifier()
+
+  def getPositionIdentifier():Int =
+    predicate.identifier(pindex)
+
+  def getIndex():Int =
+    index
+
+  /*
+  def getBindWith(position: Position):Predicate =
+    getPredicate().substitution(Substitution(getVariable(), position.getVariable()))
+      .asPredicate()
+
+  def getBindWith(position: Set[Position]):Set[Predicate] =
+    getPredicate().getArray().combinations(position.size).map(variables=>{
+      val elements = position.zip(variables).map{case(p, v)=> (p.getVariable(), v)}.toArray
+      getPredicate().substitution(Substitution(elements)).asPredicate()
+    }).toSet
+  */
 }

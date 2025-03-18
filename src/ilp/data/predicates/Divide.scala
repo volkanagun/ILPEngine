@@ -1,6 +1,5 @@
 package ilp.data.predicates
 
-import ilp.data.variables
 import ilp.data.variables.{Num, Variable}
 
 class Divide(e1: Variable, e2:Variable) extends Predicate("divide", Array(e1, e2)):

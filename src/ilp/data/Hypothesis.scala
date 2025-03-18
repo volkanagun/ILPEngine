@@ -8,6 +8,8 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
 
 
   def this(head: Predicate, rule: Rule) = this(head, Set(rule))
+  def this(head:Predicate, body:Array[Predicate]) = this(head, Rule(head, body))
+  def this(head:Predicate, body:Predicate) = this(head, Array(body))
 
   def this(rule: Rule) = this(rule.getHead(), rule)
 
@@ -17,56 +19,43 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
   def this(rule1: Rule, rule2: Rule, rule3: Rule) = this(rule1.getHead(), Set(rule1, rule2, rule3))
   def this(set:Set[Rule]) = this(set.head.getHead(), set)
 
-  def contains(rule: Rule): Boolean =
-    this.rules.contains(rule)
-
-  def print(): Unit = {
-    println(s"Hypothesis: ${toString}")
-    println(s"pos Score:${posRate}, neg score ${negRate}")
+  def print(): this.type = {
+    println("====Hypothesis====")
+    println(toString)
+    println(s"POS Score:${posRate}, NEG Score ${negRate}, ACC ${acc}")
+    println("========================")
+    this
   }
+
+
+  def replaceLast(item: Rule): Hypothesis =
+    val newRules = rules.take(rules.size - 1) + item
+    Hypothesis(head, newRules)
+
+  def getLast():Rule =
+    rules.last
 
   def getSorted():Array[Rule] =
     val callMap = rules.map(rule=> {
-      val count = rules.filter(otherRule=> rule.calledFrom(otherRule)).size
-      val bias = if rule.isAtom() then 2.0 else 1.0
-      rule -> count * bias
+      val count = rules.filter(otherRule=> rule.calledFrom(otherRule)).size + 1.0
+      val score = if rule.isAtom() then 0
+      else rule.getSize() / count
+      rule -> score
     }).toMap
-
-    val sorted = rules.map(rule => {
-      val crr = callMap(rule)
-      val count = rules.filter(otherRule => rule.calledFrom(otherRule)).map(otherRule=> callMap(otherRule)).sum
-      rule -> (count + crr)
-    }).toArray.sortBy(_._2).reverse
-      .map(_._1)
-
+    val sorted = callMap.toArray.sortBy(_._2).map(_._1)
     sorted
-
-  override def abstraction(): Hypothesis =
-
-    val replacements = rules.toArray.map(rule => {
-      (Variable(rule.getName()), Variable(rule.getAbstractName()))
-    })
-
-    val substitution = Substitution(replacements)
-    val newHead = head.substitution(substitution) /*substitution.of(head)*/
-    val newRules = rules.flatMap(rule => rule.substitution(substitution, true)
-      .getRules())
-    Hypothesis(newHead.asPredicate(), newRules)
 
   override def hashCode(): Int =
     rules.foldRight(head.name.hashCode) { case (r, m) => r.hashCode() + 7 * m }
-
-  def similarity(other: Hypothesis): Double =
-    val size = rules.filter(other.contains).size
-    size.toDouble / rules.size
 
   override def equals(obj: Any): Boolean =
     if obj.isInstanceOf[Rule] then
       val crr = obj.asInstanceOf[Rule]
       rules.contains(crr)
     else if obj.isInstanceOf[Hypothesis] then
-      val crr = obj.asInstanceOf[Hypothesis]
-      crr.hashCode() == hashCode()
+      val other = obj.asInstanceOf[Hypothesis]
+      other.rules.exists(r=> rules.exists(crr=> crr.equals(r)))
+
     else
       false
 
@@ -76,12 +65,48 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
 
   override def isRecursive(): Boolean = rules.exists(_.recursive)
 
+  override def isComplete(): Boolean = rules.forall(item=> item.isComplete()) && rules.nonEmpty
+
+//<editor-fold desc="Commented">
+  /*
+  def addCopy(rule:Rule):Hypothesis =
+
+    Hypothesis(head, rules + rule)
+
   def getRules() = rules.toArray.sortBy(_.getComplexity())
 
   override def getComplexity(): Double = {
     rules.map(_.getComplexity()).sum
   }
 
+    def contains(rule: Rule): Boolean =
+      this.rules.contains(rule)
+    def similarity(other: Hypothesis): Double =
+      val size = rules.filter(other.contains).size
+      size.toDouble / rules.size
+  val sorted = rules.map(rule => {
+      val crr = callMap(rule)
+      val count = rules.filter(otherRule => rule.calledFrom(otherRule)).map(otherRule=> callMap(otherRule)).sum
+      rule -> (count + crr)
+    }).toArray.sortBy(_._2).reverse
+      .map(_._1)
+  def union(hypothesis: Hypothesis):Hypothesis =
+    Hypothesis(head, rules ++ hypothesis.rules)
+
+  def hasGeneric(item: Predicate):Boolean =
+    this.rules.exists(rule=> rule.getBody().exists(predicate => predicate.equalGeneric(item)))
+
+  override def abstraction(): Hypothesis =
+    val replacements = rules.toArray.map(rule => {
+      (Variable(rule.getName()), Variable(rule.getAbstractName()))
+    })
+    val substitution = Substitution(replacements)
+    val newHead = head.substitution(substitution) /*substitution.of(head)*/
+    val newRules = rules.flatMap(rule => rule.substitution(substitution, true)
+      .getRules())
+    Hypothesis(newHead.asPredicate(), newRules)
+*/
+//<editor-fold>
 
 object Hypothesis {
 

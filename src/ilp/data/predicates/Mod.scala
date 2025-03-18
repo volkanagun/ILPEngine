@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
-import ilp.data.{Substitution, variables}
 import ilp.data.variables.Variable
+import ilp.data.{Substitution, variables}
 
 
 class Mod(result:String, item: Variable, modBy: Variable) extends Predicate("mod", Array[Variable](item, modBy, Variable(result))):
