@@ -5,13 +5,27 @@ import com.aparapi.device.Device
 import com.aparapi.internal.kernel.KernelManager
 import com.aparapi.internal.opencl.OpenCLPlatform
 
+import java.util
+import scala.collection.mutable
+
 object JoinManager {
 
   var totalMemorySize = Map[Long, Double]()
   var availableMemorySize = Map[Long, Double]()
-
   var devices = list()
   var switch = true
+
+  def setCPU():this.type =
+    val deviceList = new util.LinkedHashSet[Device]();
+    deviceList.add(devices.last);
+    KernelManager.instance().setDefaultPreferredDevices(deviceList)
+    this
+
+  def setGPU():this.type =
+    val deviceList = new util.LinkedHashSet[Device]();
+    deviceList.add(devices.head);
+    KernelManager.instance().setDefaultPreferredDevices(deviceList)
+    this
 
   def run(rangeX: Int, kernel: Kernel): Kernel = {
     val device = best()
@@ -23,12 +37,33 @@ object JoinManager {
     val range = com.aparapi.Range.create(rangeX, 1)
     kernel.execute(range)
   }
+  def runWithoutDevice(rangeX: Int,rangeY: Int, kernel: Kernel): Kernel = {
+    val range = com.aparapi.Range.create2D(rangeX,rangeY, 1, 1)
+    kernel.execute(range)
+  }
 
   def run(rangeX: Int, rangeY: Int, kernel: Kernel): Kernel = {
     val device = best()
     val range = com.aparapi.Range.create2D(device, rangeX, rangeY, 1, 1)
     kernel.execute(range)
+  }
 
+  def runCPU(rangeX: Int, rangeY: Int, kernel: Kernel): Kernel = {
+    val device = devices.last
+    val range = com.aparapi.Range.create2D(device, rangeX, rangeY, 1, 1)
+    kernel.execute(range)
+    kernel
+  }
+
+  def runAny(rangeX: Int, rangeY: Int,rangeZ: Int, kernel: Kernel): Kernel = {
+    val range = com.aparapi.Range.create2D(rangeY,rangeZ, rangeX, 1/*, 1, 1, 1*/)
+    kernel.execute(range)
+    kernel
+  }
+  def runAny(rangeX: Int, rangeY: Int, kernel: Kernel): Kernel = {
+    val range = com.aparapi.Range.create2D(rangeX, rangeY, 1, 1)
+    kernel.execute(range)
+    kernel
   }
   def runSecond(rangeX: Int, rangeY: Int, kernel: Kernel): Kernel = {
     val device = devices.tail.head
@@ -63,6 +98,11 @@ object JoinManager {
   }
 
   def main(_args: Array[String]): Unit = {
+
+    val destination = Array.fill[Int](200)(0)
+    val source = Range(0, 10).toArray
+    Array.copy(source, 0, destination, 0, source.length)
+
     System.out.println("com.aparapi.examples.info.Main")
 
     val platforms = (new OpenCLPlatform()).getOpenCLPlatforms().toArray[OpenCLPlatform](Array[OpenCLPlatform]())

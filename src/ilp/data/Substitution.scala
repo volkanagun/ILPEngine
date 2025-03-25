@@ -47,6 +47,11 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     })
     Substitution(newvars, newsyms)
 
+  def appendNew(variable: Variable, value:Variable): Substitution =
+    val newvars = variables :+ variable
+    val newsyms = symbols :+value
+    Substitution(newvars, newsyms)
+
   def hasVariable(variable: Variable): Boolean =
     this.variables.indexOf(variable) != -1
 

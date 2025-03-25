@@ -16,7 +16,16 @@ class Position(val predicate:Predicate, val pindex:Int, val index:Int) {
     other.getVariable().equals(getVariable())
   }
 
-  override def toString = predicate.name + "/"+ pindex + "_" + index
+  override def toString = predicate.name + "/"+ pindex + "_" + index + s"_${getName()}"
+
+  def getPositions():Array[Position] =
+    predicate.getPositions(pindex)
+
+  def getValueIdentifier():Int =
+    predicate.identifier() * 7 + index
+
+  def getVariableIdentifier():Int =
+    getVariable().hashCode()
 
   def getVariable():Variable =
     predicate.getVariable(index)
@@ -30,8 +39,10 @@ class Position(val predicate:Predicate, val pindex:Int, val index:Int) {
   def getIdentifier():Int =
     predicate.identifier()
 
-  def getPositionIdentifier():Int =
+  def getPredicateIdentifier():Int =
     predicate.identifier(pindex)
+
+
 
   def getIndex():Int =
     index

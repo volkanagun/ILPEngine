@@ -6,19 +6,20 @@ import ilp.data.variables.Variable
 import scala.collection.parallel.CollectionConverters.SetIsParallelizable
 
 class Query(var head: Predicate, var body: Array[Predicate]):
+
   var recursive = false
   var positions = Map[Position, Set[Position]]()
-  var positionsBody = Array[(String, Array[Position])]()
+  var positionsJoin = Array[(String, Array[Position])]()
 
 
   def compile(): this.type =
-    val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap{case(p, pindex) =>p.getPositions(pindex)}
-    positions = allPositions.map(crr=> (crr -> allPositions.filter(other=> crr.equalsByName(other)).toSet))
+    val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }
+    positions = allPositions.map(crr => (crr -> allPositions.filter(other => crr.equalsByName(other)).toSet))
       .toMap
 
-    val crrPositions = body.zipWithIndex.flatMap{case(p, pindex)=>p.getPositions(pindex)}
-    positionsBody = crrPositions.groupBy(p=> p.getVariable().getName()).toArray
-      .sortBy{case(_, array) => array.map(p=> p.pindex).sum}
+    val crrPositions = body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }
+    positionsJoin = crrPositions.groupBy(p => p.getVariable().getName()).toArray
+      .sortBy { case (_, array) => array.map(p => p.pindex).sum }
 
     this
 
@@ -37,8 +38,15 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   def isNegation(): Boolean = body.size == 1 && body.head.isNegative()
 
   def getBody(): Array[Predicate] = body
+
   def getPositions(): Map[Position, Set[Position]] = positions
-  def getBodyPosition(): Array[(String, Array[Position])] = positionsBody
+
+  def getJoinPositions(): Array[(String, Array[Position])] = positionsJoin
+
+  def getHeadBodyPredicates(): Array[Array[Int]] =
+    head.getVariables().map(variable => body.zipWithIndex
+      .filter(pair => pair._1.contains(variable))
+      .map { case (predicate, index) => predicate.identifier(index) })
 
   def isRecursive(): Boolean = recursive
 
@@ -54,10 +62,7 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     }
     }
 
-  //def isList():Boolean = head.isList()
-  //def isEmptyList():Boolean = head.isList()
   def identifier(): Int = head.identifier()
-
 
   def asRule(): Rule =
     asInstanceOf[Rule]
@@ -123,17 +128,17 @@ class Query(var head: Predicate, var body: Array[Predicate]):
 
     Rule(head, newBody)*/
 
-/*  def expandCall(rules: Set[Hypothesis]): Rule =
-    var newBody = Array[Predicate]()
-    for target <- body do
-      for rule <- rules do
-        if target.identifier() == rule.identifier() then
-          newBody ++= rule.call(target).getBody()
-        else
-          newBody :+= target
+  /*  def expandCall(rules: Set[Hypothesis]): Rule =
+      var newBody = Array[Predicate]()
+      for target <- body do
+        for rule <- rules do
+          if target.identifier() == rule.identifier() then
+            newBody ++= rule.call(target).getBody()
+          else
+            newBody :+= target
 
 
-    Rule(head, newBody)*/
+      Rule(head, newBody)*/
 
   /*def addPredicate(predicate: Predicate): Boolean =
     var r = false
@@ -183,7 +188,7 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     body.zipWithIndex.map { case (predicate, pindex) => {
       val otherVariables = body.zipWithIndex.filter(_._2 != pindex).flatMap(_._1.getVariables()).toSet
       (pindex, predicate.getVariables().zipWithIndex.filter { case (variable, position) => otherVariables.contains(variable) }
-        .map(pair => Position(predicate,pindex, pair._2)).toSet)
+        .map(pair => Position(predicate, pindex, pair._2)).toSet)
     }
     }.toSet
 
@@ -206,20 +211,21 @@ class Query(var head: Predicate, var body: Array[Predicate]):
 
   def unboundBodyPositions(): Set[Position] =
     val set = body
-    set.zipWithIndex.map{case(predicate, pindex) => (predicate, pindex, set.filter(!_.equals(predicate)))}
+    set.zipWithIndex.map { case (predicate, pindex) => (predicate, pindex, set.filter(!_.equals(predicate))) }
       .flatMap { case (predicate, pindex, others) => {
         predicate.array.zipWithIndex
           .filter { case (variable, index) => !others.exists(other => other.contains(variable)) }
-          .map { case (_, index) => Position(predicate,pindex, index) }
+          .map { case (_, index) => Position(predicate, pindex, index) }
       }
       }.toSet
 
   def unboundHeadPositions(): Set[Position] =
-    body.zipWithIndex.flatMap { case(predicate, pindex) => {
+    body.zipWithIndex.flatMap { case (predicate, pindex) => {
       predicate.getArray().zipWithIndex.filter { case (variable, index) => !head.contains(variable) }
         .map { case (variable, index) => {
           Position(predicate, pindex, index)
         }
         }
-    }}.toSet
+    }
+    }.toSet
 

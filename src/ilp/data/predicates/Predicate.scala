@@ -31,6 +31,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def getVariable(index: Int): Variable =
     array(index)
 
+  def getIndex(variable: Variable):Int =
+    array.indexOf(variable)
+
   def getSymbol(index: Int): variables.Sym =
     array(index).asSymbol()
 
@@ -48,6 +51,10 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def getPositions(predicateIndex:Int): Array[Position] =
     (0 until length()).map(index => Position(this, predicateIndex, index))
+      .toArray
+
+  def getPositions(): Array[Position] =
+    (0 until length()).map(index => Position(this, 0, index))
       .toArray
 
 /*
