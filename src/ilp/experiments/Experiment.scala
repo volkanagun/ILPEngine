@@ -33,12 +33,25 @@ class Experiment(params:Params):
 
     this
 
-  protected def loadDatabase():this.type =
+  def loadDatabase():this.type =
+    println("Loading database")
     Source.fromFile(folder + "bk.pl").getLines().map(_.trim)
       .filter(_.nonEmpty)
       .foreach(line=>{
-        val predicate = Parser.parsePredicate(line).get
-        database.add(predicate)
+          val predicate = Parser.parsePredicate(line).get
+          database.add(predicate)
+    })
+
+    database.build()
+    this
+
+  def loadDatabase(factSize:Int):this.type =
+    println("Loading database")
+    Source.fromFile(folder + "bk.pl").getLines().map(_.trim)
+      .filter(_.nonEmpty).take(factSize)
+      .foreach(line=>{
+          val predicate = Parser.parsePredicate(line).get
+          database.add(predicate)
     })
 
     database.build()

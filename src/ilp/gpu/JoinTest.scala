@@ -94,11 +94,23 @@ object JoinTest:
     val engine = CPUEngine(db).compile()
     val result = measureTime(engine.joinBatchGPU(q))
     println("Size: " + result.size)
+  }
+
+  def testLargeBatchGPU(): Unit = {
+    val params = Params("dunnhumby")
+    val exp = Experiment(params).load()
+    val db = exp.database
+
+    val q = Parser.parseRule("product(B1, P1, MA) :- transaction(B1, P1, S1) & product(P1, M1, D1) & causal(P1, S2, M2).").get.compile()
+    val engine = CPUEngine(db).compile()
+    JoinManager.setGPU()
+    val result = measureTime(engine.joinBatchGPU(q))
+    println("Size: " + result.size)
 
   }
 
   def main(args: Array[String]): Unit = {
     ///testLeapfrogGPU()
-    testLeapfrogBatchGPU()
+    testLargeBatchGPU()
 
   }

@@ -6,15 +6,19 @@ class GPUQuery(var tables: Array[GPUTable]):
 
   var gpuData: Array[Array[Int]] = null
   var gpuDataRows: Array[Array[Int]] = null
+  var attributes = tables.flatMap(_.attributes).toSet.toArray
 
   def init(): this.type =
     this.gpuData = buildData()
     this.gpuDataRows = buildRows()
-
     this
 
-  def getAttributes(): Set[Variable] =
-    tables.toSet.flatMap(_.attributes)
+  def getAttributes(): Array[Variable] =
+    attributes
+
+  def setAttributes(variables:Array[Variable]):this.type =
+    attributes = variables
+    this
 
   def getActive(attribute: Variable): Set[Int] =
     val domains = tables.zip(gpuDataRows).filter { case (table, rows) => table.contains(attribute)}

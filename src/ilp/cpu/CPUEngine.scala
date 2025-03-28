@@ -55,8 +55,7 @@ class CPUEngine(database: Database):
       val id = position.getValueIdentifier()
       val crrArr = values.getOrElse(id, Set[Int]()) + value
       values = values.updated(id, crrArr)
-    }
-    }
+    }}
   }
 
   def updateColCount(id: Int, size: Int): Unit = {
@@ -85,6 +84,7 @@ class CPUEngine(database: Database):
 
     predicateMap = predicateMap.updated(id, predicateMap.getOrElse(id, Array[Predicate]()) :+ predicate)
   }
+
 
   def join(query: Query): Set[Substitution] = {
     val relations = query.getBody()
@@ -132,7 +132,8 @@ class CPUEngine(database: Database):
     }
 
     val gpuQuery = GPUQuery(gpuTables).init()
-    joinBatchGPU(gpuQuery, gpuQuery.getAttributes())
+    val optimizedQuery = CPUQueryPlan(gpuQuery).optimizeByCount()
+    joinBatchGPU(optimizedQuery, optimizedQuery.getAttributes())
   }
 
   def active(map: Map[Int, Array[Array[Int]]], tables: Array[Predicate], attribute: Variable): Set[Int] = {
@@ -208,29 +209,23 @@ class CPUEngine(database: Database):
     val valueArray = values.toArray
     if batchKernel == null then
       batchKernel = new GPUBatchFilter(dataTables, dataRows, rowSize, colSize, dataPositions, valueArray, rowMax);
-      batchKernel.setExplicit(true)
+      batchKernel.put(dataTables)
+      batchKernel.put(rowSize)
+      batchKernel.put(colSize)
+
+
     if values.nonEmpty then
       batchKernel.setValueSize(valueArray.length)
       batchKernel.setValues(valueArray)
       batchKernel.setPositions(dataPositions)
       batchKernel.setRows(dataRows)
       batchKernel.init()
-      //batchKernel.put(dataRows)
-      //batchKernel.put(valueArray)
 
-      JoinManager.setCPU()
-      JoinManager.runAny(dataTables.length, rowMax, valueSize, batchKernel)
-
-      val results = batchKernel.getResults
-      batchKernel.get(results)
+      //JoinManager.runAny(dataTables.length, rowMax, valueSize, batchKernel)
+      batchKernel.runFlat()
+      val results = batchKernel.getResults()
       //batchKernel.dispose()
       val finalResults = results.map(results => {
-        /*val finalRows = results.zip(dataPositions).zip(dataRows).map{case((resultRows, position), mainRows) =>{
-          if position == -1 then mainRows
-          else resultRows
-        }}
-        query.newQuery(finalRows)
-         */
         query.newQuery(results)
       });
       //kernel.dispose()
@@ -312,7 +307,7 @@ class CPUEngine(database: Database):
     finalSet
   }
 
-  def joinBatchGPU(gpuQuery: GPUQuery, attributes: Set[Variable]): Set[Substitution] =
+  def joinBatchGPU(gpuQuery: GPUQuery, attributes: Array[Variable]): Set[Substitution] =
     if attributes.isEmpty then Set(Substitution())
     else
       val nextAttribute = attributes.head
@@ -326,4 +321,4 @@ class CPUEngine(database: Database):
           partial.appendNew(nextAttribute, nextAttribute.toSymbol(id2string(value)))
         })
         results
-      }}.toArray.toSet
+      }}.toSet

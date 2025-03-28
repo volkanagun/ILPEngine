@@ -56,7 +56,7 @@ object JoinManager {
   }
 
   def runAny(rangeX: Int, rangeY: Int,rangeZ: Int, kernel: Kernel): Kernel = {
-    val range = com.aparapi.Range.create2D(rangeY,rangeZ, rangeX, 1/*, 1, 1, 1*/)
+    val range = com.aparapi.Range.create3D(rangeX,rangeY, rangeZ, 1, 1, 1)
     kernel.execute(range)
     kernel
   }

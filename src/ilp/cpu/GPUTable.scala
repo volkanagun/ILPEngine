@@ -13,6 +13,8 @@ class GPUTable(var id: Int, var pid: Int, var attributes: Array[Variable], var d
     this.gpuData = gpuData
     this
 
+
+
   def contains(variable: Variable):Boolean =
     attributes.contains(variable)
 
@@ -28,6 +30,12 @@ class GPUTable(var id: Int, var pid: Int, var attributes: Array[Variable], var d
     val index = attributes.indexOf(attribute)
     data.zipWithIndex
       .filter { case (row, rowIndex) => newRows(rowIndex)==1 }
+      .map{case(row, _)=> row(index)}.toSet
+
+  def getActiveSet(attribute: Variable): Set[Int] =
+    val index = attributes.indexOf(attribute)
+    data.zipWithIndex
+      .filter { case (row, rowIndex) => rows(rowIndex)==1 }
       .map{case(row, _)=> row(index)}.toSet
 
 

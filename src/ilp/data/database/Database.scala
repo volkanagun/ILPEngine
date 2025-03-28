@@ -15,7 +15,7 @@ class Database(name: String):
 
 
   def build(): this.type =
-
+    println("Building database ...")
     for predicate <- sets do
       val symbols = predicate.getSymbols()
       val positions = predicate.getPositions(-1)
