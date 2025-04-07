@@ -18,11 +18,11 @@ case class Frame(
                 )
 
 class CPUEngine(database: Database):
-  var tablesFlattened = Map[Int, Array[Int]]()
+  //var tablesFlattened = Map[Int, Array[Int]]()
   var tables = Map[Int, Array[Array[Int]]]()
 
   var values = Map[Int, Set[Int]]()
-  var predicateMap = Map[Int, Array[Predicate]]()
+  //var predicateMap = Map[Int, Array[Predicate]]()
 
   var colCount = Map[Int, Int]()
   var rowCount = Map[Int, Int]()
@@ -33,10 +33,23 @@ class CPUEngine(database: Database):
   var batchKernel: GPUBatchFilter = null
 
   def compile(): this.type =
+    println("Compiling started ...")
     database.sets.foreach(predicate => {
       addTable(predicate)
     })
+    println("Compilation finished...")
     this
+
+  def compile(query: Query): this.type =
+    println("Compiling started ...")
+    val identifiers = query.getBody().map(_.identifier())
+    database.sets.filter(predicate=> identifiers.contains(predicate.identifier())).foreach(predicate => {
+      addTable(predicate)
+    })
+    println("Compilation finished...")
+    this
+
+  def getTables():Map[Int, Array[Array[Int]]] = tables
 
   def addSymbolID(value: String): Int =
     if !string2id.contains(value) then
@@ -80,11 +93,40 @@ class CPUEngine(database: Database):
     incRowCount(id)
 
     tables = tables.updated(id, tables.getOrElse(id, Array[Array[Int]]()) :+ values)
-    tablesFlattened = tablesFlattened.updated(id, tablesFlattened.getOrElse(id, Array[Int]()) ++ values)
-
-    predicateMap = predicateMap.updated(id, predicateMap.getOrElse(id, Array[Predicate]()) :+ predicate)
+    //predicateMap = predicateMap.updated(id, predicateMap.getOrElse(id, Array[Predicate]()) :+ predicate)
   }
 
+  def optimizeGPU(query: Query):GPUQuery =
+    val relations = query.getBody()
+
+    val gpuTables = relations.zipWithIndex.map { case (predicate, index) => {
+      val id = predicate.identifier()
+      val pid = predicate.identifier(index)
+      val attributes = predicate.getVariables()
+      val data = tables(id)
+      GPUTable(id, pid, attributes, data)
+    }
+    }
+
+    val gpuQuery = GPUQuery(gpuTables).init()
+    val optimizedQuery = CPUQueryPlan(gpuQuery).optimizeByBranch()
+    optimizedQuery
+
+  def optimizeCPU(query: Query):GPUQuery =
+    val relations = query.getBody()
+
+    val gpuTables = relations.zipWithIndex.map { case (predicate, index) => {
+      val id = predicate.identifier()
+      val pid = predicate.identifier(index)
+      val attributes = predicate.getVariables()
+      val data = tables(id)
+      GPUTable(id, pid, attributes, data)
+    }
+    }
+
+    val gpuQuery = GPUQuery(gpuTables).init()
+    val optimizedQuery = CPUQueryPlan(gpuQuery).optimizeByDepth()
+    optimizedQuery
 
   def join(query: Query): Set[Substitution] = {
     val relations = query.getBody()
@@ -97,7 +139,18 @@ class CPUEngine(database: Database):
     join(items, relations, attributes)
   }
 
-  def joinBaseGPU(query: Query): Set[Substitution] = {
+  def joinParallel(query: Query): Set[Substitution] = {
+    val relations = query.getBody()
+    val attributes = relations.flatMap(predicate => predicate.getVariables()).toSet
+    val items = relations.zipWithIndex.map { case (p, index) => {
+      p.identifier(index) -> tables(p.identifier())
+    }
+    }.toMap
+
+    joinParallel(items, relations, attributes)
+  }
+
+  def joinBaseParallel(query: Query): Set[Substitution] = {
     val relations = query.getBody()
     val attributes = relations.flatMap(predicate => predicate.getVariables()).toSet
     val items = relations.zipWithIndex.map { case (p, index) => {
@@ -119,22 +172,10 @@ class CPUEngine(database: Database):
     joinBaseStackGPU(items, relations, attributes)
   }
 
-  def joinBatchGPU(query: Query): Set[Substitution] = {
-    val relations = query.getBody()
-
-    val gpuTables = relations.zipWithIndex.map { case (predicate, index) => {
-      val id = predicate.identifier()
-      val pid = predicate.identifier(index)
-      val attributes = predicate.getVariables()
-      val data = tables(id)
-      GPUTable(id, pid, attributes, data)
-    }
-    }
-
-    val gpuQuery = GPUQuery(gpuTables).init()
-    val optimizedQuery = CPUQueryPlan(gpuQuery).optimizeByCount()
-    joinBatchGPU(optimizedQuery, optimizedQuery.getAttributes())
+  def joinBatchParallel(optimizedQuery: GPUQuery): Set[Substitution] = {
+    joinBatchParallel(optimizedQuery, optimizedQuery.getAttributes())
   }
+
 
   def active(map: Map[Int, Array[Array[Int]]], tables: Array[Predicate], attribute: Variable): Set[Int] = {
     val domains = tables.zipWithIndex.collect {
@@ -221,8 +262,8 @@ class CPUEngine(database: Database):
       batchKernel.setRows(dataRows)
       batchKernel.init()
 
-      //JoinManager.runAny(dataTables.length, rowMax, valueSize, batchKernel)
-      batchKernel.runFlat()
+      JoinManager.runAny(dataTables.length, rowMax, valueSize, batchKernel)
+      //batchKernel.runFlat()
       val results = batchKernel.getResults()
       //batchKernel.dispose()
       val finalResults = results.map(results => {
@@ -236,6 +277,21 @@ class CPUEngine(database: Database):
 
 
   def join(map: Map[Int, Array[Array[Int]]], relations: Array[Predicate], attributes: Set[Variable]): Set[Substitution] =
+    if attributes.isEmpty then Set(Substitution())
+    else
+      val nextAttribute = attributes.head
+      val activeDomain = active(map, relations, nextAttribute)
+      val debug = 0;
+      activeDomain.flatMap(value => {
+        val filteredMap = filter(map, relations, nextAttribute, value)
+        val partialResults = join(filteredMap, relations, attributes.tail)
+        val results = partialResults.map(partial => {
+          partial.appendNew(nextAttribute, nextAttribute.toSymbol(id2string(value)))
+        })
+        results
+      }).toArray.toSet
+
+  def joinParallel(map: Map[Int, Array[Array[Int]]], relations: Array[Predicate], attributes: Set[Variable]): Set[Substitution] =
     if attributes.isEmpty then Set(Substitution())
     else
       val nextAttribute = attributes.head
@@ -307,7 +363,7 @@ class CPUEngine(database: Database):
     finalSet
   }
 
-  def joinBatchGPU(gpuQuery: GPUQuery, attributes: Array[Variable]): Set[Substitution] =
+  def joinBatchParallel(gpuQuery: GPUQuery, attributes: Array[Variable]): Set[Substitution] =
     if attributes.isEmpty then Set(Substitution())
     else
       val nextAttribute = attributes.head
@@ -316,7 +372,7 @@ class CPUEngine(database: Database):
       val newQuery = filterBatchGPU(gpuQuery, nextAttribute, activeDomain)
 
       newQuery.zip(activeDomain).flatMap { case (crrQuery, value) => {
-        val partialResults = joinBatchGPU(crrQuery, remainingAttributes)
+        val partialResults = joinBatchParallel(crrQuery, remainingAttributes)
         val results = partialResults.map(partial => {
           partial.appendNew(nextAttribute, nextAttribute.toSymbol(id2string(value)))
         })

@@ -17,7 +17,7 @@ object JoinManager {
 
   def setCPU():this.type =
     val deviceList = new util.LinkedHashSet[Device]();
-    deviceList.add(devices.last);
+    deviceList.add(devices.tail.head);
     KernelManager.instance().setDefaultPreferredDevices(deviceList)
     this
 

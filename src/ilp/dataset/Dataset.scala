@@ -31,6 +31,6 @@ class Dataset():
 
 object Dataset extends Dataset:
   def main(args: Array[String]): Unit = {
-    constructDunnhumby("bk.pl", 100000)
+    constructDunnhumby("bk.pl", 50000)
   }
 

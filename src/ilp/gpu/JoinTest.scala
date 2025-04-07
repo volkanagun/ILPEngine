@@ -6,12 +6,12 @@ import ilp.experiments.{Experiment, Params}
 
 object JoinTest:
 
-  def measureTime[T](block: => T): T = {
+  def measureTime[T](block: => T, name:String = "GPU"): T = {
     val start = System.nanoTime()
     val result = block
     val end = System.nanoTime()
     val elapsedTime = (end - start) / 1e6
-    println(s"Time in milliseconds: ${elapsedTime}")
+    println(s"${name} time in milliseconds: ${elapsedTime}")
     result
   }
 
@@ -70,7 +70,7 @@ object JoinTest:
     val q = Parser.parseRule("cyclic_query(D1, D2, E, T) :- enzyme(E, D1) & enzymeinhibitor(D1, E) & target(T, D1) & target(T, D2).").get.compile()
     val engine = CPUEngine(db).compile()
     val result1 = measureTime(engine.join(q))
-    val result2 = measureTime(engine.joinBaseGPU(q))
+    val result2 = measureTime(engine.joinBaseParallel(q))
   }
 
   def testLeapfrogGPU(): Unit = {
@@ -91,26 +91,39 @@ object JoinTest:
     val db = exp.database
 
     val q = Parser.parseRule("path(X, Y, X1, Y1, Y2) :- adjacent(X, Y, X1, Y1) & adjacent(X1, Y1, X2, Y2).").get.compile()
+
     val engine = CPUEngine(db).compile()
-    val result = measureTime(engine.joinBatchGPU(q))
+
+    val optimized = engine.optimizeGPU(q)
+    val result = measureTime(engine.joinBatchParallel(optimized))
     println("Size: " + result.size)
   }
 
-  def testLargeBatchGPU(): Unit = {
+  def compareSerialWithParallel(): Unit = {
     val params = Params("dunnhumby")
     val exp = Experiment(params).load()
     val db = exp.database
 
-    val q = Parser.parseRule("product(B1, P1, MA) :- transaction(B1, P1, S1) & product(P1, M1, D1) & causal(P1, S2, M2).").get.compile()
-    val engine = CPUEngine(db).compile()
+    val q = Parser.parseRule("product(B1, P1, MA) :-  transaction(B1, P1, S1) & product(P1, M1, D1) & causal(P1, S2, M2).").get.compile()
+    val engine = CPUEngine(db).compile(q)
+    val optimizedGPU = engine.optimizeGPU(q)
+    val optimizedCPU = engine.optimizeCPU(q)
+    val resultCPUSerial = measureTime(engine.join(q), "Serial CPU")
+    val resultCPUParallel = measureTime(engine.joinParallel(q), "Parallel CPU")
+    //JoinManager.setCPU()
+    //val resultCPUParallel = measureTime(engine.joinBaseParallel(q), "Parallel CPU")
+
+    //val resultCPUBatch = measureTime(engine.joinBatchParallel(optimizedCPU), "Batch CPU")
+    //System.gc()
     JoinManager.setGPU()
-    val result = measureTime(engine.joinBatchGPU(q))
-    println("Size: " + result.size)
+    val resultGPUParallel = measureTime(engine.joinBatchParallel(optimizedGPU), "Batch GPU")
+    println("Size: " + resultGPUParallel.size)
 
   }
 
+
   def main(args: Array[String]): Unit = {
     ///testLeapfrogGPU()
-    testLargeBatchGPU()
+    compareSerialWithParallel()
 
   }

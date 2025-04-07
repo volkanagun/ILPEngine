@@ -31,6 +31,7 @@ class Database(name: String):
         val existing = attachments.getOrElse(position, Set())
         attachments = attachments.updated(position, existing ++ crrPositions)
 
+    println("Building finished ...")
     this
 
 
