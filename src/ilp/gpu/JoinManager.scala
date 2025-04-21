@@ -55,8 +55,30 @@ object JoinManager {
     kernel
   }
 
-  def runAny(rangeX: Int, rangeY: Int,rangeZ: Int, kernel: Kernel): Kernel = {
-    val range = com.aparapi.Range.create3D(rangeX,rangeY, rangeZ, 1, 1, 1)
+  def runAny(rowSize: Int, valueSize: Int, tableSize: Int, kernel: Kernel): Kernel = {
+    val range = com.aparapi.Range.create3D(rowSize, valueSize, tableSize, 1, 1, 1)
+    kernel.execute(range)
+    kernel
+  }
+
+  def runReduced(rowSize: Int, tableSize: Int, kernel: Kernel): Kernel = {
+    val range = com.aparapi.Range.create2D(rowSize, tableSize, 1, 1)
+    kernel.execute(range)
+    kernel
+  }
+
+  def runLocal(rowSize: Int, valueSize: Int, tableSize: Int, kernel: Kernel): Kernel = {
+    val roundRowSize = rowSize * tableSize
+    val range = com.aparapi.Range.create2D(roundRowSize, valueSize, tableSize, 1)
+    kernel.execute(range)
+    kernel
+  }
+
+  def runVeryLocal(rowSize: Int, valueSize: Int, tableSize: Int, localSize:Int, kernel: Kernel): Kernel = {
+    val roundRowSize = rowSize
+    val roundValueSize = valueSize
+
+    val range = com.aparapi.Range.create2D(roundRowSize, roundValueSize, 1, 1)
     kernel.execute(range)
     kernel
   }

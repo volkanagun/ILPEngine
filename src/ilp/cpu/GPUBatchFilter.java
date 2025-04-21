@@ -10,32 +10,33 @@ public class GPUBatchFilter extends Kernel {
     private int[][] rows;
     private int[] values;
     private int valueSize;
-    @Constant
-    private int size;
-    @Constant
-    private int predicateSize;
-    @Constant
+    private int rowMax;
+    private int tableSize;
+
     private int[][] tables;
-    @Constant
+
     private int[] rowsize;
-    @Constant
     private int[] colsize;
 
-    public GPUBatchFilter(int[][] tables, int[][] rows, int[] rowsize, int[] colsize, int[] positions, int[] values, int size) {
+    public GPUBatchFilter(int[][] tables, int[][] rows, int[] rowsize, int[] colsize, int[] positions, int[] values, int rowMax, int localSize) {
         this.tables = tables;
         this.rows = rows;
         this.rowsize = rowsize;
         this.colsize = colsize;
         this.positions = positions;
         this.values = values;
-        this.size = size;
-        this.predicateSize = positions.length;
+        this.rowMax = rowMax;
+        this.tableSize = positions.length;
         this.valueSize = values.length;
         init();
     }
 
+    public GPUBatchFilter copy(){
+        return new GPUBatchFilter(tables, rows, rowsize, colsize, positions, values, rowMax, 1);
+    }
+
     public GPUBatchFilter init(){
-        this.results = new int[valueSize][predicateSize][size];
+        this.results = new int[valueSize][tableSize][rowMax];
         this.setExplicit(true);
 
         return this;
@@ -46,15 +47,34 @@ public class GPUBatchFilter extends Kernel {
         return results;
     }
 
+    public void setRowMax(int rowMax) {
+        this.rowMax = rowMax;
+    }
+
+    public void setRowsize(int[] rowsize) {
+        this.rowsize = rowsize;
+    }
+
+    public void setColsize(int[] colsize) {
+        this.colsize = colsize;
+    }
+
     public void setPositions(int[] positions) {
         this.positions = positions;
+        this.tableSize = positions.length;
         put(positions);
     }
 
     public void setRows(int[][] rows) {
         this.rows = rows;
-        put(rows);
+        put(this.rows);
     }
+
+    public void setTables(int[][] data) {
+        this.tables = data;
+        put(tables);
+    }
+
 
     public void setValues(int[] values) {
         this.values = values;
@@ -67,9 +87,10 @@ public class GPUBatchFilter extends Kernel {
 
     @Override
     public void run() {
-        int tableIndex = getGlobalId(0);
-        int rowIndex = getGlobalId(1);
-        int valueIndex = getGlobalId(2);
+
+        int rowIndex = getGlobalId(0);
+        int valueIndex = getGlobalId(1);
+        int tableIndex = getGlobalId(2);
 
         if (rowsize[tableIndex] > rowIndex && positions[tableIndex] != -1 && rows[tableIndex][rowIndex] == 1){
             int index = colsize[tableIndex] * rowIndex + positions[tableIndex];
@@ -82,8 +103,8 @@ public class GPUBatchFilter extends Kernel {
 
     public void runFlat() {
         for (int valueIndex = 0; valueIndex < values.length; valueIndex++) {
-            for (int tableIndex = 0; tableIndex < predicateSize; tableIndex++) {
-                for (int rowIndex = 0; rowIndex < size; rowIndex++) {
+            for (int tableIndex = 0; tableIndex < tableSize; tableIndex++) {
+                for (int rowIndex = 0; rowIndex < rowMax; rowIndex++) {
 
                     if (rowsize[tableIndex] > rowIndex && positions[tableIndex] != -1 && rows[tableIndex][rowIndex] == 1){
                         int index = colsize[tableIndex] * rowIndex + positions[tableIndex];

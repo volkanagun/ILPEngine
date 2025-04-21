@@ -26,6 +26,8 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   override def getValue(): Variable = this
 
+
+
   def execute(): Option[Substitution] = None
 
   def getVariable(index: Int): Variable =

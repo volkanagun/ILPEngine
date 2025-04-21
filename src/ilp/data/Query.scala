@@ -11,6 +11,9 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   var positions = Map[Position, Set[Position]]()
   var positionsJoin = Array[(String, Array[Position])]()
 
+  def getAttributes():Set[Variable] =
+    body.flatMap(predicate=> predicate.getVariables())
+      .toSet
 
   def compile(): this.type =
     val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }

@@ -12,7 +12,8 @@ class Database(name: String):
   var templates2 = Map[Int, Set[Predicate]]()
   var attachments = Map[Position, Set[Position]]()
   var symbolPositions = Map[Sym, Set[Position]]()
-
+  var index = Map[Int, Index]()
+  var stats = Map[Int, Statistics]()
 
   def build(): this.type =
     println("Building database ...")
@@ -31,10 +32,15 @@ class Database(name: String):
         val existing = attachments.getOrElse(position, Set())
         attachments = attachments.updated(position, existing ++ crrPositions)
 
+    index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray).build()}
+    stats = templates.map{case(index, data)=> index-> Statistics(data.head, data)}
+
     println("Building finished ...")
     this
 
+  def getIndex() = index
 
+  def getStatistics() = stats
 
   private def getPositions(symbol: Sym): Set[Position] =
     if symbolPositions.contains(symbol) then
