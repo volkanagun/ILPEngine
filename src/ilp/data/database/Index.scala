@@ -9,7 +9,7 @@ import scala.collection.immutable.BitSet
 
 
 
-class Index(val predicate: Predicate, val data:Array[Predicate]) {
+class Index(val predicate: Predicate, val data:Array[Predicate], val bitsize:Int) {
   //Pairwise sorted trie
   var rowMap  = predicate.getPositions().map(position=>{
     position.getIndex() -> Map[Variable, Set[Int]]()
@@ -23,6 +23,40 @@ class Index(val predicate: Predicate, val data:Array[Predicate]) {
     position.getIndex() -> Map[Variable, RoaringBitmap]()
   }).toMap
 
+  var cudaBitmap  = predicate.getPositions().map(position=>{
+    position.getIndex() -> Map[Variable, Array[Int]]()
+  }).toMap
+
+  def convertFromBitmapToRows(bitmap: Array[Int]): Array[Int] = {
+    val indices = scala.collection.mutable.ArrayBuffer[Int]()
+    for (i <- bitmap.indices) {
+      val word = bitmap(i)
+      for (b <- 0 until 32) {
+        if (((word >>> b) & 1) != 0) {
+          indices += (i * 32 + b) // little-endian: bit b of word i
+        }
+      }
+    }
+    indices.toArray
+  }
+
+  def convertToBitmapFromRows(indices: Array[Int]): Array[Int] = {
+    val bitmap = Array.fill(bitsize)(0)
+    val length = bitsize * 32
+    for (idx <- indices if idx >= 0 && idx < length) {
+      val wordIndex = idx / 32
+      val bitIndex = idx % 32
+      bitmap(wordIndex) |= (1 << bitIndex) // LSB first (little-endian)
+    }
+    bitmap
+  }
+
+  def buildCuda():this.type ={
+    cudaBitmap = rowMap.map{case(id, map)=>{
+      id -> map.map{case(variable, rows)=> (variable -> convertToBitmapFromRows(rows.toArray))}
+    }}
+    this
+  }
 
   def build(): this.type = {
     data.zipWithIndex.foreach{case(row, index)=>{
@@ -41,7 +75,8 @@ class Index(val predicate: Predicate, val data:Array[Predicate]) {
         roaringBitmap = roaringBitmap.updated(i, roaringmap.updated(value, roadingBitmap))
       })
     }}
-    this
+
+    buildCuda()
   }
 
   def getValues(rows:Set[Int], position: Int):Set[Variable] =
@@ -52,6 +87,12 @@ class Index(val predicate: Predicate, val data:Array[Predicate]) {
     rows.toSet.map(indice => data(indice))
       .map(predicate=> predicate.getVariable(position))
 
+  def getValues(bitmap:Array[Int], position: Int):Set[Variable] = {
+    val rows = convertFromBitmapToRows(bitmap)
+    rows.map(index => data(index))
+      .map(predicate=> predicate.getVariable(position)).toSet
+  }
+
   def getValues(rows:RoaringBitmap, position: Int):Set[Variable] =
     rows.toArray.map(indice => data(indice))
       .map(predicate=> predicate.getVariable(position))
@@ -60,6 +101,10 @@ class Index(val predicate: Predicate, val data:Array[Predicate]) {
 
   def getRows(value:Variable, position: Int):Set[Int]=
     val trie = rowMap(position)
+    trie(value)
+
+  def getCudaRows(value:Variable, position: Int):Array[Int]=
+    val trie = cudaBitmap(position)
     trie(value)
 
   def getRows(rows:Set[Int], value:Variable, position: Int):Set[Int]=
@@ -76,4 +121,5 @@ class Index(val predicate: Predicate, val data:Array[Predicate]) {
     val trie = roaringBitmap(position)
     val existingRows = trie(value)
     RoaringBitmap.and(rows, existingRows)
+
 }

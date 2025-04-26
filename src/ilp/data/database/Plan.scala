@@ -6,6 +6,7 @@ import ilp.data.variables.Variable
 
 class Plan(val db:Database) {
 
+  val bitsize = db.bitsize
   val statistics = db.getStatistics()
 
   def getRowSizes(relations:Array[Predicate]):Map[Int, Int]=
@@ -59,7 +60,7 @@ class Plan(val db:Database) {
     val dataMap = stats.zipWithIndex.map{case(statistics, index) => statistics.predicate.identifier(index) -> statistics.data}
       .toMap
     val sorted = optimizeByRecursive(attributes,relations, stats).map(_._1)
-    Optimized(sorted, relations).initRows(rowMap)
+    Optimized(sorted, relations, bitsize).initRows(rowMap)
       .setData(dataMap)
 
   def optimizeRelative(query: Query):Optimized =
@@ -70,7 +71,7 @@ class Plan(val db:Database) {
     val dataMap = stats.zipWithIndex.map{case(statistics, index) => statistics.predicate.identifier(index) -> statistics.data}
       .toMap
     val sorted = optimizeByRelative(attributes,relations, stats).map(_._1)
-    Optimized(sorted, relations).initRows(rowMap)
+    Optimized(sorted, relations, bitsize).initRows(rowMap)
       .setData(dataMap)
 
 }

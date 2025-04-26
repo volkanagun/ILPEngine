@@ -49,8 +49,8 @@ class Dataset():
 
 
   def constructRandom(ilpFilename:String, tableSize:Int, valueRange:Int, attrMin:Int = 2, attrMax:Int = 6):Unit = {
-    val min = 1000
-    val max = 2000
+    val min = 300
+    val max = 500
     val data = Range(0, tableSize).flatMap(tableIndex=>{
       val attributeSize = attrMin + Random.nextInt(attrMax-attrMin)
       val name = "predicate"+tableIndex
@@ -66,6 +66,6 @@ class Dataset():
 
 object Dataset extends Dataset:
   def main(args: Array[String]): Unit = {
-    constructRandom("bk.pl", 6, 20000, 4, 5)
+    constructRandom("bk.pl", 6, 5, 4, 5)
   }
 

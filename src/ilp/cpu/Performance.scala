@@ -166,6 +166,8 @@ object Performance:
     val resultCPUIndex = measureMultipleTime(indexEngine.joinBitmap(bestDependency), "Bitmap CPU", 2)
     System.gc()
     val resultRoaringIndex = measureMultipleTime(indexEngine.joinRoaring(bestDependency), "Roaring Bitmap CPU", 2)
+    System.gc()
+    //val resultCudaIndex = measureMultipleTime(indexEngine.joinCuda(bestDependency), "Cuda Bitmap CPU", 2)
 
     println("Relative query scores")
     println("==================")
@@ -175,10 +177,13 @@ object Performance:
     val relativeCPUIndex = measureMultipleTime(indexEngine.joinBitmap(relativeDependency), "Bitmap CPU", 2)
     System.gc()
     val relativeRoaringIndex = measureMultipleTime(indexEngine.joinRoaring(relativeDependency), "Roaring Bitmap CPU", 2)
+    System.gc()
+    //val relativeCudaIndex = measureMultipleTime(indexEngine.joinCuda(relativeDependency), "Cuda Bitmap CPU", 2)
 
 
     println("Size: " + resultCPUIndex.size)
-    println("Test: " + (resultCPUNoIndex.size == relativeRoaringIndex.size))
+    println("Test roaring: " + (resultCPUNoIndex.size == relativeRoaringIndex.size))
+    //println("Test cuda: " + (resultCPUNoIndex.size == relativeCudaIndex.size))
     System.gc()
   }
 
@@ -232,8 +237,5 @@ object Performance:
   }
 
   def main(args: Array[String]): Unit = {
-    ///testLeapfrogGPU()
     compare()
-    //testMultiParallelQuery("dunnhumby1")
-
   }

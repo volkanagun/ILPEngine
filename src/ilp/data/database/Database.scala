@@ -4,7 +4,7 @@ import ilp.data.*
 import ilp.data.predicates.*
 import ilp.data.variables.*
 
-class Database(name: String):
+class Database(name: String, val bitsize:Int = 32):
 
   var symbols = Array[Collection]()
   var sets = Set[Predicate]()
@@ -32,7 +32,7 @@ class Database(name: String):
         val existing = attachments.getOrElse(position, Set())
         attachments = attachments.updated(position, existing ++ crrPositions)
 
-    index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray).build()}
+    index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray, bitsize).build()}
     stats = templates.map{case(index, data)=> index-> Statistics(data.head, data)}
 
     println("Building finished ...")
