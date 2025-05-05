@@ -12,12 +12,6 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def this(name: String, item1: Variable, item2: Variable, item3: Variable) = this(name, Array(item1, item2, item3))
 
-/*  var collection: Collection = null
-
-  def setCollection(collection: Collection): this.type =
-    this.collection = collection
-    this*/
-
   def getArray(): Array[Variable] =
     this.array
 
@@ -26,15 +20,20 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   override def getValue(): Variable = this
 
-
+  def substitutionBy(predicate: Predicate):Substitution =
+    val variables = predicate.getVariables()
+    val symbols = array
+    Substitution(variables, symbols)
 
   def execute(): Option[Substitution] = None
 
   def getVariable(index: Int): Variable =
     array(index)
 
-  def getIndex(variable: Variable):Int =
-    array.indexOf(variable)
+  def getIndex(variable: Variable):Int = {
+    val name = variable.getName()
+    array.indexWhere(item=> item.getName() == name)
+  }
 
   def getSymbol(index: Int): variables.Sym =
     array(index).asSymbol()
@@ -49,7 +48,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     })
 
   def getSymbols(): Array[variables.Sym] =
-    array.map(_.asSymbol())
+    array.filter(_.isSymbol()).map(_.asSymbol())
 
   def getPositions(predicateIndex:Int): Array[Position] =
     (0 until length()).map(index => Position(this, predicateIndex, index))
@@ -95,11 +94,11 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
 
   override def substitution(substitution: Substitution): Variable =
-
     val crrName = Variable(name)
     val newName = crrName.substitution(substitution).getName()
     val newArray = array.map(variable => variable.substitution(substitution))
     Predicate(newName, newArray)
+
 
 
   def toPredicate(newName: String): Predicate =
@@ -127,6 +126,8 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def isNegative() = false
   def isCount() = false
   def isExecutable() = false
+  def isFunctional() = false
+
 
   override def isPredicate() = true
 
@@ -136,8 +137,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def length() = array.length
 
-  override def contains(item: Variable): Boolean =
-    array.contains(item)
+  override def contains(variable: Variable): Boolean =
+    array.find(item=> item.getName() == variable.getName())
+      .isDefined
 
   def identifier(): Int =
     name.hashCode * 7 + length()

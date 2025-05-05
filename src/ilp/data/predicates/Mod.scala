@@ -4,7 +4,7 @@ import ilp.data.variables.Variable
 import ilp.data.{Substitution, variables}
 
 
-class Mod(result:String, item: Variable, modBy: Variable) extends Predicate("mod", Array[Variable](item, modBy, Variable(result))):
+class Mod(result:String, item: Variable, modBy: Variable) extends Functional("mod", Array(item, modBy, Variable(result))):
 
   override def isExecutable(): Boolean = isDefinite()
   override def isDefinite(): Boolean = item.isSymbol() && modBy.isSymbol()

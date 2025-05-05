@@ -1,25 +1,55 @@
 package ilp.data
-import ilp.data.predicates.*
-import ilp.data.variables.{Collection, NumList, Variable, VariableList}
 
+import ilp.data.predicates.*
+import ilp.data.variables.{Collection, Num, NumList, Variable, VariableList}
+
+import scala.util.Random
 import scala.util.parsing.combinator.*
 
 object Parser extends JavaTokenParsers {
 
-  var symbolVariableNames = Array[String]("A","B","C","D","E","F","G","H","I","J")
-  /** Parser for an identifier (predicate or function name) */
-  def identifier: Parser[String] = "[a-z0-9\\_]+".r
+  var random = Random(1191)
+  var symbolVariableNames = Array[String]("A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
 
-  def double: Parser[String] = "([+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?)".r
+
+  def argumentNames(args: Array[Variable]): Array[Variable] =
+    args.zipWithIndex.map { case (variable, index) => {
+      if variable.isSymbol() then variable.setName(symbolVariableNames(index))
+      else variable
+    }}
+
+  def getRandomName():String =
+    val index = random.nextInt(symbolVariableNames.length)
+    val num = random.nextInt(100)
+    symbolVariableNames(index) + num
+
+  /** Parser for an identifier (predicate or function name) */
+  def identifier: Parser[String] = "[a-z0-9\\_]+([A-Z][a-z0-9\\_]+)*".r
+
+  def double: Parser[String] = "([+-]?(\\d+(\\.\\d+)?)([eE][+-]?\\d+)?)".r
+
+  def list: Parser[String] = "((\\_\\|[A-Z]+)|([A-Z]+\\|\\_))"
+
+  def islist: Parser[String] = "((\\[\\_\\|\\_\\])|(\\[\\]))".r
 
   def numVar: Parser[String] = "([+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?|[A-Z]+)".r
 
   def negative: Parser[String] = "\\~[a-z0-9\\_]+".r
-  def varstr: Parser[String] = "[A-Z0-9\\_]+".r
+
+  def varstr: Parser[String] = "[A-Z]([A-Za-z0-9\\_]*)".r
+
+  def symstr: Parser[String] = "[a-z0-9\\_]+".r
+
+  def anystr: Parser[String] = "\\_[A-Z]*".r
+
+
+  def keywordMod: Parser[String] = "mod".r
+
+  def keywordIs: Parser[String] = "is".r
 
   /** Parser for a variable (starts with an uppercase letter) */
   def variable: Parser[Variable] =
-    "[A-Z0-9\\_]+".r ^^ {
+    "[A-Z]([A-Za-z0-9\\_]*)".r ^^ {
       case item => Variable(item)
     }
 
@@ -31,13 +61,21 @@ object Parser extends JavaTokenParsers {
 
   /** Parser for a variable (starts with an lowercase letter) */
   def symbol: Parser[variables.Sym] =
-    "[a-z\\_\\d]+".r ^^ {
+    "[a-z\\_\\d]+([A-Z][a-z\\_\\d]+)*".r ^^ {
       case symbol => new variables.Sym("X", symbol)
     }
 
+  def variableOrSym: Parser[Variable] =
+    variable | symbol
+
   def number: Parser[variables.Num] =
     double ^^ {
-      case num => new variables.Num("X", num.toDouble)
+      case num => new variables.Num(getRandomName(), num.toDouble)
+    }
+
+  def number_int: Parser[variables.Num] =
+    "\\d+".r ^^ {
+      case num => new variables.Num(getRandomName(), num.toDouble)
     }
 
   def variableList: Parser[VariableList] =
@@ -47,7 +85,7 @@ object Parser extends JavaTokenParsers {
         args.foreach(item => {
           if (item.matches("\\d+(\\.\\d+?)")) then
             items = items :+ variables.Num("X", item.toDouble)
-          else if (item.matches("[A-Z]]"))
+          else if (item.matches("[A-Z]"))
             items = items :+ Variable(item)
           else
             items = items :+ new variables.Sym("X", item)
@@ -59,10 +97,59 @@ object Parser extends JavaTokenParsers {
   def numberList: Parser[NumList] =
     "[" ~ repsep(double, ",") ~ "]" ^^ {
       case "[" ~ args ~ "]" => {
-        new NumList("X", args.toArray.map(_.toDouble))
+        new NumList(getRandomName(), args.toArray.map(_.toDouble))
       }
     }
 
+  def tailNameArgument: Parser[Tail] =
+    identifier ~ "([" ~ anystr ~ "|" ~ variable ~ "]," ~ variable ~ ")" ^^ {
+      case name ~ "([" ~ item ~ "|" ~ tail ~ "]," ~ myvar ~ ")" => {
+        Tail(name, NumList(tail.getName()), NumList(myvar.getName()))
+      }
+    }
+
+
+  def tailArgument: Parser[Tail] =
+    "[" ~ anystr ~ "|" ~ variable ~ "]" ^^ {
+      case "[" ~ item ~ "|" ~ tail ~ "]" => {
+        Tail("tail", NumList(tail.getName()), NumList("LIST"))
+      }
+    }
+
+  def headTailArgument: Parser[HeadTail] =
+    "[" ~ variable ~ "|" ~ variable ~ "]" ^^ {
+      case "[" ~ head ~ "|" ~ tail ~ "]" => {
+        HeadTail("headTail", head, NumList(tail.getName()), NumList("LIST"))
+      }
+    }
+
+  def headNameArgument: Parser[Head] =
+    identifier ~ "([" ~ variable ~ "|" ~ anystr ~ "]," ~ variable ~ ")" ^^ {
+      case name ~ "([" ~ h ~ "|" ~ lst_var ~ "]," ~ myvar ~ ")" => {
+        Head(name, myvar, NumList("LIST"))
+      }
+    }
+
+  def headArgument: Parser[Head] =
+    "[" ~ variable ~ "|" ~ anystr ~ "]" ^^ {
+      case "[" ~ h ~ "|" ~ lst_var ~ "]" => {
+        Head("head", h, NumList(lst_var))
+      }
+    }
+
+  def headArgument2: Parser[Head] =
+    identifier ~ "([" ~ variable ~ "|" ~ anystr ~ "])" ^^ {
+      case name ~ "([" ~ h ~ "|" ~ lst_var ~ "])" => {
+        Head(name, h, NumList(lst_var))
+      }
+    }
+
+  def islistCall: Parser[IsList] =
+    "is_list(" ~ variable ~ ")" ^^ {
+      case "is_list(" ~ myvar ~ ")" => {
+        IsList(myvar)
+      }
+    }
 
   def functionCall: Parser[Variable] =
     identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
@@ -70,42 +157,155 @@ object Parser extends JavaTokenParsers {
     }
 
   def modCall: Parser[Variable] =
-    "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Mod("~ result ~ "," ~ args ~ ")" =>
+    "mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "mod(" ~ result ~ "," ~ args ~ ")" =>
         Mod(result, args.head, args.last)
     }
 
+  def modModCall: Parser[Predicate] =
+    variable ~ keywordMod ~ argument_int ^^ {
+      case myvar ~ "mod" ~ myargument => Mod(myvar.getName(), myvar, myargument)
+    }
+
+
   def sumCall: Parser[Variable] =
-    "Sum(" ~ numberList ~ ")" ^^ {
-      case "Sum(" ~ array ~ ")" => {
-        Sum(array)
+    "sum(" ~ numberList ~ ")" ^^ {
+      case "sum(" ~ array ~ ")" => {
+        Sum(array, Variable(array.getName()))
       }
     }
 
-  def equalCall: Parser[Variable] =
-    "Equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
+  def equalCall: Parser[Predicate] =
+    "equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
+    }
+
+  def equalIsCall: Parser[Predicate] =
+    (symbol <~ keywordIs) ~ argument ^^ {
+      case (sym ~ (myargument)) => Equal(myargument.getName(), sym, myargument)
     }
 
   /** Parser for an argument, which can be a variable or a function call */
-  def argument: Parser[variables.Sym | Collection | Variable] = {
-    variableList |
+  def argument: Parser[Variable] = {
+
+    expansionArgument |
+      isListArgument |
+      emptyListArgument |
+      plusArgument |
+      plusEqualArgument |
+      minusArgument |
+      minusEqualArgument |
+      headArgument |
+      headArgument2 |
+      tailArgument |
+      tailNameArgument |
+      headTailArgument |
       numberList |
       modCall |
+      modModCall |
+      negativeCall |
+      negativePlusCall |
       equalCall |
+      equalIsCall |
+      notEqualArgument |
       functionCall |
       number |
+      symbol |
+      variable |
+      collection
+  }
+
+  def argument_int: Parser[Variable] = {
+    headArgument |
+      tailNameArgument |
+      tailArgument |
+      numberList |
+      modCall |
+      modModCall |
+      negativeCall |
+      negativePlusCall |
+      equalCall |
+      equalIsCall |
+      functionCall |
+      number_int |
       symbol |
       variable |
       collection
 
   }
 
-  def argumentNames(args:Array[Variable]):Array[Variable] =
-    args.zipWithIndex.map{case(variable, index)=>{
-      if variable.isSymbol() then variable.setName(symbolVariableNames(index))
-      else variable
-    }}
+  def negativePlusCall: Parser[Predicate] =
+    "\\+" ~ argument ^^ {
+      case "\\+" ~ predicate => Negative(predicate.getName(), predicate.asPredicate().getVariables())
+    }
+
+  def negativeCall: Parser[Predicate] =
+    "~" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
+      case "~" ~ name ~ "(" ~ args ~ ")" => Negative(name, argumentNames(args.toArray))
+    }
+
+  def isListArgument: Parser[Predicate] =
+    "is_list(" ~ islist ~ ")" ^^ {
+      case "is_list(" ~ item ~ ")" => IsList(NumList("E", Array[Double]()))
+    }
+
+  def plusArgument: Parser[Predicate] =
+    variable ~ "is" ~ argument ~ "+" ~ argument ^^ {
+      case result ~ "is" ~ var1 ~ "+" ~ var2 => Plus(result, var1, var2)
+    }
+
+  def plusEqualArgument: Parser[Predicate] =
+    variable ~ "=" ~ argument ~ "+" ~ argument ^^ {
+      case result ~ "=" ~ var1 ~ "+" ~ var2 => Plus(result, var1, var2)
+    }
+
+  def expansionArgument: Parser[Predicate] =
+    varstr ~ "=[" ~ symbol ~ "," ~ repsep(variable, ",") ~ "]" ^^ {
+      case name ~ "=[" ~ func ~ "," ~ varlist ~ "]" => Expansion(name, Variable(func.value), varlist.toArray)
+    }
+
+  def minusArgument: Parser[Predicate] =
+    variable ~ "is" ~ argument ~ "-" ~ argument ^^ {
+      case result ~ "is" ~ var1 ~ "-" ~ var2 => Minus(result, var1, var2)
+    }
+
+  def minusEqualArgument: Parser[Predicate] =
+    variable ~ "=" ~ argument ~ "-" ~ argument ^^ {
+      case result ~ "=" ~ var1 ~ "-" ~ var2 => Minus(result, var1, var2)
+    }
+
+  def notEqualArgument: Parser[Predicate] =
+    variable ~ "\\=" ~ variable ^^ {
+      case var1 ~ "\\=" ~ var2 => NotEqual("R", var1, var2)
+    }
+
+  def appendArgument: Parser[Predicate] =
+    "append([" ~ variable ~ "]," ~ variable ~ "," ~ variable ~ ")" ^^ {
+      case "append([" ~ item ~ "]," ~ list ~ "," ~ result ~ ")" => Append(item, list, result)
+    } |
+      "append(" ~ variable ~ ",[" ~ variable ~ "]," ~ variable ~ ")" ^^ {
+        case "append(" ~ list ~ ",[" ~ item ~ "]," ~ result ~ ")" => Append(item, list, result)
+      }
+
+  def greaterArgument: Parser[Predicate] =
+    argument ~ ">" ~ argument ^^ {
+      case var1 ~ ">" ~ var2 => Greater("G", var1, var2)
+    }
+
+  def greaterEqualArgument: Parser[Predicate] =
+    argument ~ ">=" ~ argument ^^ {
+      case var1 ~ ">=" ~ var2 => GreaterEqual("G", var1, var2)
+    }
+
+  def lowerArgument: Parser[Predicate] =
+    argument ~ "<" ~ argument ^^ {
+      case var1 ~ "<" ~ var2 => Lower("L", var1, var2)
+    }
+
+  def lowerEqualArgument: Parser[Predicate] =
+    argument ~ "<=" ~ argument ^^ {
+      case var1 ~ "<=" ~ var2 => LowerEqual("L", var1, var2)
+    }
 
   /** Parser for a predicate (e.g., parent(X, func(y))) */
   def single_predicate: Parser[Predicate] =
@@ -118,24 +318,51 @@ object Parser extends JavaTokenParsers {
       case "~" ~ name ~ "(" ~ args ~ ")" ~ "." => Negative(name, argumentNames(args.toArray))
     }
 
+  def single_negative_plus: Parser[Predicate] =
+    "\\+ " ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")" ~ "." ^^ {
+      case "\\+ " ~ name ~ "(" ~ args ~ ")" ~ "." => Negative(name, argumentNames(args.toArray))
+    }
+
   def single_count: Parser[Predicate] =
-    "Count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ~ "." ^^ {
-      case "Count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" ~ "." => Count(name, argumentNames(args.toArray), num.toInt)
+    "count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ~ "." ^^ {
+      case "count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" ~ "." => Count(name, argumentNames(args.toArray), num.toInt)
     }
 
   def single_equal: Parser[Predicate] =
-    "Equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
-      case "Equal(" ~ result ~ "," ~  args ~ ")." => Equal(result, args.head, args.last)
+    equalCall ~ "." ^^ {
+      case predicate ~ "." => predicate
     }
 
+  def single_equal_is: Parser[Predicate] = {
+    equalIsCall <~ "." ^^ {
+      case predicate => predicate
+    }
+  }
+
   def single_mod: Parser[Predicate] =
-    "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
-      case "Mod(" ~ result ~ "," ~ args ~ ")." => Mod(result, args.head.asNumber(), args.last.asNumber())
+    "mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
+      case "mod(" ~ result ~ "," ~ args ~ ")." => Mod(result, args.head.asNumber(), args.last.asNumber())
+    }
+
+  def single_mod_mod: Parser[Predicate] =
+    modModCall ~ "." ^^ {
+      case predicate ~ "." => predicate
+    }
+
+
+  def single_head: Parser[Predicate] =
+    headNameArgument ~ "." ^^ {
+      case predicate ~ "." => predicate
+    }
+
+  def single_tail: Parser[Predicate] =
+    tailNameArgument ~ "." ^^ {
+      case predicate ~ "." => predicate
     }
 
 
   def head: Parser[Predicate] =
-    identifier ~ "(" ~ repsep(variable, ",") ~ ")" ^^ {
+    identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
       case name ~ "(" ~ args ~ ")" => Predicate(name, args.toArray)
     }
 
@@ -144,33 +371,52 @@ object Parser extends JavaTokenParsers {
       case name ~ "(" ~ args ~ ")" => Predicate(name, argumentNames(args.toArray))
     }
 
-  def predicate_negative: Parser[Negative] =
+  def negativeArgument: Parser[Negative] =
     "~" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")" ^^ {
       case "~" ~ name ~ "(" ~ args ~ ")" => Negative(name, argumentNames(args.toArray))
     }
 
-  def predicate_count: Parser[Count] =
-    "Count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ^^ {
-      case "Count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" => Count(name, argumentNames(args.toArray), num.toInt)
+  def countArgument: Parser[Count] =
+    "count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ^^ {
+      case "count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" => Count(name, argumentNames(args.toArray), num.toInt)
     }
 
-  def predicate_equal: Parser[Equal] =
-    "Equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
-      case "Equal("~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
+  def equalArgument: Parser[Equal] =
+    "equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+      case "equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
     }
 
-  def predicate_mod: Parser[Mod] =
+  def emptyListArgument: Parser[Empty] =
+    "empty([])" ^^ {
+      case "empty([])" => Empty("empty", Variable("LIST"))
+    }
+
+  def equalIsArgument: Parser[Equal] =
+    (symbol ~ keywordIs) ~ argument ^^ {
+      case variable ~ "is" ~ predicate => Equal(predicate.getName(), variable, predicate)
+    }
+
+  def modArgument: Parser[Mod] =
     "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
       case "Mod(" ~ result ~ "," ~ args ~ ")" => Mod(result, args.head, args.last)
     }
 
-  def predicate_input: Parser[Predicate] =
-    predicate_equal | predicate_mod | predicate_count | predicate_negative | predicate_argument
+  def predicate_input: Parser[Predicate] = {
+    notEqualArgument | expansionArgument |
+      minusArgument | minusEqualArgument | plusArgument | plusEqualArgument | greaterArgument | greaterEqualArgument | lowerArgument | lowerEqualArgument | equalArgument | equalIsArgument |
+      negativeCall | negativePlusCall | appendArgument | headNameArgument | tailNameArgument | modArgument | countArgument |
+      predicate_argument
+  }
 
-  def predicate_single: Parser[Predicate] =
-    single_equal | single_mod | single_count | single_negative | single_predicate
+  /*  def predicate_single: Parser[Predicate] = {
+      single_head | single_tail | single_equal | single_mod | single_count | single_negative | single_predicate |
+        single_mod_mod | single_equal_is | single_negative_plus
+    }*/
 
   def rule: Parser[Rule] =
+    ruleByComma | ruleByAnd | ruleByCut
+
+  def ruleByAnd: Parser[Rule] =
     head ~ ":-" ~ repsep(predicate_input, "&") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
         val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
@@ -179,8 +425,31 @@ object Parser extends JavaTokenParsers {
       }
     }
 
+  def ruleByCut: Parser[Rule] =
+    head ~ ":-" ~ repsep(predicate_input, "&") ~ "!." ^^ {
+      case headPredicate ~ ":-" ~ body ~ "!." => {
+        val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
+        Rule(headPredicate, body.toArray)
+          .setRecursion(isRecursive)
+      }
+    }
+
+  def ruleByComma: Parser[Rule] =
+    head ~ ":-" ~ repsep(predicate_input, ",") ~ "." ^^ {
+      case headPredicate ~ ":-" ~ body ~ "." => {
+        val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
+        Rule(headPredicate, body.toArray)
+          .setRecursion(isRecursive)
+      }
+    }
+
+  def predicate: Parser[Predicate] =
+    argument <~ "." ^^ {
+      case item => item.asPredicate()
+    }
+
   def parsePredicate(input: String): Option[Predicate] = {
-    parseAll(predicate_single, input) match {
+    parseAll(predicate, input) match {
       case Success(result, _) => Some(result)
       case Failure(msg, _) => println(msg); None
       case Error(msg, _) => println(msg); None

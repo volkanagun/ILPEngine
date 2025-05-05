@@ -11,6 +11,7 @@ class Variable(var name: String):
     name.equals(obj.asInstanceOf[Variable].name)
   }
 
+
   override def toString: String = name.toUpperCase
 
   def getName():String = name
@@ -28,7 +29,7 @@ class Variable(var name: String):
 
 
   def substitution(substitution: Substitution): Variable =
-    if substitution.hasVariable(this) then
+    if isVariable() && substitution.hasVariable(this) then
       substitution.valueByVariable(this).get
     else
       this
@@ -70,6 +71,8 @@ class Variable(var name: String):
     else if variable.isNumberList() && isNumberList() then true
     else if variable.isVariable() && isVariable() then true
     else false
+
+  def equalValue(variable: Variable) = true
 
   def isSymbol() = false
   def isPredicate() = false

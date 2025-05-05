@@ -79,11 +79,11 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   def getSize():Int =
     body.size
 
-  def getNonRecursive():Array[Predicate] =
-    body.filter(p=> !p.equalByIdentifier(head))
+/*  def getNonRecursive():Array[Predicate] =
+    body.filter(p=> !p.equalByIdentifier(head))*/
 
   def getNonRecursiveSize():Int =
-    getNonRecursive().size
+    getNonRecursive().getBody().size
 
   def getScore(): Double =
     score

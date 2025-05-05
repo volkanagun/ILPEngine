@@ -2,7 +2,7 @@ package ilp.gpu
 
 
 import ilp.data.{Position, Query, Substitution}
-import ilp.data.database.Database
+import ilp.data.database.{Database, CudaManager}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.{Sym, Variable}
 
@@ -158,7 +158,7 @@ class JoinEngine(database: Database):
       join.values2 = tv2
       join.values3 = tv3
       join.init()
-      JoinManager.run(join.rowCount1, join.rowCount2, join.rowCount3, join)
+      CudaManager.run(join.rowCount1, join.rowCount2, join.rowCount3, join)
       val valueMap = getValueFilter(context, Array(join.result), Array(p1, p2, p3))
       val rowMap = getRows(variable, Array(join.rows1, join.rows2, join.rows3), Array(pos1, pos2, pos3))
       JoinResult(valueMap, rowMap)

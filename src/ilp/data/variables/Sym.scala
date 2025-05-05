@@ -16,6 +16,8 @@ class Sym(name: String, var value: String) extends Variable(name):
 
   override def hashCode(): Int = value.hashCode
 
+  override def equalValue(variable: Variable): Boolean = variable.isSymbol() && variable.asSymbol().value == value
+
   override def equals(obj: Any): Boolean =
     if obj.isInstanceOf[Sym] then
       val other = obj.asInstanceOf[Sym]
@@ -23,4 +25,6 @@ class Sym(name: String, var value: String) extends Variable(name):
     else
       name.equals(obj.asInstanceOf[Variable].name)
 
-  override def toString: String = value.toLowerCase(Settings.locale)
+
+
+  override def toString: String = value.toLowerCase()

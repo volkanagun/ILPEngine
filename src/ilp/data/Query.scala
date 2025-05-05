@@ -11,9 +11,16 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   var positions = Map[Position, Set[Position]]()
   var positionsJoin = Array[(String, Array[Position])]()
 
-  def getAttributes():Set[Variable] =
-    body.flatMap(predicate=> predicate.getVariables())
-      .toSet
+  def getAttributes(): Set[Variable] =
+    body.flatMap(predicate => predicate.getVariables())
+      .toSet//.filter(item => item.isVariable())
+
+  def getNonRecursive(): Query =
+    Query(head, body.filter(predicate => !predicate.equalByIdentifier(head)))
+
+  def getRecursiveHead(): Predicate =
+    body.filter(predicate => predicate.equalByIdentifier(head))
+      .head
 
   def compile(): this.type =
     val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }
@@ -70,10 +77,20 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   def asRule(): Rule =
     asInstanceOf[Rule]
 
+  def removeRecursion(): Query = {
+    val newBody = body.filter(predicate => !predicate.equalByIdentifier(head))
+    Query(head, newBody).compile()
+  }
+
   def call(predicate: Predicate): Query = {
     val new_variables = predicate.array
     val crr_variables = head.array
-    val substitution = Substitution(crr_variables, new_variables)
+    val substitution = Substitution()
+    for i <- 0 until new_variables.length do
+      val variable = crr_variables(i)
+      val symbol = new_variables(i).setName(variable.getName())
+      substitution.add(variable, symbol)
+
     call(substitution).compile()
   }
 
@@ -87,19 +104,6 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     Query(head, body :+ predicate)
       .compile()
 
-  /*def replace(index:Int, newHead:Predicate, predicates:Array[Predicate]):Query =
-    var newBody = Array[Predicate]()
-    body.zipWithIndex.foreach(pair=>{
-      if pair._2 == index then
-        newBody ++= predicates.map(p=> {
-          if p.name == newHead.name then p.setName(head.name)
-          else p
-        })
-      else
-        newBody :+= pair._1
-    })
-
-    Query(head, newBody)*/
 
   def contains(predicate: Predicate): Boolean =
     body.contains(predicate)

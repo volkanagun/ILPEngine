@@ -60,7 +60,7 @@ object Invention:
 
   def metaWith(database: Database, source: Array[Predicate], destination: Array[Predicate], metaRule: Rule): Array[Rule] =
     var crrSubstitutions: Array[Substitution] = Array(Substitution())
-    val crrMetaBody = metaRule.getNonRecursive()
+    val crrMetaBody = metaRule.getNonRecursive().getBody()
     val crrCombinations = combinations(source, destination, metaRule, crrMetaBody.length)
     val newRules = crrCombinations.map(predicates => crrMetaBody.zip(predicates)
         .filter { case (r, p) => r.equalByArity(p) }).filter(item=> item.size == crrMetaBody.length)

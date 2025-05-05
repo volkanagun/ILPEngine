@@ -28,6 +28,15 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
   }
 
 
+  def addRule(rule: Rule):this.type = {
+    this.rules = rules + rule
+    this
+  }
+  def addRule(newrules: Set[Rule]):this.type = {
+    this.rules = rules ++ newrules
+    this
+  }
+
   def replaceLast(item: Rule): Hypothesis =
     val newRules = rules.take(rules.size - 1) + item
     Hypothesis(head, newRules)
@@ -37,7 +46,7 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
 
   def getSorted():Array[Rule] =
     val callMap = rules.map(rule=> {
-      val count = rules.filter(otherRule=> rule.calledFrom(otherRule)).size + 1.0
+      val count = rules.filter(crrRule => !crrRule.equals(rule)).filter(otherRule=> rule.calledFrom(otherRule)).size + 1.0
       val score = if rule.isAtom() then 0
       else rule.getSize() / count
       rule -> score
@@ -66,47 +75,6 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
   override def isRecursive(): Boolean = rules.exists(_.recursive)
 
   override def isComplete(): Boolean = rules.forall(item=> item.isComplete()) && rules.nonEmpty
-
-//<editor-fold desc="Commented">
-  /*
-  def addCopy(rule:Rule):Hypothesis =
-
-    Hypothesis(head, rules + rule)
-
-  def getRules() = rules.toArray.sortBy(_.getComplexity())
-
-  override def getComplexity(): Double = {
-    rules.map(_.getComplexity()).sum
-  }
-
-    def contains(rule: Rule): Boolean =
-      this.rules.contains(rule)
-    def similarity(other: Hypothesis): Double =
-      val size = rules.filter(other.contains).size
-      size.toDouble / rules.size
-  val sorted = rules.map(rule => {
-      val crr = callMap(rule)
-      val count = rules.filter(otherRule => rule.calledFrom(otherRule)).map(otherRule=> callMap(otherRule)).sum
-      rule -> (count + crr)
-    }).toArray.sortBy(_._2).reverse
-      .map(_._1)
-  def union(hypothesis: Hypothesis):Hypothesis =
-    Hypothesis(head, rules ++ hypothesis.rules)
-
-  def hasGeneric(item: Predicate):Boolean =
-    this.rules.exists(rule=> rule.getBody().exists(predicate => predicate.equalGeneric(item)))
-
-  override def abstraction(): Hypothesis =
-    val replacements = rules.toArray.map(rule => {
-      (Variable(rule.getName()), Variable(rule.getAbstractName()))
-    })
-    val substitution = Substitution(replacements)
-    val newHead = head.substitution(substitution) /*substitution.of(head)*/
-    val newRules = rules.flatMap(rule => rule.substitution(substitution, true)
-      .getRules())
-    Hypothesis(newHead.asPredicate(), newRules)
-*/
-//<editor-fold>
 
 object Hypothesis {
 

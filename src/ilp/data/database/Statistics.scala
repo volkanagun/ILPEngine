@@ -6,6 +6,8 @@ import ilp.data.variables.Variable
 
 class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
 
+  def this(predicate: Predicate) = this(predicate, Set(predicate))
+
   var activeMap = Range(0, predicate.getArity()).map(index => index -> computeActiveSize(index)).toMap
   var relativeMap = Range(0, predicate.getArity()).flatMap(current => {
     val size1 = activeMap(current)
@@ -17,8 +19,6 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
 
 
   def rowSize():Int = data.size
-
-
 
   def getActiveSize(position:Int):Double =
      activeMap(position)
@@ -36,6 +36,4 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
   def computeActiveSize(position: Int): Double = {
     data.map(predicate => predicate.getVariable(position)).size
   }
-
-
 }

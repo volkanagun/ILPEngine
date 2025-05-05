@@ -1,9 +1,9 @@
 package ilp.cpu
 
 import ilp.data.Parser
-import ilp.data.database.{Engine, Optimized, Plan}
+import ilp.data.database.{Engine, CudaManager, Optimized, Plan}
 import ilp.experiments.{Experiment, Params}
-import ilp.gpu.{JoinEngine, JoinManager}
+
 
 object Performance:
 
@@ -29,25 +29,7 @@ object Performance:
     block
   }
 
-  def testKinship(): Unit = {
-    val params = Params("kinship-pi")
-    val exp = Experiment(params).load()
-    val db = exp.database
-    val jb = JoinEngine(db).compile()
-    val q = Parser.parseRule("anchestor(X,Y):-father(X,Z) & mother(Z,Y).").get.compile()
-    jb.join(q).foreach(subs => println(subs))
-  }
 
-  def testJoinTime(): Unit = {
-    val params = Params("imdb3-toy")
-    val exp = Experiment(params).load()
-    val db = exp.database
-    val jb = JoinEngine(db).compile()
-    val q = Parser.parseRule("relevant(M1,M2):-genre(M1,G) & genre(M2,G).").get.compile()
-    val result = measureTime(jb.join(q))
-    result.foreach(subs => println(subs))
-    println("Size: " + result.size)
-  }
 
   def testFactTime(): Unit = {
     val params = Params("imdb3-toy")
@@ -106,7 +88,7 @@ object Performance:
     val resultCPUSerial = measureTime(engine.join(optimizedDependency), "Serial CPU")
     //val resultCPUParallel = measureMultipleTime(engine.joinParallel(optimizedDependency), "Parallel CPU", 2)
 
-    JoinManager.setGPU()
+    CudaManager.setGPU()
     //engine.registerQuery(optimizedDependency)
     engine.registerQuery(optimizedDependency)
 
@@ -218,9 +200,9 @@ object Performance:
       engine.registerQuery(queries(6)).joinBatchParallel(queries(6))
     }
 
-    JoinManager.setCPU()
+    CudaManager.setCPU()
     val resultCPUParallel = measureTime(blockSerial, "Parallel GPU in serial")
-    JoinManager.setGPU()
+    CudaManager.setGPU()
     val resultGPUParallel = measureTime(engine.joinBatchParallel(queries), "Parallel GPU in parallel")
 
     println("-----------------------------------")

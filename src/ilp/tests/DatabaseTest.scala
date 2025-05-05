@@ -1,7 +1,7 @@
 package ilp.tests
 
-import ilp.data.{Hypothesis, Query, Rule}
-import ilp.data.database.Database
+import ilp.data.{Hypothesis, Parser, Query, Rule, Substitution}
+import ilp.data.database.{Database, Engine, Plan}
 import ilp.data.predicates.{Equal, Head, Mod, Negative, Predicate, Tail}
 import ilp.data.variables.{Num, NumList, Sym, Variable}
 
@@ -186,7 +186,7 @@ object DatabaseTest {
   }
 
   def testEven(): Unit = {
-    val array = Range(0, 1000000).map(item=>Random.nextInt(1000).toDouble).toArray
+    val array = Range(0, 100).map(item=>Random.nextInt(1000).toDouble).toArray
     val inputList = NumList("L", array)
     val baseList = NumList("L")
     val h = Variable("H")
@@ -212,8 +212,71 @@ object DatabaseTest {
     d.facts(hypothesis).foreach(predicate => println("Predicate: " + predicate))
   }
 
+  def simpleExecution(): Unit = {
+    val db = Database("executionTest");
+    val g1 = Parser.parsePredicate("g(4).").get
+    val f = Parser.parseRule("f(X,Y) :- Y=X+1, g(Y).").get
+    val main = Substitution().add(Variable("X"), Num("X", 3.0))
+
+    db.add(g1)
+    val engine = Engine(db)
+    val plan = Plan(db)
+    val o1 = plan.optimizeRelative(f)
+
+    engine.execute(o1, main).getVariables()
+      .foreach(variable=>println(variable.toString))
+  }
+
+  def simpleJoin(): Unit = {
+    val db = Database("executionTest");
+    val g1 = Parser.parsePredicate("g(4).").get
+    val f = Parser.parseRule("f(X,Y) :- Y=X+1, g(Y).").get
+    val main = Substitution().add(Variable("X"), Num("X", 3.0))
+
+    db.add(g1).build()
+    val engine = Engine(db)
+    val plan = Plan(db)
+    val o1 = plan.optimizeRelative(f)
+    val s1 = engine.execute(o1, main)
+    engine.joinSymbolData(o1.substitution(s1)).foreach(substitution=> println(substitution))
+  }
+
+  def simpleRecursive(): Unit = {
+    val db = Database("recursiveTest");
+    val p1 = Parser.parsePredicate("f(5, 1).").get
+    val p2 = Parser.parsePredicate("f(4, 1).").get
+    val p3 = Parser.parsePredicate("f(3, 2).").get
+    val p4 = Parser.parsePredicate("f(2, 3).").get
+    val g1 = Parser.parsePredicate("g(3).").get
+    val g2 = Parser.parsePredicate("g(4).").get
+    val g3 = Parser.parsePredicate("g(5).").get
+
+    db.add(p1)
+      .add(p2)
+      .add(p3)
+      .add(p4)
+      .add(g1)
+      .add(g2)
+      .add(g3)
+      .build()
+
+    val engine = Engine(db)
+    val plan = Plan(db)
+
+    val s1 = Substitution().add(Variable("X"), Num("X", 6))
+      .add(Variable("Y"), Num("Y", 2))
+    //val s1 = Substitution()
+    val r1 = Parser.parseRule("f(X, Y) :- g(X), X=X-1, f(X,Y).").get
+    val q_original = plan.optimizeRelative(r1)
+    val q_head = q_original.getRecursive()
+    val q_non = q_original.getNonRecursive()
+
+    val substitutions = engine.joinDataRecursive(q_non,q_head, s1)
+    substitutions.foreach(sub=> println(sub))
+  }
+
   def main(args: Array[String]): Unit = {
-    testEven()
+    simpleRecursive()
 
   }
 

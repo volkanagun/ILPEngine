@@ -1,10 +1,9 @@
 package ilp.cpu
 
 import ilp.data.{Position, Query, Substitution}
-import ilp.data.database.Database
+import ilp.data.database.{Database, CudaManager}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.{Sym, Variable}
-import ilp.gpu.JoinManager
 
 import java.util.jar.Attributes
 import scala.collection.mutable
@@ -305,7 +304,7 @@ class CPUEngine(database: Database, batchSize: Int = 1, localSize: Int = 1):
     val dataRows = dataTables.map(_.length)
     val dataMaxRowSize = dataRows.max
     val kernel = new GPUFilter(dataTables, dataPositions, dataRows, dataMaxRowSize, value);
-    JoinManager.runAny(dataTables.length, dataMaxRowSize, kernel)
+    CudaManager.runAny(dataTables.length, dataMaxRowSize, kernel)
 
     val newMap = filterResult(regularTables, kernel.results, dataPredicates)
     val finalMap = dataRelations.map(id => {
@@ -385,7 +384,7 @@ class CPUEngine(database: Database, batchSize: Int = 1, localSize: Int = 1):
       batchKernel.setColsize(colSize)
       batchKernel.init()
 
-      JoinManager.runAny(rowMax, valueSize, dataPositions.length, batchKernel)
+      CudaManager.runAny(rowMax, valueSize, dataPositions.length, batchKernel)
       //batchKernel.runFlat()
       val results = batchKernel.getResults()
       val finalResults = results.map(crrResult => {
@@ -418,7 +417,7 @@ class CPUEngine(database: Database, batchSize: Int = 1, localSize: Int = 1):
       myKernel.setRows(dataRows)
       myKernel.setValueSize(valueArray.length)
       myKernel.init()
-      JoinManager.runAny(rowMax, valueSize, dataTables.length, myKernel)
+      CudaManager.runAny(rowMax, valueSize, dataTables.length, myKernel)
 
       val results = myKernel.getResults()
       val finalResults = results.map(crrResult => {

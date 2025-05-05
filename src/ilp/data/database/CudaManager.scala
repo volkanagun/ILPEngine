@@ -1,4 +1,4 @@
-package ilp.gpu
+package ilp.data.database
 
 import com.aparapi.Kernel
 import com.aparapi.device.Device
@@ -6,9 +6,8 @@ import com.aparapi.internal.kernel.KernelManager
 import com.aparapi.internal.opencl.OpenCLPlatform
 
 import java.util
-import scala.collection.mutable
 
-object JoinManager {
+object CudaManager {
 
   var totalMemorySize = Map[Long, Double]()
   var availableMemorySize = Map[Long, Double]()

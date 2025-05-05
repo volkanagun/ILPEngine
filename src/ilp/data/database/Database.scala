@@ -15,6 +15,9 @@ class Database(name: String, val bitsize:Int = 32):
   var index = Map[Int, Index]()
   var stats = Map[Int, Statistics]()
 
+  var preRules = Set[Rule]()
+
+
   def build(): this.type =
     println("Building database ...")
     for predicate <- sets do
@@ -24,7 +27,6 @@ class Database(name: String, val bitsize:Int = 32):
         symbolPositions = symbolPositions.updated(symbol, symbolPositions.getOrElse(symbol, Set[Position]()) + position)
 
     for predicate <- sets do
-
       val symbols = predicate.getSymbols()
       val positions = predicate.getPositions(-1)
       for (symbol, position) <- symbols.zip(positions) do
@@ -48,6 +50,13 @@ class Database(name: String, val bitsize:Int = 32):
     else
       Set()
 
+  def add(rule:Rule):this.type =
+    if !preRules.contains(rule) then {
+        preRules += rule
+        for predicate <- rule.getBody() do
+          add(predicate)
+    }
+    this
 
   def add(predicate: Predicate): this.type =
     if !sets.contains(predicate) then {
@@ -114,7 +123,6 @@ class Database(name: String, val bitsize:Int = 32):
   def getTemplate3(): Set[Predicate] =
     templates.values.map(set => set.head)
       .toSet
-
 
   def getPositions(items: Set[Position]): Set[Position] =
     val filtered = items.filter(position => attachments.contains(position))

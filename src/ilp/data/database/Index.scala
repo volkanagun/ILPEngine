@@ -9,7 +9,7 @@ import scala.collection.immutable.BitSet
 
 
 
-class Index(val predicate: Predicate, val data:Array[Predicate], val bitsize:Int) {
+class Index(val predicate: Predicate, var data:Array[Predicate], val bitsize:Int) {
   //Pairwise sorted trie
   var rowMap  = predicate.getPositions().map(position=>{
     position.getIndex() -> Map[Variable, Set[Int]]()
@@ -26,6 +26,7 @@ class Index(val predicate: Predicate, val data:Array[Predicate], val bitsize:Int
   var cudaBitmap  = predicate.getPositions().map(position=>{
     position.getIndex() -> Map[Variable, Array[Int]]()
   }).toMap
+
 
   def convertFromBitmapToRows(bitmap: Array[Int]): Array[Int] = {
     val indices = scala.collection.mutable.ArrayBuffer[Int]()
@@ -58,22 +59,37 @@ class Index(val predicate: Predicate, val data:Array[Predicate], val bitsize:Int
     this
   }
 
+  def addIndex(predicates: Set[Predicate]):this.type = {
+    predicates.filter(predicate => !data.contains(predicate)).foreach(predicate => addData(predicate) addIndex(predicate))
+    this
+  }
+
+  def addData(predicate: Predicate):this.type = {
+    data = data :+ predicate
+    this
+  }
+
+  def addIndex(predicate: Predicate, index:Int = data.size):this.type = {
+    predicate.getPositions().foreach(position => {
+      val i = position.getIndex()
+      val trie = rowMap(i)
+      val bitmap = rowBitmap(i)
+      val roaringmap = roaringBitmap(i)
+      val value = predicate.getVariable(position.index)
+      val roadingBitmap = roaringmap.getOrElse(value, RoaringBitmap())
+
+      roadingBitmap.add(index)
+
+      rowMap = rowMap.updated(i, trie.updated(value, trie.getOrElse(value, Set()) + index))
+      rowBitmap = rowBitmap.updated(i, bitmap.updated(value, bitmap.getOrElse(value, BitSet()).incl(index)))
+      roaringBitmap = roaringBitmap.updated(i, roaringmap.updated(value, roadingBitmap))
+    })
+    this
+  }
+
   def build(): this.type = {
     data.zipWithIndex.foreach{case(row, index)=>{
-      row.getPositions().foreach(position=> {
-        val i = position.getIndex()
-        val trie = rowMap(i)
-        val bitmap = rowBitmap(i)
-        val roaringmap = roaringBitmap(i)
-        val value = row.getVariable(position.index)
-        val roadingBitmap = roaringmap.getOrElse(value, RoaringBitmap())
-
-        roadingBitmap.add(index)
-
-        rowMap = rowMap.updated(i, trie.updated (value, trie.getOrElse(value, Set()) + index))
-        rowBitmap = rowBitmap.updated(i, bitmap.updated(value, bitmap.getOrElse(value, BitSet()).incl(index)))
-        roaringBitmap = roaringBitmap.updated(i, roaringmap.updated(value, roadingBitmap))
-      })
+      addIndex(row, index)
     }}
 
     buildCuda()
@@ -101,7 +117,7 @@ class Index(val predicate: Predicate, val data:Array[Predicate], val bitsize:Int
 
   def getRows(value:Variable, position: Int):Set[Int]=
     val trie = rowMap(position)
-    trie(value)
+    trie.getOrElse(value, Set())
 
   def getCudaRows(value:Variable, position: Int):Array[Int]=
     val trie = cudaBitmap(position)

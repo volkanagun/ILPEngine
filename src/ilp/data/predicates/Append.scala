@@ -3,15 +3,14 @@ package ilp.data.predicates
 import ilp.data.Substitution
 import ilp.data.variables.{NumList, Variable}
 
-class Append(val item: Variable, val list: NumList, val result: Variable) extends Predicate("append", Array(item, list, result)):
+class Append(val item: Variable, val list: Variable, val result: Variable) extends Predicate("append", Array(item, list, result)):
 
-
-  override def isDefinite(): Boolean =  true
-  override def isExecutable(): Boolean = list.nonEmpty() && item.isSymbol()
+  override def isDefinite(): Boolean =  item.isSymbol() && list.isNumberList()
+  override def isExecutable(): Boolean = isDefinite()
 
   //override def isList(): Boolean = list.nonEmpty()
   override def getValue(): Variable = {
-    list.append(item.asNumber())
+    list.asNumList().append(item.asNumber())
   }
   override def copy(): Variable =
     Append(item.copy(), list.copy().asNumList(), result.copy())

@@ -15,6 +15,9 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def this(variable: String, symbol: String) = this(Variable(variable), Variable(symbol))
 
+  def getVariables() = variables
+  def getSymbols() = symbols
+
   def length(): Int =
     variables.length
 
@@ -23,6 +26,25 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def nonEmpty(): Boolean =
     variables.nonEmpty
+
+
+
+
+  def unification(substitution: Substitution):Option[Substitution] =
+
+    val new_variables = substitution.variables
+    val new_symbols = substitution.symbols
+    val sharedPairs = new_variables.zip(new_symbols)
+      .filter(pair => hasVariable(pair._1))
+
+    val canUnify = sharedPairs.nonEmpty && sharedPairs.forall{case(variable, sym) => {
+         valueByVariable(variable).get.equals(sym)
+      }}
+
+    if canUnify then
+      Some(appendNew(substitution))
+    else
+      None
 
   def add(variable: Variable, symbol: Variable): this.type =
     variables = variables :+ variable
@@ -53,23 +75,24 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     Substitution(newvars, newsyms)
 
   def hasVariable(variable: Variable): Boolean =
-    this.variables.indexOf(variable) != -1
+    this.variables.find(crr_variable=> crr_variable.getName() == variable.getName())
+      .isDefined
 
   def hasValue(variable: Variable): Boolean =
-    this.symbols.indexOf(variable) != -1
+    this.symbols.find(crr_symbol=> crr_symbol.equals(variable)).isDefined
 
   def variableByValue(variable: Variable): Option[Variable] = {
-    val index = symbols.indexOf(variable)
-    if index != -1 then
-      Some(variables(index))
+    val find = symbols.zipWithIndex.find(pair=> pair._1.equals(variable))
+    if find.isDefined then
+      Some(variables(find.get._2))
     else
       None
   }
 
   def valueByVariable(variable: Variable): Option[Variable] = {
-    val index = variables.indexOf(variable)
-    if index != -1 then
-      Some(symbols(index))
+    val find = variables.zipWithIndex.find(pair=> pair._1.getName() == variable.getName())
+    if find.isDefined then
+      Some(symbols(find.get._2))
     else
       None
   }
@@ -77,8 +100,27 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def explain(pattern: Variable, instance: Variable): String =
     s"The pattern ${pattern} must have compatible value in ${instance}"
 
+
+
   def reverse():Substitution =
     Substitution(symbols, variables)
+
+  def composition(substitution: Substitution): Substitution =
+    val leftShared = variables.filter(variable => substitution.hasVariable(variable))
+      .map(variable => (variable, substitution.valueByVariable(variable).get))
+
+    val leftDifference = variables.filter(variable => !substitution.hasVariable(variable))
+      .map(variable => (variable, valueByVariable(variable).get))
+
+    val rightDifference = substitution.getVariables().filter(variable => !hasVariable(variable))
+      .map(variable => (variable, substitution.valueByVariable(variable).get))
+
+    val union = leftDifference ++ rightDifference ++ leftShared
+    val unionVar = union.map(_._1)
+    val unionSym = union.map(_._2)
+
+    Substitution(unionVar, unionSym)
+/*
 
   def composition(substitution: Substitution): Substitution =
     val left = symbols.filter(variable => !substitution.hasVariable(variable))
@@ -95,6 +137,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     val unionSym = union.map(_._2)
 
     Substitution(unionVar, unionSym)
+*/
 
   def merge(substitution: Substitution): Substitution =
     val composed = composition(substitution)
