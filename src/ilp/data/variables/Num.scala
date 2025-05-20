@@ -1,7 +1,5 @@
 package ilp.data.variables
 
-import ilp.data.predicates.Predicate
-
 class Num(name:String, var item:Double) extends Sym(name, item.toString) :
   override def isNumber(): Boolean = true
   override def isSymbol(): Boolean = true
@@ -12,6 +10,8 @@ class Num(name:String, var item:Double) extends Sym(name, item.toString) :
   override def equalValue(variable: Variable): Boolean = variable.isNumber() && variable.asNumber().getNumber() == getNumber()
 
   override def toString: String = value
+
+  override def id(): Int = name.hashCode * 7 + item.hashCode()
 
   override def copy(): Variable = Num(name, item)
 

@@ -3,7 +3,7 @@ package ilp.data.predicates
 import ilp.data.variables.{NumList, Variable}
 
 
-class Average(array: NumList) extends Predicate("average", array):
+class Average(array: NumList) extends Functional("average", Array(array)):
 
   override def isDefinite(): Boolean = true
 

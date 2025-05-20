@@ -11,22 +11,23 @@ class Variable(var name: String):
     name.equals(obj.asInstanceOf[Variable].name)
   }
 
-
   override def toString: String = name.toUpperCase
 
   def getName():String = name
   
   def getShortName():String = name.hashCode.toHexString.take(2)
-  
-  def setName(name:String):this.type =
+
+  def setName(name: String): Variable =
     this.name = name
     this
-  
+
   def getComplexity():Double = 1.0
   def getSize():Int = 0
 
   def getValue():Variable= this
 
+  def id():Int =
+    name.hashCode
 
   def substitution(substitution: Substitution): Variable =
     if isVariable() && substitution.hasVariable(this) then
@@ -73,6 +74,8 @@ class Variable(var name: String):
     else false
 
   def equalValue(variable: Variable) = true
+  def equalName(variable: Variable) = variable.name.equals(name)
+
 
   def isSymbol() = false
   def isPredicate() = false

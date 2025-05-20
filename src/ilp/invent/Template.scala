@@ -1,11 +1,13 @@
-package ilp.concepts
+package ilp.invent
 
-import ilp.data.database.Database
+import ilp.data.database.{Database, Engine, Plan}
 import ilp.data.predicates.Predicate
 import ilp.data.{Hypothesis, Query, Rule, Substitution}
 
-abstract class Template(val database: Database):
+abstract class Template(val engine: Engine):
 
+  val database = engine.getDatabase()
+  val plan = Plan(database)
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
   var metaRules = Set[Rule]()
@@ -62,7 +64,13 @@ abstract class Template(val database: Database):
     ig(Set(), hypothesis)
 
   def ig(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
-    val crrFacts = database.facts(set, hypothesis)
+
+    val optimization = plan.optimizeRelative(hypothesis)
+    val crrSubstitions = engine.joinAllCyclic(optimization, Substitution())
+    val crrPairs = optimization.zip(crrSubstitions)
+    val crrFacts = crrPairs.flatMap{case(rule, substitutionSet) =>
+      substitutionSet.map(crrSubstitution=> rule.getHead().substitution(crrSubstitution).asPredicate())}.toSet
+
     hypothesis.ig(crrFacts, positives, negatives)
     hypothesis.accuracy()
     hypothesis

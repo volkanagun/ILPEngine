@@ -1,8 +1,8 @@
 package ilp.data.database
 
-import ilp.data.{Query, Substitution, Unification}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
+import ilp.data.{Query, Substitution}
 import org.roaringbitmap.RoaringBitmap
 
 import scala.collection.immutable.BitSet
@@ -15,29 +15,58 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
   var cudaBitmap: Map[Int, Array[Int]] = Map()
   var dataMap: Map[Int, Set[Predicate]] = Map()
 
+
+  def identifier():Int =
+    getHead().identifier()
+
+
+  def newData(): Optimized = {
+    Optimized(query, variables, predicates, bitSize)
+  }
+
+  def newData(map: Map[Int, Set[Predicate]]): Optimized = {
+    Optimized(query, variables, predicates, bitSize)
+      .setData(map)
+  }
+
   def getQuery(): Query =
     query
 
   def getHead(): Predicate =
     query.getHead()
 
-  def getVariables():Array[Variable]=
+  def getVariables(): Array[Variable] =
     variables
 
-  def isRecursive():Boolean =
+  def getRelations(): Array[Predicate] =
+    predicates
+
+  def getDataMap(): Map[Int, Set[Predicate]] =
+    dataMap
+
+  def getBitmapMap(): Map[Int, BitSet] =
+    rowsBitmap
+
+  def getRoaringMap(): Map[Int, RoaringBitmap] =
+    roaringBitmap
+
+  def isRecursive(): Boolean =
     query.isRecursive()
 
-  def filter(ids:Array[(Predicate, Int)]):Optimized =
+  def id(): Int =
+    predicates.foldRight[Int](1) { case (predicate, main) => main * 7 + predicate.identifier() }
+
+  def filter(ids: Array[(Predicate, Int)]): Optimized =
     val replaces = ids.zipWithIndex.map { case ((predicate, oldId), indice) => oldId -> predicate.identifier(indice) }
       .toMap
     val rels = ids.map(_._1)
-    val newDataMap = replaces.map{case(oldId, newId) => newId -> dataMap(oldId) }
-    val newRows = replaces.map{case(oldId, newId) => newId -> rows(oldId) }
-    val newBitmap = replaces.map{case(oldId, newId) => newId -> rowsBitmap(oldId) }
-    val newCudaBitmap = replaces.map{case(oldId, newId) => newId -> cudaBitmap(oldId) }
-    val newRoaringBitmap = replaces.map{case(oldId, newId) => newId -> roaringBitmap(oldId) }
+    val newDataMap = replaces.map { case (oldId, newId) => newId -> dataMap(oldId) }
+    val newRows = replaces.map { case (oldId, newId) => newId -> rows(oldId) }
+    val newBitmap = replaces.map { case (oldId, newId) => newId -> rowsBitmap(oldId) }
+    val newCudaBitmap = replaces.map { case (oldId, newId) => newId -> cudaBitmap(oldId) }
+    val newRoaringBitmap = replaces.map { case (oldId, newId) => newId -> roaringBitmap(oldId) }
     val vars = rels.flatMap(_.getArray()).toSet
-    val newVars = variables.filter(variable=> vars.contains(variable))
+    val newVars = variables.filter(variable => vars.contains(variable))
 
     Optimized(query, newVars, rels, bitSize)
       .setData(newDataMap)
@@ -46,24 +75,26 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
       .setCudaBitmap(newCudaBitmap)
       .setRoaring(newRoaringBitmap)
 
-  def exclude(id:Int):Optimized=
+  def exclude(id: Int): Optimized =
     val ids = predicates.zipWithIndex.map { case (predicate, index) => {
-        (predicate, predicate.identifier(index))
-      }}.filter { case (predicate, _) => predicate.identifier() != id }
+      (predicate, predicate.identifier(index))
+    }
+    }.filter { case (predicate, _) => predicate.identifier() != id }
     filter(ids)
 
-  def include(id:Int):Optimized=
+  def include(id: Int): Optimized =
     val ids = predicates.zipWithIndex.map { case (predicate, index) => {
-        (predicate, predicate.identifier(index))
-      }}.filter { case (predicate, _) => predicate.identifier() == id }
+      (predicate, predicate.identifier(index))
+    }
+    }.filter { case (predicate, _) => predicate.identifier() == id }
     filter(ids)
 
-  def getRecursive():Optimized = {
+  def getRecursive(): Optimized = {
     val crrId = query.getHead().identifier()
     include(crrId)
   }
 
-  def getNonRecursive():Optimized =
+  def getNonRecursive(): Optimized =
     val crrId = query.getHead().identifier()
     exclude(crrId)
 
@@ -79,16 +110,24 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
     roaringBitmap = map
     this
 
-  def setCudaBitmap(map: Map[Int, Array[Int]]): this.type =
+  def setCudaBitmap(map: Map[Int, Array[Int]]): Optimized =
     cudaBitmap = map
     this
 
-  def setData(map: Map[Int, Set[Predicate]]): this.type = {
+  def setData(map: Map[Int, Set[Predicate]]): Optimized = {
     this.dataMap = map
     this
   }
 
-  def substitution(substitution: Substitution):this.type = {
+  def substitution(predicate: Predicate): Substitution =
+    val head = getHead()
+    val replaces = head.getVariables()
+      .zip(predicate.getVariables())
+      .map { case (variable, sym) => (variable, sym.setName(variable.getName())) }
+
+    Substitution(replaces)
+
+  def substitution(substitution: Substitution): Optimized = {
     variables = variables.map(variable => {
       if substitution.hasVariable(variable) then {
         val newvariable = substitution.valueByVariable(variable).get
@@ -126,18 +165,18 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
     this
   }
 
-  def filterRows(map:Map[Int, Set[Int]]):this.type = {
-    map.foreach{case(id, rows)=> filterRows(id, rows)}
+  def filterRows(map: Map[Int, Set[Int]]): this.type = {
+    map.foreach { case (id, rows) => filterRows(id, rows) }
     this
   }
 
-  private def filterRows(id:Int, rowSet:Set[Int]):this.type = {
-    rows = rows.updated(id, rows(id).filter(row=> rowSet.contains(row)))
+  private def filterRows(id: Int, rowSet: Set[Int]): this.type = {
+    rows = rows.updated(id, rows(id).filter(row => rowSet.contains(row)))
     rowsBitmap = rowsBitmap.updated(id, rowsBitmap(id).intersect(rowSet))
     cudaBitmap = cudaBitmap.updated(id, cudaBitmap(id).intersect(rowSet.toArray))
 
     val roaring = RoaringBitmap()
-    roaring.add(rowSet.toArray:_*)
+    roaring.add(rowSet.toArray: _*)
     roaringBitmap = roaringBitmap.updated(id, roaring)
     this
   }

@@ -3,8 +3,6 @@ package ilp.data
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
-import java.util.Random
-
 
 class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
 
@@ -189,10 +187,10 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     score
 
 
-  override def copy(): Rule =
+/*  override def copy(): Rule =
     val r = Rule(head.copy().asPredicate(), body.map(_.copy().asPredicate()))
       .setPositives(positives).setNegatives(negatives)
       .setRecursion(recursive)
       .setPosRate(posRate).setNegRate(negRate)
-    r
+    r*/
 

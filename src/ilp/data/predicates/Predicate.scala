@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
 import ilp.data.*
-import ilp.data.variables.{Collection, Variable}
+import ilp.data.variables.Variable
 
 
 class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(crr_name):
@@ -58,48 +58,22 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     (0 until length()).map(index => Position(this, 0, index))
       .toArray
 
-/*
-  def bindTo(predicate: Predicate): Predicate =
-    val otherVars = predicate.array.filter(_.isVariable())
-    Predicate(name, otherVars)
-*/
-
- /* def bindTo(elements: Array[Variable]): Predicate =
-    Predicate(name, elements)*/
-
- /* def getReplace(names: Array[String]): Substitution =
-    val vars = array.map(item => Variable(item.name))
-    val reps = names.map(name => Variable(name))
-    Substitution(vars, reps)
-
-  override def getComplexity(): Double =
-    val symbolComplexity = array.foldRight(0.0) { case (s, m) => s.getComplexity() + m }
-    if isNegative() then 2d * symbolComplexity
-    else symbolComplexity
-
-
-  def toPredicate(): Predicate =
-    Predicate(name, array)
-
-  def identifier(position:Int): Int =
-    (position * 7 + name.hashCode) * 7 + length()
-
-  def negate(): Predicate =
-    if isNegative() then Predicate(name, array)
-    else Negative(name, array)
-
-  def contains(position: Position):Boolean =
-    identifier() == position.getPredicate().identifier()
-    */
-
-
   override def substitution(substitution: Substitution): Variable =
     val crrName = Variable(name)
     val newName = crrName.substitution(substitution).getName()
     val newArray = array.map(variable => variable.substitution(substitution))
     Predicate(newName, newArray)
 
+  def call(other:Predicate, substitution: Substitution):Substitution=
+   val pairs = array.zipWithIndex.filter { case (variable, _) => substitution.hasVariable(variable) }
+      .map { case (source, index) => (other.getVariable(index), substitution.valueByVariable(source).get) }
 
+   Substitution(pairs)
+
+  def toSubstitution():Substitution=
+    val variables = array.map(variable => variable.toVariable())
+    val symbols = array
+    Substitution(variables, symbols)
 
   def toPredicate(newName: String): Predicate =
     Predicate(newName, array.map(_.copy()))
@@ -107,7 +81,6 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def toGeneric(): Predicate =
     Predicate(name, array.map(item => Variable(item.name)))
-
 
   def toNegative(): Negative =
     Negative(name, array)

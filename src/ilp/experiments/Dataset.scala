@@ -1,6 +1,4 @@
-package ilp.dataset
-
-import ilp.dataset.Dataset.main
+package ilp.experiments
 
 import java.io.PrintWriter
 import scala.io.Source
@@ -66,6 +64,7 @@ class Dataset():
 
 object Dataset extends Dataset:
   def main(args: Array[String]): Unit = {
-    constructRandom("bk.pl", 6, 5, 4, 5)
+    //constructRandom("bk.pl", 6, 5, 4, 5)
+    constructDunnhumby("bk.pl", 800, 1000)
   }
 

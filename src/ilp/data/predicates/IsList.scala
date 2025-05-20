@@ -3,7 +3,7 @@ package ilp.data.predicates
 import ilp.data.Substitution
 import ilp.data.variables.Variable
 
-class IsList(variable:Variable) extends Predicate("is_list", Array(variable)) {
+class IsList(variable:Variable) extends Functional("is_list", Array(variable)) {
   override def isDefinite(): Boolean = true
   override def isExecutable(): Boolean = variable.isList()
 

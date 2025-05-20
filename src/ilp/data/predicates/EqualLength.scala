@@ -3,7 +3,7 @@ package ilp.data.predicates
 import ilp.data.Substitution
 import ilp.data.variables.{NumList, Sym, Variable}
 
-class EqualLength(result:String, e1:NumList, e2:NumList) extends Predicate("equal_length", e1,e2, Variable(result)) {
+class EqualLength(result:String, e1:NumList, e2:NumList) extends Functional("equal_length", Array(e1,e2, Variable(result))) {
 
   override def isExecutable(): Boolean =
     isDefinite() && e1 == e2

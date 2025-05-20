@@ -1,8 +1,6 @@
 package ilp.data.variables
 
-import ilp.data.Settings
-
-class Sym(name: String, var value: String) extends Variable(name):
+class Sym(n: String, var value: String) extends Variable(n):
 
   override def getComplexity(): Double = 0
 
@@ -15,6 +13,8 @@ class Sym(name: String, var value: String) extends Variable(name):
   override def copy(): Variable = new Sym(name, value)
 
   override def hashCode(): Int = value.hashCode
+
+  override def id(): Int = name.hashCode * 7 + value.hashCode
 
   override def equalValue(variable: Variable): Boolean = variable.isSymbol() && variable.asSymbol().value == value
 

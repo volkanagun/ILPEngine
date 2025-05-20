@@ -1,11 +1,10 @@
-package ilp.concepts
+package ilp.invent
 
+import ilp.data.*
 import ilp.data.database.Database
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import ilp.data.*
 
-import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, SetIsParallelizable}
 import scala.util.Random
 
 object Invention:

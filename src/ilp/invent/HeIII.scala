@@ -1,9 +1,9 @@
-package ilp.concepts
+package ilp.invent
 
 import ilp.data.Hypothesis
-import ilp.data.database.Database
+import ilp.data.database.{Database, Engine}
 
-class HeIII(database: Database) extends HeI(database):
+class HeIII(engine: Engine) extends HeI(engine):
   override def source(): Set[Hypothesis] =
     //Select from POS rate 1 and update by NEG rate 1
     val selectedSet = sources.filter(h => h.negRate == 0.0)
@@ -24,7 +24,7 @@ class HeIII(database: Database) extends HeI(database):
 
   override def invent(): Set[Hypothesis] =
     val sourceHypotheses = source()
-    val targetPredicates = target().filter(t => !sourceHypotheses.contains(t)).flatMap(hypothesis => hypothesis.getLast().body)
+    val targetPredicates = target()./*filter(t => !sourceHypotheses.contains(t)).*/flatMap(hypothesis => hypothesis.getLast().body)
       .toArray
 
     val combines = sourceHypotheses.flatMap(sourceHypothesis => {

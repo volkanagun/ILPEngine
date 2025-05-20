@@ -4,7 +4,7 @@ import ilp.data.Substitution
 import ilp.data.variables.{Sym, Variable}
 
 
-class Equal(result: String, e1: Variable, e2: Variable) extends Predicate("equal", Array[Variable](e1, e2, Variable(result))):
+class Equal(result: String, e1: Variable, e2: Variable) extends Functional("equal", Array[Variable](e1, e2, Variable(result))):
 
   override def isExecutable(): Boolean =
     isDefinite() && e1 == e2

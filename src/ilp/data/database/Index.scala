@@ -1,6 +1,5 @@
 package ilp.data.database
 
-import ilp.data.Position
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import org.roaringbitmap.RoaringBitmap
@@ -11,6 +10,9 @@ import scala.collection.immutable.BitSet
 
 class Index(val predicate: Predicate, var data:Array[Predicate], val bitsize:Int) {
   //Pairwise sorted trie
+
+
+
   var rowMap  = predicate.getPositions().map(position=>{
     position.getIndex() -> Map[Variable, Set[Int]]()
   }).toMap
@@ -137,5 +139,13 @@ class Index(val predicate: Predicate, var data:Array[Predicate], val bitsize:Int
     val trie = roaringBitmap(position)
     val existingRows = trie(value)
     RoaringBitmap.and(rows, existingRows)
+
+  def getHavingRows(rows:RoaringBitmap, value:Variable, position: Int):RoaringBitmap =
+    val trie = roaringBitmap(position)
+    if trie.contains(value) then
+      val existingRows = trie(value)
+      RoaringBitmap.and(rows, existingRows)
+    else
+      rows
 
 }

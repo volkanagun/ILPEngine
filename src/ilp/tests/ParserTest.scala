@@ -5,17 +5,20 @@ import ilp.data.Parser
 object ParserTest {
 
   def test(str:String): Unit = {
-    println(Parser.parsePredicate(str).get)
+    val predicate  = Parser.parsePredicate(str).get
+    println(predicate)
   }
   def testRule(str:String): Unit = {
-    println(Parser.parseRule(str).get)
+    val rule = Parser.parseRule(str).get
+    println(rule)
   }
 
   def testList(): Unit = {
-    //test("tail([_|T], T).")
+    testRule("f(V1, V0):-one(V1), tail(V0, V1).")
     //test("head([H|_], H).")
     //test("\\+ is_list(A).")
     test("Atom2=[f,A,C].")
+    test("empty([]).")
 
     //testRule("move_right(w(X1,Y),w(X2,Y)) :- X2 = X1 + 1.")
 

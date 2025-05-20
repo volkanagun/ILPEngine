@@ -3,7 +3,7 @@ package ilp.data.predicates
 import ilp.data.variables.Variable
 
 
-class Count(name: String, array: Array[Variable], var least: Int) extends Predicate(name, array):
+class Count(name: String, array: Array[Variable], var least: Int) extends Functional(name, array):
 
   override def hashCode(): Int =
     super.hashCode()

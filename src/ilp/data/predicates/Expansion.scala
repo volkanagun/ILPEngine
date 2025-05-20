@@ -1,7 +1,7 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{Sym, Variable}
+import ilp.data.variables.Variable
 
 class Expansion(val nm:String, val func:Variable, variables:Array[Variable]) extends Predicate(func.getName(), variables) {
 

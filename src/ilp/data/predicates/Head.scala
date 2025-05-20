@@ -4,7 +4,7 @@ import ilp.data.Substitution
 import ilp.data.variables.{NumList, Variable}
 
 
-class Head(val nm:String, val head: Variable, val list: NumList) extends Predicate(nm, Array(head, list)):
+class Head(val nm:String, val head: Variable, val list: NumList) extends Functional(nm, Array(head, list)):
 
   def this(head:Variable, list:NumList) = this("head", head, list)
 

@@ -4,7 +4,7 @@ import ilp.data.Substitution
 import ilp.data.variables.{NumList, Variable}
 
 
-class Reverse(val list: NumList, val result: NumList) extends Predicate("reverse", Array[Variable](list, result)):
+class Reverse(val list: NumList, val result: NumList) extends Functional("reverse", Array[Variable](list, result)):
 
   override def isDefinite(): Boolean =  true
   override def isExecutable(): Boolean = list.nonEmpty()

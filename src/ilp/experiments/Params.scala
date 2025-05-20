@@ -1,6 +1,5 @@
 package ilp.experiments
 
-import ilp.data.database.Database
 import ilp.data.{Parser, Rule}
 
 

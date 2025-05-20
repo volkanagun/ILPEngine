@@ -1,9 +1,9 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{NumList, Variable}
+import ilp.data.variables.Variable
 
-class Append(val item: Variable, val list: Variable, val result: Variable) extends Predicate("append", Array(item, list, result)):
+class Append(val item: Variable, val list: Variable, val result: Variable) extends Functional("append", Array(item, list, result)):
 
   override def isDefinite(): Boolean =  item.isSymbol() && list.isNumberList()
   override def isExecutable(): Boolean = isDefinite()
@@ -17,8 +17,8 @@ class Append(val item: Variable, val list: Variable, val result: Variable) exten
 
   override def substitution(substitution: Substitution): Variable =
     val newItem = item.substitution(substitution)
-    val newList = list.substitution(substitution).asNumList()
-    val newResult = result.substitution(substitution).asNumList()
+    val newList = list.substitution(substitution)
+    val newResult = result.substitution(substitution)
     Append(newItem, newList, newResult).asVariable()
 
   override def execute(): Option[Substitution] =

@@ -1,8 +1,8 @@
 package ilp.experiments
 
-import ilp.data.Parser
 import ilp.data.database.Database
 import ilp.data.predicates.Predicate
+import ilp.data.{Hypothesis, Parser}
 
 import java.util.regex.Pattern
 import scala.io.Source
@@ -13,13 +13,20 @@ class Experiment(params:Params):
   var folder = "examples/"+name+"/"
   var database = new Database(name)
 
+  var hypothesis : Hypothesis = null
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
+
+  def getDatabase() = database
+  def getHypothesis() = hypothesis
+  def getPositives() = positives
+  def getNegatives() = negatives
 
   protected def loadSamples():this.type =
     val rSamples = "((pos|neg)\\((.*?)\\)\\.)"
     val pSamples = Pattern.compile(rSamples)
     Source.fromFile(folder + "exs.pl").getLines().map(_.trim)
+      .filter(line => !line.startsWith("%"))
       .filter(_.nonEmpty).foreach(line=>{
         val matching = pSamples.matcher (line)
         val f = matching.find()
@@ -57,14 +64,20 @@ class Experiment(params:Params):
     database.build()
     this
 
+  def loadQueries(): this.type =
+    println("Loading queries: " + folder)
+    val rules = Source.fromFile(folder + "/query.pl").getLines().map(_.trim)
+      .filter(line=> line.nonEmpty && !line.startsWith("%"))
+      .map(line => {
+        val rule = Parser.parseRule(line).get
+        rule
+      }).toSet
+
+    hypothesis = Hypothesis(rules)
+    this
+
   def load(): this.type =
     loadDatabase()
     loadSamples()
-  /*
-  def induction():this.type =
-    val engine = params.getEngine(database)
-      .setPositives(positives)
-      .setNegatives(negatives)
-    println(engine.induction().map(_.toString).mkString("\n"))
-    this
-  */
+    loadQueries()
+

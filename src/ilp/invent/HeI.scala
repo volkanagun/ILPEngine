@@ -1,9 +1,9 @@
-package ilp.concepts
+package ilp.invent
 
 import ilp.data.Hypothesis
-import ilp.data.database.Database
+import ilp.data.database.{Database, Engine}
 
-class HeI(database: Database) extends Template(database):
+class HeI(engine: Engine) extends Template(engine):
 
   override def source(): Set[Hypothesis] =
     //Select from POS rate 1 and update by NEG rate 1

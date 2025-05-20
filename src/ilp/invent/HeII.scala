@@ -1,9 +1,9 @@
-package ilp.concepts
+package ilp.invent
 
 import ilp.data.Hypothesis
-import ilp.data.database.Database
+import ilp.data.database.{Database, Engine}
 
-class HeII(database: Database) extends HeI(database):
+class HeII(engine: Engine) extends HeI(engine):
   override def source(): Set[Hypothesis] =
     //Select from POS rate 1 and update by NEG rate 1
     val selectedSet = sources.filter(h => h.posRate == 1.0 && h.negRate < 1.0)

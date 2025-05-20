@@ -2,7 +2,7 @@ package ilp.data.predicates
 
 import ilp.data.variables.{Num, Variable}
 
-class Divide(e1: Variable, e2:Variable) extends Predicate("divide", Array(e1, e2)):
+class Divide(e1: Variable, e2:Variable) extends Functional("divide", Array(e1, e2)):
 
   override def isExecutable(): Boolean = e1.isSymbol() && e2.isSymbol()
   override def isDefinite(): Boolean = true

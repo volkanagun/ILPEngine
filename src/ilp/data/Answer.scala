@@ -1,6 +1,5 @@
-package ilp.data.variables
+package ilp.data
 
-import ilp.data.Substitution
 import ilp.data.predicates.Predicate
 
 

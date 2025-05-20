@@ -1,7 +1,7 @@
 package ilp.data
 
 import ilp.data.predicates.*
-import ilp.data.variables.{Collection, Num, NumList, Variable, VariableList}
+import ilp.data.variables.*
 
 import scala.util.Random
 import scala.util.parsing.combinator.*
@@ -101,20 +101,35 @@ object Parser extends JavaTokenParsers {
       }
     }
 
+  def symbolList: Parser[SymList] =
+    "[" ~ repsep(symstr, ",") ~ "]" ^^ {
+      case "[" ~ args ~ "]" => {
+        new SymList(getRandomName(), args.toArray)
+      }
+    }
+
   def tailNameArgument: Parser[Tail] =
     identifier ~ "([" ~ anystr ~ "|" ~ variable ~ "]," ~ variable ~ ")" ^^ {
       case name ~ "([" ~ item ~ "|" ~ tail ~ "]," ~ myvar ~ ")" => {
-        Tail(name, NumList(tail.getName()), NumList(myvar.getName()))
+        Tail(name, NumList(myvar.getName()), NumList(tail.getName()))
       }
     }
 
 
-  def tailArgument: Parser[Tail] =
+  def tailArgument1: Parser[Tail] =
     "[" ~ anystr ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ item ~ "|" ~ tail ~ "]" => {
-        Tail("tail", NumList(tail.getName()), NumList("LIST"))
+        Tail("tail", NumList("LIST"),NumList(tail.getName()))
       }
     }
+
+  def tailArgument2: Parser[Tail] =
+    "tail(" ~ variable ~ "," ~ variable ~ ")" ^^ {
+      case "tail(" ~ var1 ~ "," ~ var2 ~ ")" => {
+        Tail("tail", NumList(var1.getName()), NumList(var2.getName()))
+      }
+    }
+
 
   def headTailArgument: Parser[HeadTail] =
     "[" ~ variable ~ "|" ~ variable ~ "]" ^^ {
@@ -130,7 +145,7 @@ object Parser extends JavaTokenParsers {
       }
     }
 
-  def headArgument: Parser[Head] =
+  def headArgument1: Parser[Head] =
     "[" ~ variable ~ "|" ~ anystr ~ "]" ^^ {
       case "[" ~ h ~ "|" ~ lst_var ~ "]" => {
         Head("head", h, NumList(lst_var))
@@ -141,6 +156,13 @@ object Parser extends JavaTokenParsers {
     identifier ~ "([" ~ variable ~ "|" ~ anystr ~ "])" ^^ {
       case name ~ "([" ~ h ~ "|" ~ lst_var ~ "])" => {
         Head(name, h, NumList(lst_var))
+      }
+    }
+
+  def headArgument3: Parser[Head] =
+    "head(" ~ variable ~ "," ~ variable ~ ")" ^^ {
+      case "head(" ~ var1 ~ "," ~ var2 ~ ")" => {
+        Head("head", var1, NumList(var2.getName()))
       }
     }
 
@@ -187,7 +209,6 @@ object Parser extends JavaTokenParsers {
 
   /** Parser for an argument, which can be a variable or a function call */
   def argument: Parser[Variable] = {
-
     expansionArgument |
       isListArgument |
       emptyListArgument |
@@ -195,12 +216,15 @@ object Parser extends JavaTokenParsers {
       plusEqualArgument |
       minusArgument |
       minusEqualArgument |
-      headArgument |
+      headArgument1 |
       headArgument2 |
-      tailArgument |
+      headArgument3 |
+      tailArgument1 |
+      tailArgument2 |
       tailNameArgument |
       headTailArgument |
       numberList |
+      symbolList |
       modCall |
       modModCall |
       negativeCall |
@@ -216,9 +240,9 @@ object Parser extends JavaTokenParsers {
   }
 
   def argument_int: Parser[Variable] = {
-    headArgument |
+    headArgument1 |
       tailNameArgument |
-      tailArgument |
+      tailArgument1 |
       numberList |
       modCall |
       modModCall |
@@ -388,7 +412,7 @@ object Parser extends JavaTokenParsers {
 
   def emptyListArgument: Parser[Empty] =
     "empty([])" ^^ {
-      case "empty([])" => Empty("empty", Variable("LIST"))
+      case "empty([])" => Empty("empty", NumList("L"))
     }
 
   def equalIsArgument: Parser[Equal] =
@@ -435,10 +459,10 @@ object Parser extends JavaTokenParsers {
     }
 
   def ruleByComma: Parser[Rule] =
-    head ~ ":-" ~ repsep(predicate_input, ",") ~ "." ^^ {
+    head ~ ":-" ~ repsep(argument, ",") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
         val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
-        Rule(headPredicate, body.toArray)
+        Rule(headPredicate, body.map(_.asPredicate()).toArray)
           .setRecursion(isRecursive)
       }
     }

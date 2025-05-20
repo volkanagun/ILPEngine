@@ -1,26 +1,28 @@
 package ilp.tests
 
-import ilp.concepts.{Execution, HeI, HeII, HeIII}
+import ilp.data.database.Engine
+import ilp.invent.{Execution, HeI, HeII, HeIII}
 import ilp.data.{Hypothesis, Parser, Rule}
 import ilp.experiments.{Experiment, Params}
 
-object Test:
+object InventionTest:
 
   def testHe(): Unit = {
     val experiment = new Experiment(Params())
     experiment.load()
     val db = experiment.database
+    val engine = Engine(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
     val metaRule1 = Parser.parseRule("f(X) :- p(X,Y) & s(Y,K).").get
     val metaRule2 = Parser.parseRule("f(X) :- p(X,Y) & s(Y).").get
-    val heI = new HeI(db)
+    val heI = new HeI(engine)
       .setPositives(pos)
       .setNegatives(neg)
       .addMetaRule(metaRule1)
       .compile()
-    val heII = new HeII(db)
+    val heII = new HeII(engine)
       .setPositives(pos)
       .setNegatives(neg)
       .addMetaRule(metaRule2)
@@ -38,13 +40,15 @@ object Test:
   def testHeRecursive(): Unit = {
     val experiment = new Experiment(Params("kinship-ancestor"))
     experiment.load()
+
     val db = experiment.database
+    val engine = Engine(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
-    val metaRule1 = Parser.parseRule("gamma(X, Y) :- p(X,Y).").get.compile()
-    val metaRule2 = Parser.parseRule("gamma(X, Y) :- gamma(X, Z) & gamma(Z, Y).").get.compile()
-    val heIII = new HeIII(db)
+    val metaRule1 = Parser.parseRule("gamma(A, B) :- alpha(A,Z) & alpha(Z, B).").get
+    val metaRule2 = Parser.parseRule("gamma(A, B) :- alpha(A, Z) & mama(Z, B).").get
+    val heIII = new HeIII(engine)
       .setPositives(pos)
       .setNegatives(neg)
       .addMetaRule(metaRule1)
@@ -59,6 +63,7 @@ object Test:
 
   }
 
+/*
   def testRecursiveRule(): Unit = {
     val r1 = Parser.parseRule("ancestor(X, Y) :- mother(X,Y).").get
     val r2 = Parser.parseRule("ancestor(X, Y) :- father(X,Y).").get
@@ -73,6 +78,7 @@ object Test:
     h.accuracy()
     h.print()
   }
+*/
 
   def main(args: Array[String]): Unit = {
     testHeRecursive()

@@ -1,4 +1,4 @@
-package ilp.concepts
+package ilp.invent
 
 import ilp.data.Hypothesis
 

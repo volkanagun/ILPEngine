@@ -1,6 +1,8 @@
 package ilp.data.variables
 
-class NumList(name:String, var items:Array[Double]) extends Sym(name, items.mkString(",")) :
+import ilp.data.Substitution
+
+class NumList(n:String, var items:Array[Double]) extends Sym(n, items.mkString(",")) :
 
   def this(name:String) = this(name, Array[Double]())
   def this(name:String, var1:Double) = this(name, Array(var1))
@@ -13,6 +15,15 @@ class NumList(name:String, var items:Array[Double]) extends Sym(name, items.mkSt
   override def isEmpty(): Boolean = items.isEmpty
   override def copy(): Variable = NumList(name, items)
 
+  override def substitution(substitution: Substitution): Variable = {
+    val targetValue = substitution.valueByVariable(this)
+    if targetValue.isDefined && targetValue.get.isNumberList() then
+      targetValue.get
+    else
+      this
+  }
+
+  override def id(): Int = items.foldRight(name.hashCode){case(crr, main)=> main * 7 + crr.hashCode()}
 
   def nonEmpty() : Boolean = items.nonEmpty
   def getHead(): Num = Num("X", items.head)
@@ -30,6 +41,24 @@ class NumList(name:String, var items:Array[Double]) extends Sym(name, items.mkSt
     NumList(name, items.map(item => math.log(item)))
 
   override def hashCode(): Int = name.hashCode()
-  override def equals(obj: Any): Boolean =
-    obj.isInstanceOf[Variable] && obj.asInstanceOf[Variable].name == name
+
+  override def equalValue(variable: Variable): Boolean =
+
+    if variable.isNumberList() then
+      val other = variable.asNumList()
+      other.getSize() == items.length && other.items.zip(items).forall(pair => pair._1 == pair._2)
+    else
+      val otherName = variable.getName()
+      otherName == name
+
+  override def equals(compare: Any): Boolean = {
+    val variable = compare.asInstanceOf[Variable]
+    if variable.isNumberList() then
+      val other = variable.asNumList()
+      other.getName() == name && other.getSize() == items.length && other.items.zip(items).forall(pair=> pair._1 == pair._2)
+    else
+      val otherName = variable.getName()
+      otherName == name
+  }
+
   override def toString: String = items.mkString("[",",","]")

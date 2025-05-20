@@ -10,8 +10,8 @@ class Database(name: String, val bitsize:Int = 32):
   var sets = Set[Predicate]()
   var templates = Map[Int, Set[Predicate]]()
   var templates2 = Map[Int, Set[Predicate]]()
-  var attachments = Map[Position, Set[Position]]()
-  var symbolPositions = Map[Sym, Set[Position]]()
+  //var attachments = Map[Position, Set[Position]]()
+  //var symbolPositions = Map[Sym, Set[Position]]()
   var index = Map[Int, Index]()
   var stats = Map[Int, Statistics]()
 
@@ -20,12 +20,13 @@ class Database(name: String, val bitsize:Int = 32):
 
   def build(): this.type =
     println("Building database ...")
-    for predicate <- sets do
+/*    for predicate <- sets do
       val symbols = predicate.getSymbols()
       val positions = predicate.getPositions(-1)
       for (symbol, position) <- symbols.zip(positions) do
-        symbolPositions = symbolPositions.updated(symbol, symbolPositions.getOrElse(symbol, Set[Position]()) + position)
+        symbolPositions = symbolPositions.updated(symbol, symbolPositions.getOrElse(symbol, Set[Position]()) + position)*/
 
+    /*
     for predicate <- sets do
       val symbols = predicate.getSymbols()
       val positions = predicate.getPositions(-1)
@@ -33,6 +34,7 @@ class Database(name: String, val bitsize:Int = 32):
         val crrPositions = getPositions(symbol)
         val existing = attachments.getOrElse(position, Set())
         attachments = attachments.updated(position, existing ++ crrPositions)
+    */
 
     index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray, bitsize).build()}
     stats = templates.map{case(index, data)=> index-> Statistics(data.head, data)}
@@ -44,11 +46,14 @@ class Database(name: String, val bitsize:Int = 32):
 
   def getStatistics() = stats
 
-  private def getPositions(symbol: Sym): Set[Position] =
+  def getRules():Set[Rule] =
+    preRules
+
+  /*private def getPositions(symbol: Sym): Set[Position] =
     if symbolPositions.contains(symbol) then
       symbolPositions(symbol)
     else
-      Set()
+      Set()*/
 
   def add(rule:Rule):this.type =
     if !preRules.contains(rule) then {
@@ -113,7 +118,6 @@ class Database(name: String, val bitsize:Int = 32):
     else
       Set()
 
-
   def getTemplates2(predicate: Predicate): Set[Predicate] =
     if templates2.contains(predicate.length()) then
       templates2(predicate.length())
@@ -124,11 +128,12 @@ class Database(name: String, val bitsize:Int = 32):
     templates.values.map(set => set.head)
       .toSet
 
-  def getPositions(items: Set[Position]): Set[Position] =
+/*  def getPositions(items: Set[Position]): Set[Position] =
     val filtered = items.filter(position => attachments.contains(position))
     val candidates = filtered.flatMap(position => attachments(position))
-    candidates
+    candidates*/
 
+  /*
   def getPositions(item: Position): Set[Position] =
     if attachments.contains(item) then attachments(item)
     else Set()
@@ -139,7 +144,7 @@ class Database(name: String, val bitsize:Int = 32):
       val p = Position(predicate, 0, i)
       if attachments.contains(p) then
         attachement_set ++= attachments(p)
-    attachement_set
+    attachement_set*/
 
   def copy(): Database =
     Database(name).add(sets)
@@ -169,6 +174,7 @@ class Database(name: String, val bitsize:Int = 32):
 
     result
 
+/*
 
   protected def lookup(cache: Set[Predicate], predicate: Predicate, main: Substitution): Answer =
 
@@ -195,6 +201,8 @@ class Database(name: String, val bitsize:Int = 32):
       else
         Answer(main)
     }
+*/
+/*
 
   protected def execute(query:Query, set: Set[Predicate], elements: Array[Predicate], main: Substitution): Set[Answer] =
     if elements.isEmpty && main.nonEmpty() then Set(Answer(main, main))
@@ -212,6 +220,8 @@ class Database(name: String, val bitsize:Int = 32):
         substitutions.flatMap(crrSubstitution => {
           execute(query, set, elements.tail, crrSubstitution)
         }).toArray.toSet
+*/
+/*
 
   protected def execute(set: Set[Predicate], query: Query, main: Substitution): Set[Answer] =
     if query.isAtom() then
@@ -223,7 +233,9 @@ class Database(name: String, val bitsize:Int = 32):
       answers
     else
       execute(query, set, query.getBody(), main)
+*/
 
+/*
 
   def execute(set: Set[Predicate], query: Query): Set[Answer] =
     execute(set, query, Substitution())
@@ -234,27 +246,31 @@ class Database(name: String, val bitsize:Int = 32):
     val op = unifiedOperation.execute(headSubstitution, answers.map(_.main))
     val r = execute(op)
     r
+*/
+/*
 
   def retrieve(set:Set[Predicate], query: Query): Set[Predicate] =
     val answers = execute(set, query)
     answers.flatMap(answer => answer.execute(query.getHead()))
+*/
+/*
 
   def retrieve(set:Set[Predicate], hypothesis: Hypothesis): Set[Predicate] =
     val predicates = hypothesis.getSorted().flatMap(rule => {
       execute(set, rule).flatMap(answer=> answer.execute(hypothesis.head))
     }).toSet
     predicates
+*/
 
-
-
-  def facts(query: Query): Set[Predicate] =
+/*  def facts(query: Query): Set[Predicate] =
     val answers = execute(Set(), query)
     val results = answers.flatMap(answer => answer.execute(query.head))
-    results
+    results*/
 
-  def facts(hypothesis: Hypothesis): Set[Predicate] =
+/*  def facts(hypothesis: Hypothesis): Set[Predicate] =
     val results = facts(Set(), hypothesis)
-    results
+    results*/
+/*
 
   def facts(set:Set[Predicate], hypothesis: Hypothesis): Set[Predicate] =
     var results = Set[Predicate]()
@@ -270,6 +286,8 @@ class Database(name: String, val bitsize:Int = 32):
       changed = size!=results.size
 
     results
+*/
+/*
 
   def execute(bufferSet:Set[Predicate], operations: Array[Operation], call: Predicate): this.type = {
     var affected = true
@@ -278,7 +296,9 @@ class Database(name: String, val bitsize:Int = 32):
     }
     this
   }
+*/
 
+/*
 
   def expand(bufferSet: Set[Predicate], operation: Operation, call: Predicate): Array[Predicate] =
     val (headSubstitution, unifiedOperation) = operation.execute(call)
@@ -286,7 +306,9 @@ class Database(name: String, val bitsize:Int = 32):
     val op = unifiedOperation.execute(headSubstitution, answers.map(_.main))
     val r = expand(op)
     r
+*/
 
+/*
 
   def expand(operations: Set[Operation], call: Predicate): this.type =
     var crrCalls = Set(call)
@@ -299,6 +321,7 @@ class Database(name: String, val bitsize:Int = 32):
       })
     }
     this
+*/
 
 
   override def toString: String = {

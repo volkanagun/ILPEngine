@@ -1,11 +1,11 @@
 package ilp.data
 
 import ilp.data.predicates.Predicate
-import ilp.data.variables.Variable
 
 
 class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_head, rules.head.getBody()):
 
+  var headMap = rules.groupBy(rule=> rule.getHead())
 
   def this(head: Predicate, rule: Rule) = this(head, Set(rule))
   def this(head:Predicate, body:Array[Predicate]) = this(head, Rule(head, body))
@@ -27,6 +27,13 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
     this
   }
 
+  def substitution(predicate: Predicate): Substitution =
+    val head = getHead()
+    val replaces = head.getVariables()
+      .zip(predicate.getVariables())
+      .map { case (variable, sym) => (variable, sym.setName(variable.getName())) }
+
+    Substitution(replaces)
 
   def addRule(rule: Rule):this.type = {
     this.rules = rules + rule
@@ -53,6 +60,9 @@ class Hypothesis(crr_head: Predicate, var rules: Set[Rule]) extends Rule(crr_hea
     }).toMap
     val sorted = callMap.toArray.sortBy(_._2).map(_._1)
     sorted
+
+  def getLastHead():Predicate =
+    getSorted().last.getHead()
 
   override def hashCode(): Int =
     rules.foldRight(head.name.hashCode) { case (r, m) => r.hashCode() + 7 * m }
