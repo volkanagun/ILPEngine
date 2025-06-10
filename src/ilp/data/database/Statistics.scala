@@ -26,7 +26,7 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
       val size1 = activeMap(current)
       Range(0, predicate.getArity()).map(next => {
         val size2 = activeMap(next)
-        (current, next) -> size2 / size1
+        (current, next) -> size1 / size2
       })
     }).toMap
 

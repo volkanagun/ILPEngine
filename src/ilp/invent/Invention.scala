@@ -25,9 +25,9 @@ object Invention:
     val combinations = array.combinations(head.length())
     combinations.map(elements => head.copy(elements)).toSet
 
-  def combinations(source: Array[Predicate], destination: Array[Predicate], metaRule: Rule, slots:Int): Array[Array[Predicate]] = {
-      if slots == 1 then (source.toSet ++ destination.toSet).toArray.map(Array(_))
-      else combinationsMeta(source, destination, slots)
+  def combinations(source: Array[Predicate], destination: Array[Predicate], metaRule: Rule, slots: Int): Array[Array[Predicate]] = {
+    if slots == 1 then (source.toSet ++ destination.toSet).toArray.map(Array(_))
+    else combinationsMeta(source, destination, slots)
   }
 
   def combinationsMeta(source: Array[Predicate], destination: Array[Predicate], slots: Int): Array[Array[Predicate]] = {
@@ -46,10 +46,16 @@ object Invention:
     }.toArray
   }
 
-  def genericVariable():Variable =
+  def genericName(): String =
     val index = rnd.nextInt(uppercases.length)
-    val name = uppercases(index) + rnd.nextInt(100)
-    Variable(name)
+    val name = uppercases(index) + rnd.nextInt(1000)
+    name
+
+  def genericLower(): String =
+    genericName().toLowerCase()
+
+  def genericVariable(): Variable =
+    Variable(genericName())
 
   def genericRename(metaRule: Rule): Rule =
     val renamePairs = metaRule.getAllVariables().map(original => (original, genericVariable()))
@@ -62,22 +68,28 @@ object Invention:
     val crrMetaBody = metaRule.getNonRecursive().getBody()
     val crrCombinations = combinations(source, destination, metaRule, crrMetaBody.length)
     val newRules = crrCombinations.map(predicates => crrMetaBody.zip(predicates)
-        .filter { case (r, p) => r.equalByArity(p) }).filter(item=> item.size == crrMetaBody.length)
-      .map(pairs => {
+        .filter { case (r, p) => r.equalByArity(p) }).filter(item => item.size == crrMetaBody.length)
+      .flatMap(pairs => {
         val replacements = pairs.map { case (r, p) => {
           (r.asVariable(), p.asVariable())
         }
         }
         val predicateSubstitution = Substitution(replacements)
-        var variableSubstitution = Substitution()
-        pairs.flatMap { case (r, p) => Unification().ofWithout(Substitution(), r, p) }
-          .foreach(substituiton => variableSubstitution = variableSubstitution.composition(substituiton))
-        val newRule = metaRule.substitution(predicateSubstitution).substitution(variableSubstitution.reverse())
-        newRule.asRule()
+
+        if predicateSubstitution.hasConflict() then {
+          None
+        }
+        else {
+          var variableSubstitution = Substitution()
+          pairs.flatMap { case (r, p) => Unification().ofWithout(Substitution(), r, p) }
+            .foreach(substituiton => variableSubstitution = variableSubstitution.composition(substituiton))
+          val newRule = metaRule.substitution(predicateSubstitution).substitution(variableSubstitution.reverse())
+          Some(newRule.asRule())
+        }
       })
     newRules
 
-  //<editor-fold desc="Commented old code">
+//<editor-fold desc="Commented old code">
 /*
 
   def generic(database: Database, metaPredicate: Predicate): Set[Predicate] =
@@ -276,7 +288,7 @@ def softFilter(database: Database, crrPositions: Set[Position], candidates: Set[
       Set(Hypothesis(newHead, rule1, rule2))
 
   */
-  //</editor-fold>
+//</editor-fold>
 
 
     

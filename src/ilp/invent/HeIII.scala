@@ -18,13 +18,13 @@ class HeIII(engine: Engine) extends HeI(engine):
   def union(crr: Set[Hypothesis]): Set[Hypothesis] =
     crr.groupBy(hypothesis => hypothesis.getHead())
       .map { case (head, set) => {
-        ig(Hypothesis(head, set.flatMap(_.rules)))
+        ig(Hypothesis(head, set.flatMap(_.rules).toArray))
       }}.toSet
 
 
   override def invent(): Set[Hypothesis] =
     val sourceHypotheses = source()
-    val targetPredicates = target()./*filter(t => !sourceHypotheses.contains(t)).*/flatMap(hypothesis => hypothesis.getLast().body)
+    val targetPredicates = target().flatMap(hypothesis => hypothesis.getLast().body)
       .toArray
 
     val combines = sourceHypotheses.flatMap(sourceHypothesis => {

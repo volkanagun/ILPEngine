@@ -16,9 +16,10 @@ object Parser extends JavaTokenParsers {
     args.zipWithIndex.map { case (variable, index) => {
       if variable.isSymbol() then variable.setName(symbolVariableNames(index))
       else variable
-    }}
+    }
+    }
 
-  def getRandomName():String =
+  def getRandomName(): String =
     val index = random.nextInt(symbolVariableNames.length)
     val num = random.nextInt(100)
     symbolVariableNames(index) + num
@@ -27,6 +28,8 @@ object Parser extends JavaTokenParsers {
   def identifier: Parser[String] = "[a-z0-9\\_]+([A-Z][a-z0-9\\_]+)*".r
 
   def double: Parser[String] = "([+-]?(\\d+(\\.\\d+)?)([eE][+-]?\\d+)?)".r
+
+  def clause: Parser[String] = "max\\_[clauses,body, vars]".r
 
   def list: Parser[String] = "((\\_\\|[A-Z]+)|([A-Z]+\\|\\_))"
 
@@ -42,7 +45,7 @@ object Parser extends JavaTokenParsers {
 
   def anystr: Parser[String] = "\\_[A-Z]*".r
 
-
+  def lower:Parser[String] = "[a-z\\_\\d]+".r
   def keywordMod: Parser[String] = "mod".r
 
   def keywordIs: Parser[String] = "is".r
@@ -119,7 +122,7 @@ object Parser extends JavaTokenParsers {
   def tailArgument1: Parser[Tail] =
     "[" ~ anystr ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ item ~ "|" ~ tail ~ "]" => {
-        Tail("tail", NumList("LIST"),NumList(tail.getName()))
+        Tail("tail", NumList("LIST"), NumList(tail.getName()))
       }
     }
 
@@ -440,6 +443,19 @@ object Parser extends JavaTokenParsers {
   def rule: Parser[Rule] =
     ruleByComma | ruleByAnd | ruleByCut
 
+  def max: Parser[Max] =
+    clause ~ "(" ~ number ~ ")." ^^ {
+      case "max_clauses" ~ "(" ~ num ~ ")." => Max("clauses", num.item)
+      case "max_body" ~ "(" ~ num ~ ")." => Max("body", num.item)
+      case "max_vars" ~ "(" ~ num ~ ")." => Max("vars", num.item)
+    }
+
+  def definition: Parser[Type] =
+    "type(" ~ identifier ~ ", (" ~ repsep(lower, ", ") ~ "))." ^^ {
+      case "type(" ~ name ~ ", (" ~ items ~ "))." => Type(name, items.toArray)
+    }
+
+
   def ruleByAnd: Parser[Rule] =
     head ~ ":-" ~ repsep(predicate_input, "&") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
@@ -459,7 +475,7 @@ object Parser extends JavaTokenParsers {
     }
 
   def ruleByComma: Parser[Rule] =
-    head ~ ":-" ~ repsep(argument, ",") ~ "." ^^ {
+    head ~ ":-" ~ repsep(predicate_input, ",") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
         val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
         Rule(headPredicate, body.map(_.asPredicate()).toArray)
@@ -482,6 +498,14 @@ object Parser extends JavaTokenParsers {
 
   def parseRule(input: String): Option[Rule] = {
     parseAll(rule, input) match {
+      case Success(result, _) => Some(result)
+      case Failure(msg, _) => println(input + ":" + msg); None
+      case Error(msg, _) => println(input + ":" + msg); None
+    }
+  }
+
+  def parseDefinition(input: String): Option[Type] = {
+    parseAll(definition, input) match {
       case Success(result, _) => Some(result)
       case Failure(msg, _) => println(input + ":" + msg); None
       case Error(msg, _) => println(input + ":" + msg); None

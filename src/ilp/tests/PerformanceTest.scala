@@ -12,8 +12,8 @@ import scala.io.Source
 
 object PerformanceTest {
   val folder = "examples/"
-  val experiments = Array("kinship","imdb","zendo1","dunnhumby1","dunnhumby2")
-  val resultFilename = "resources/experiments/performance.txt"
+  val experiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb","kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains", "robots","uwcs","webkb","yeast", "zendo")
+  val resultFilename = "resources/experiments/performance.csv"
 
   def measureMultipleTime[T](block: => T, count: Int = 5): Double = {
     val time = Range(0, count).map(i => {
@@ -74,7 +74,7 @@ object PerformanceTest {
       .map(line => {
         val rule = Parser.parseRule(line).get
         rule
-      }).toSet
+      }).toArray
 
     Hypothesis(rules)
 
@@ -93,10 +93,10 @@ object PerformanceTest {
     databases.zip(queries).zip(names).zip(tests).map(tuple => (tuple._1._1._1, tuple._1._1._2, tuple._2, tuple._1._2))
   }
 
-  def initialize(hypothesis: Hypothesis, instances: Set[Predicate], limit: Int = 5): Hypothesis = {
+/*  def initialize(hypothesis: Hypothesis, instances: Set[Predicate], limit: Int = 5): Hypothesis = {
     val allQuery = instances.take(limit).flatMap(predicate => hypothesis.getSorted().map(rule => rule.call(predicate).toRule()))
-    Hypothesis(hypothesis.getHead(), allQuery)
-  }
+    Hypothesis(hypothesis.getHead(), allQuery.toArray)
+  }*/
 
 /*  def update(database: Database, query: Hypothesis, instances: Set[Predicate]): Unit = {
     val rules = database.getRules()
@@ -133,66 +133,66 @@ object PerformanceTest {
     val plan = Plan(database)
     val hypothesis = query
     val optimizedNone = plan.optimizeNone(hypothesis)
-    val optimizedRel = plan.optimizeRelative(hypothesis)
+    val optimizedRel = plan.optimizeExperimental(hypothesis)
     var crrTime = measureMultipleTime({
       val set = engine.joinCyclic(optimizedNone, Substitution())
-      //println(s"Correct: ${test(set, instances)}")
+      //println(s"Correct no optimization: ${test(set, instances)}")
     }, 5)
 
-    text = text + name + "\n"
-    text = text + "No index, no optimization : " + crrTime.toString + "\n"
-
+    text = text + s"${name}, No Index, Serial, No Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       val set = engine.joinCyclic(optimizedRel, Substitution())
+      //println(s"Correct optimization: ${test(set, instances)}")
     }, 5)
 
-    text = text + "No index, relative optimization : " + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Serial, Relative Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       val set = engine.joinCyclicParallel(optimizedNone, Substitution())
 
     }, 5)
 
-    text = text + "No index, parallel, no optimization, cache : " + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Parallel, No Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       val trie = TrieMap[String, Set[Substitution]]()
       val set = engine.joinCyclicParallel(optimizedRel, Substitution())
     }, 5)
 
-    text = text + "No index, parallel, relative optimization, cache : " + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       val set = engine.joinCyclicRoaring(optimizedNone, Substitution())
     }, 5)
 
-    text = text + "Index, parallel, no optimization, roaring : " + crrTime.toString + "\n"
+    text = text + s"${name}, Roaring Index, Parallel, No Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       val set = engine.joinCyclicRoaring(optimizedRel, Substitution())
     }, 5)
 
-    text = text + "Index, parallel, relative optimization, roaring : " + crrTime.toString + "\n"
+    text = text + s"${name}, Roaring Index, Parallel, Relative Optimization, " + crrTime.toString
 
+    /*
     crrTime = measureMultipleTime({
       val set = engine.joinCyclicBitmap(optimizedRel, Substitution())
     }, 5)
 
-    text = text + "Index, parallel, relative optimization, bitmap : " + crrTime.toString + "\n"
+    text = text + s"${name}, Bitset Index, Parallel, Relative Optimization, " + crrTime.toString*/
+
     text
 
 
   def experiment(): Unit = {
     val exp = load()
     val pw = PrintWriter(resultFilename)
+    pw.println("FigureName,IndexType,ExecutionMode,Optimization,Performance")
     exp.foreach { case (db, query, positives, name) => {
-      println("Experimenting : " + name)
-
+      println("Experimenting started: "+name)
       pw.println(experiment(db, query, positives, name))
-      pw.println()
-    }
-    }
+      println("Experimenting finished for "+name)
+    }}
     pw.close()
   }
 

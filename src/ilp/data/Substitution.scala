@@ -40,6 +40,18 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     Substitution(newSet.map(_._1), newSet.map(_._2))
   }
 
+  def hasConflict(): Boolean = {
+    val conflict = variables.zip(symbols)
+      .groupBy(pair => pair._1.getName())
+      .view
+      .mapValues(values =>
+        values.map(_._2).toSet.toArray)
+      .exists(items => {
+        items._2.length > 1
+      })
+
+    conflict
+  }
 
   def unification(substitution: Substitution): Option[Substitution] =
 

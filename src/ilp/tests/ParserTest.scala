@@ -14,11 +14,14 @@ object ParserTest {
   }
 
   def testList(): Unit = {
-    testRule("f(V1, V0):-one(V1), tail(V0, V1).")
+    //testRule("f(V1, V0):-one(V1), tail(V0, V1).")
+    testRule("move_right(w(X1,Y),w(X2,Y)):- size(Size), X1 < Size, X2 = X1 + 1.")
+
     //test("head([H|_], H).")
     //test("\\+ is_list(A).")
     test("Atom2=[f,A,C].")
     test("empty([]).")
+
 
     //testRule("move_right(w(X1,Y),w(X2,Y)) :- X2 = X1 + 1.")
 

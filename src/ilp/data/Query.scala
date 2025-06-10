@@ -16,9 +16,15 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   def getNonRecursive(): Query =
     Query(head, body.filter(predicate => !predicate.equalByIdentifier(head)))
 
-/*  def getRecursiveHead(): Predicate =
-    body.filter(predicate => predicate.equalByIdentifier(head))
-      .head*/
+
+  def renameHead(name:String):Query= {
+    val newQuery  = Query(head.copy(name), body)
+    newQuery
+  }
+
+  /*  def getRecursiveHead(): Predicate =
+      body.filter(predicate => predicate.equalByIdentifier(head))
+        .head*/
 
  /* def compile(): this.type =
     val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }

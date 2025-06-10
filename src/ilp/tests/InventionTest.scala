@@ -1,8 +1,8 @@
 package ilp.tests
 
-import ilp.data.database.Engine
-import ilp.invent.{Execution, HeI, HeII, HeIII}
-import ilp.data.{Hypothesis, Parser, Rule}
+import ilp.data.database.{Engine, Plan}
+import ilp.invent.{Execution, HeBinary, HeI, HeII, HeIII}
+import ilp.data.{Hypothesis, Parser, Rule, Substitution}
 import ilp.experiments.{Experiment, Params}
 
 object InventionTest:
@@ -28,13 +28,72 @@ object InventionTest:
       .addMetaRule(metaRule2)
       .compile()
 
-    val results = Execution()
+    val results = Execution(engine)
       .setIter(5)
       .addTemplate(heI)
       .addTemplate(heII).induction()
 
-    results.foreach(h=> h.print())
+    results.foreach(h => h.print())
 
+  }
+
+  def testKinshipAnchestor(): Unit = {
+    val experiment = new Experiment(Params("kinship-ancestor"))
+    experiment.load()
+
+    val db = experiment.database
+    val engine = Engine(db)
+    val pos = experiment.positives
+    val neg = experiment.negatives
+
+    val metaGeneric = Parser.parseRule("gamma(A, B) :- alpha(A,B).").get
+    val metaTransition = Parser.parseRule("gamma(A, B) :- alpha(A,Z) & gamma(Z, B).").get
+
+    val heIII = new HeIII(engine)
+      .setPositives(pos)
+      .setNegatives(neg)
+      .addMetaRule(metaGeneric)
+      .addMetaRule(metaTransition)
+      .compile()
+
+    val results = Execution(engine)
+      .setIter(5)
+      .addTemplate(heIII).induction()
+
+    results.foreach(h => h.print())
+  }
+
+  def testIMDB3(): Unit = {
+    val experiment = new Experiment(Params("imdb3"))
+    experiment.load()
+
+    val db = experiment.database
+    val engine = Engine(db)
+    val pos = experiment.positives
+    val neg = experiment.negatives
+    //f(V0,V1):- gender(V0,V3),gender(V1,V3),movie(V2,V0),movie(V2,V1).
+    //f(V0,V1):- actor(V0),director(V1),movie(V2,V0),movie(V2,V1).
+    val metaTransition1 = Parser.parseRule("theta(V0,V1) :- alpha(V0,V3), alpha(V1,V3).").get
+    val metaTransition2 = Parser.parseRule("beta(V0,V1) :- gamma(V2, V0), gamma(V2,V1).").get
+    val metaTransition3 = Parser.parseRule("tilda(V0,V1) :- theta(V0, V1), beta(V0,V1).").get
+
+    val q = Parser.parseRule("f(V0,V1):- gender(V0,V3),gender(V1,V3),movie(V2,V0),movie(V2,V1).").get
+    val optimized = Plan(db).optimizeExperimental(Hypothesis(q))
+    val facts = engine.joinCyclicRoaring(optimized, Substitution())
+
+    val heIV = new HeBinary(engine)
+      .setPositives(pos)
+      .setNegatives(neg)
+      .addMetaRule(metaTransition1)
+      .addMetaRule(metaTransition2)
+      .addMetaRule(metaTransition3)
+      .compile()
+
+    val results = Execution(engine)
+      .setIter(5)
+      .addTemplate(heIV).induction()
+
+    results.foreach(h => h.print())
   }
 
   def testHeRecursive(): Unit = {
@@ -55,31 +114,14 @@ object InventionTest:
       .addMetaRule(metaRule2)
       .compile()
 
-    val results = Execution()
+    val results = Execution(engine)
       .setIter(5)
       .addTemplate(heIII).induction()
 
-    results.foreach(h=> h.print())
-
+    results.foreach(h => h.print())
   }
 
-/*
-  def testRecursiveRule(): Unit = {
-    val r1 = Parser.parseRule("ancestor(X, Y) :- mother(X,Y).").get
-    val r2 = Parser.parseRule("ancestor(X, Y) :- father(X,Y).").get
-    val r3 = Parser.parseRule("ancestor(X, Z) :- ancestor(X,Y) & ancestor(Y,Z).").get
-    val h = Hypothesis(Set[Rule](r1,r2,r3))
-    val experiment = new Experiment(Params("kinship-ancestor")).load()
-    val db = experiment.database
-    val pos = experiment.positives
-    val neg = experiment.negatives
-    val facts = db.facts(h)
-    h.ig(facts, pos, neg)
-    h.accuracy()
-    h.print()
-  }
-*/
 
   def main(args: Array[String]): Unit = {
-    testHeRecursive()
+    testIMDB3()
   }

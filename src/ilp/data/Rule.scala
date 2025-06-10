@@ -1,5 +1,6 @@
 package ilp.data
 
+import ilp.data.database.Bias
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
@@ -14,73 +15,98 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   var genfacts = Set[Predicate]()
   var score = 0.0
   var acc = 0.0
+  var id = idset()
 
-  def this(crr_head:Predicate) = this(crr_head, Array[Predicate]())
-  def this(crr_head:Predicate, atom:Predicate)  = this(crr_head, Array(atom))
+  def this(crr_head: Predicate) = this(crr_head, Array[Predicate]())
+
+  def this(crr_head: Predicate, atom: Predicate) = this(crr_head, Array(atom))
+
+  def idset(): Set[Set[Position]] =
+    val allVariables = getAllVariables().toSet
+    val allPredicates = getBody() :+ head.copy("head")
+    allVariables.map(variable => {
+      val containingSet = allPredicates.zipWithIndex.filter { case (predicate, pindex) => predicate.contains(variable) }
+      val positionSet = containingSet.map { case (predicate, pindex) => predicate.getPosition(pindex, variable) }
+        .toSet
+      positionSet
+    })
+
+  override def equals(obj: Any): Boolean = {
+    obj.isInstanceOf[Rule] &&
+      obj.asInstanceOf[Rule].id.forall(other => id.exists(crr => {
+        crr.intersect(other).size == crr.size
+      }))
+  }
+
+
+  override def renameHead(name:String):Query= {
+    val newRule  = Rule(head.copy(name), body)
+    newRule
+  }
 
   //<editor-fold desc="Commented Folded">
-/*
-  def invalid():Boolean =
-    (body.size == 1 && body.head.getName().equals(head.getName()))
+  /*
+    def invalid():Boolean =
+      (body.size == 1 && body.head.getName().equals(head.getName()))
 
-    def doGeneralize():Boolean =
-    posRate <= 1.0 && negRate == 0
+      def doGeneralize():Boolean =
+      posRate <= 1.0 && negRate == 0
 
-  def doSpecify():Boolean =
-    posRate == 1.0 && negRate >= 0
-  override def addCopy(predicate: Predicate): Query =
-    Rule(head, body:+predicate)
+    def doSpecify():Boolean =
+      posRate == 1.0 && negRate >= 0
+    override def addCopy(predicate: Predicate): Query =
+      Rule(head, body:+predicate)
 
-    def getName(): String =
-    this.head.getName()
+      def getName(): String =
+      this.head.getName()
 
-  def setName(name:String): this.type =
-    this.head.setName(name)
-    this
+    def setName(name:String): this.type =
+      this.head.setName(name)
+      this
 
-  def newName(name:String): Rule =
-    val newHead = this.head.copy().setName(name)
-      .asPredicate()
-    Rule(newHead, body)
+    def newName(name:String): Rule =
+      val newHead = this.head.copy().setName(name)
+        .asPredicate()
+      Rule(newHead, body)
 
-  def randomPositive():Predicate =
-    val index = new Random(17).nextInt(positives.size)
-    positives.toSeq(index)
-
-
-  def abstraction(): Hypothesis =
-    val newName = body.map(_.getName()).mkString("_")
-    val substitution = Substitution(head.getName(), newName)
-    //Rule(head.setName(newName), getBody())
-    this.substitution(substitution, true)
+    def randomPositive():Predicate =
+      val index = new Random(17).nextInt(positives.size)
+      positives.toSeq(index)
 
 
-  def toRule(headName: String): Rule =
-    val newHead = head.toPredicate(headName)
-    val newBody = body.map(_.copy().asPredicate())
-    Rule(newHead, newBody)
-      .setPositives(positives)
-      .setNegatives(negatives)
-      .setPosRate(posRate)
-      .setNegRate(negRate)
+    def abstraction(): Hypothesis =
+      val newName = body.map(_.getName()).mkString("_")
+      val substitution = Substitution(head.getName(), newName)
+      //Rule(head.setName(newName), getBody())
+      this.substitution(substitution, true)
 
-   def getComplexity(): Double =
-    if isRecursive() then body.foldRight(5.0){case(a, m)=> a.getComplexity() + m}
-    else body.foldRight(0.0){case(a, m)=> a.getComplexity() + m}
-    */
+
+    def toRule(headName: String): Rule =
+      val newHead = head.toPredicate(headName)
+      val newBody = body.map(_.copy().asPredicate())
+      Rule(newHead, newBody)
+        .setPositives(positives)
+        .setNegatives(negatives)
+        .setPosRate(posRate)
+        .setNegRate(negRate)
+
+     def getComplexity(): Double =
+      if isRecursive() then body.foldRight(5.0){case(a, m)=> a.getComplexity() + m}
+      else body.foldRight(0.0){case(a, m)=> a.getComplexity() + m}
+      */
   //</editor-fold>
 
-  def getAllVariables():Array[Variable] =
+  def getAllVariables(): Array[Variable] =
     val items = body :+ head
-    items.flatMap(predicate=> predicate.getRecursive())
+    items.flatMap(predicate => predicate.getRecursive())
 
-  def getSize():Int =
+  def getSize(): Int =
     body.size
 
-/*  def getNonRecursive():Array[Predicate] =
-    body.filter(p=> !p.equalByIdentifier(head))*/
+  /*  def getNonRecursive():Array[Predicate] =
+      body.filter(p=> !p.equalByIdentifier(head))*/
 
-  def getNonRecursiveSize():Int =
+  def getNonRecursiveSize(): Int =
     getNonRecursive().getBody().size
 
   def getScore(): Double =
@@ -120,11 +146,11 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this.negRate = rate
     this
 
-  def setRecursion(recursive:Boolean): this.type =
+  def setRecursion(recursive: Boolean): this.type =
     this.recursive = recursive
     this
 
-  def replace(index: Int, rule:Rule): Query =
+  def replace(index: Int, rule: Rule, keepHead:Boolean = true): Query =
     var newBody = Array[Predicate]()
     val crrHead = rule.getHead()
     val crrPredicates = rule.getBody()
@@ -135,23 +161,26 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
         newBody :+= pair._1
     })
 
-    val substitution = Substitution(crrHead.toVariable(), head.toVariable())
-    Rule(crrHead, newBody).substitution(substitution, true)
+    if !keepHead then
+      val substitution = Substitution(crrHead.toVariable(), head.toVariable())
+      Rule(crrHead, newBody).substitution(substitution, true)
+    else
+      Rule(crrHead, newBody)
 
 
-  def substitution(substitution: Substitution, doRecursion:Boolean = false):Hypothesis =
+  def substitution(substitution: Substitution, doRecursion: Boolean = false): Hypothesis =
 
     val newHead = head.substitution(substitution).asPredicate()
     val newBody = body.map(_.substitution(substitution).asPredicate())
     val recursiveRule = Rule(newHead, newBody)
     if doRecursion && isRecursive() then
-      val atoms = body.zip(newBody).filter{case(original, named)=>{
+      val atoms = body.zip(newBody).filter { case (original, named) => {
         original.identifier() == head.identifier()
-      }}.map{case(original, named)=> Rule(named, original)}.toSet
-      Hypothesis(newHead, atoms + recursiveRule.setRecursion(isRecursive()))
+      }
+      }.map { case (original, named) => Rule(named, original) }
+      Hypothesis(newHead, atoms :+ recursiveRule.setRecursion(isRecursive()))
     else
       Hypothesis(newHead, recursiveRule.setRecursion(isRecursive()))
-
 
 
   def matches(test: Set[Predicate], facts: Set[Predicate]): Set[Predicate] =
@@ -164,7 +193,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
       result
 
 
-  def accuracy():Double =
+  def accuracy(): Double =
     val tp = positives.size
     val fp = genfacts.size - positives.size
     val fn = negatives.size
@@ -174,11 +203,12 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     acc = nom.toDouble / denom
     acc
 
-  def ig(facts: Set[Predicate], posItems:Set[Predicate], negItems:Set[Predicate]): Double =
-
+  def ig(facts: Set[Predicate], posItems: Set[Predicate], negItems: Set[Predicate]): Double =
+    val functName = posItems.head.getName()
+    val matchFacts = facts.map(predicate => predicate.setName(functName).asPredicate())
     genfacts = facts
-    positives = matches(posItems, facts)
-    negatives = matches(negItems, facts)
+    positives = matches(posItems, matchFacts)
+    negatives = matches(negItems, matchFacts)
 
     posRate = positives.size.toDouble / math.max(posItems.size, 1.0)
     negRate = negatives.size.toDouble / math.max(negItems.size, 1.0)

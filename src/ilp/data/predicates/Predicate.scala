@@ -54,6 +54,10 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     (0 until length()).map(index => Position(this, predicateIndex, index))
       .toArray
 
+  def getPosition(position:Int, variable:Variable):Position =
+    val index = getIndex(variable)
+    Position(this, position, index)
+
   def getPositions(): Array[Position] =
     (0 until length()).map(index => Position(this, 0, index))
       .toArray

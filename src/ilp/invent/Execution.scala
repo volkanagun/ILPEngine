@@ -1,10 +1,12 @@
 package ilp.invent
 
 import ilp.data.Hypothesis
+import ilp.data.database.Engine
 
-import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
+import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 
-class Execution:
+class Execution(var engine: Engine):
+
 
   var templates = Array[Template]()
   var iteration = 1
@@ -22,14 +24,22 @@ class Execution:
     this
 
   def induction(): Set[Hypothesis] =
-    var sourceHypothesis = templates.par.flatMap(template => template.invent())
-      .toArray
-      .toSet
+    var sourceHypothesis = templates.par
+      .flatMap(template => template.invent()
+        .map(hypothesis=> template.igRoaring(hypothesis)))
+      .toArray.toSet
+
+    sourceHypothesis = sourceHypothesis.filter(engine.validHypothesis)
     var isFinished = sourceHypothesis.exists(_.isFinished())
     var count = 1
     while (!isFinished && sourceHypothesis.nonEmpty && count < iteration) do
-      sourceHypothesis = templates.map(template => template.setSources(sourceHypothesis)).flatMap(template => template.invent())
+      println(s"Iteration: ${count} with size: ${sourceHypothesis.size}")
+      sourceHypothesis = templates.map(template => template.setSources(sourceHypothesis).setTarget(sourceHypothesis.toArray))
+        .flatMap(template => template.invent().par.map(hypothesis=> template.igRoaring(hypothesis)))
         .toSet
+      sourceHypothesis = sourceHypothesis.filter(engine.validHypothesis).map(_.compact())
+      //sourceHypothesis.toArray.foreach(h=>{h.print(); println("========")})
+
       isFinished = sourceHypothesis.exists(item=> item.isFinished() && item.isComplete())
       count += 1
 

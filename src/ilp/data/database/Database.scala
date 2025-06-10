@@ -10,37 +10,30 @@ class Database(name: String, val bitsize:Int = 32):
   var sets = Set[Predicate]()
   var templates = Map[Int, Set[Predicate]]()
   var templates2 = Map[Int, Set[Predicate]]()
-  //var attachments = Map[Position, Set[Position]]()
+  var attachments = Map[Position, Set[Position]]()
   //var symbolPositions = Map[Sym, Set[Position]]()
   var index = Map[Int, Index]()
   var stats = Map[Int, Statistics]()
 
   var preRules = Set[Rule]()
-
+  var bias : Bias = null
 
   def build(): this.type =
     println("Building database ...")
-/*    for predicate <- sets do
-      val symbols = predicate.getSymbols()
-      val positions = predicate.getPositions(-1)
-      for (symbol, position) <- symbols.zip(positions) do
-        symbolPositions = symbolPositions.updated(symbol, symbolPositions.getOrElse(symbol, Set[Position]()) + position)*/
-
-    /*
-    for predicate <- sets do
-      val symbols = predicate.getSymbols()
-      val positions = predicate.getPositions(-1)
-      for (symbol, position) <- symbols.zip(positions) do
-        val crrPositions = getPositions(symbol)
-        val existing = attachments.getOrElse(position, Set())
-        attachments = attachments.updated(position, existing ++ crrPositions)
-    */
 
     index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray, bitsize).build()}
     stats = templates.map{case(index, data)=> index-> Statistics(data.head, data)}
 
     println("Building finished ...")
     this
+
+  def setBias(bias:Bias):this.type = {
+    this.bias = bias
+    this
+  }
+
+  def getBias():Bias =
+    this.bias
 
   def getIndex() = index
 

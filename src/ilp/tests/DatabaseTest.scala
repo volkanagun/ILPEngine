@@ -34,7 +34,7 @@ object DatabaseTest {
     val engine = Engine(db, recursiveDepth = 8)
     val plan = Plan(db)
 
-    val optimizedList = plan.optimizeRelative(hypothesis)
+    val optimizedList = plan.optimizeMinMin(hypothesis)
 
     positives.foreach(positive => {
       val substitution = hypothesis.substitution(positive)
@@ -56,7 +56,7 @@ object DatabaseTest {
     val engine = Engine(db, recursiveDepth = 8)
     val plan = Plan(db)
 
-    val optimizedList = plan.optimizeRelative(hypothesis)
+    val optimizedList = plan.optimizeMinMin(hypothesis)
 
     positives.foreach(positive => {
       val substitution = hypothesis.substitution(positive)

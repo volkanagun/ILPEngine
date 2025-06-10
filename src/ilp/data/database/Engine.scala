@@ -1,6 +1,6 @@
 package ilp.data.database
 
-import ilp.data.Substitution
+import ilp.data.{Hypothesis, Substitution}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import org.roaringbitmap.RoaringBitmap
@@ -11,7 +11,7 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 
 
 
-class Engine(val database: Database, val recursiveDepth: Int = 2) {
+class Engine(val database: Database, val recursiveDepth: Int = 1) {
 
   val bitsize = database.bitsize
   var dataIndex = database.getIndex()
@@ -25,6 +25,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 2) {
     dataIndex = dataIndex.updated(id, dataIndex.getOrElse(id, Index(predicate, Array[Predicate](), bitsize)).addIndex(predicates))
     this
   }
+
+  def validHypothesis(hypothesis: Hypothesis):Boolean =
+    database.getBias().getHyposthesis(hypothesis).isDefined
 
   def cacheID(depth: Int, rule: Optimized, substitution: Substitution, nextAttribute: Variable): Int = {
     val items = Array(depth, rule.id(), nextAttribute.hashCode())
@@ -477,10 +480,22 @@ class Engine(val database: Database, val recursiveDepth: Int = 2) {
     val result = joinCyclic(programMap, substitution, rule, dataMap, relations, attributes)
     result
 
-  def joinAllCyclic(program: Array[Optimized], substitution: Substitution): Array[Set[Substitution]] =
+  def joinAll(program: Array[Optimized], substitution: Substitution): Array[Set[Substitution]] =
     val programMap = program.groupBy(optimized => optimized.identifier())
     val rules = program.map(optimized=> program.filter(other => other.id()!=optimized.id()) :+ optimized)
       .map(rules=> joinCyclic(rules, substitution))
+    rules
+
+  def joinAllRoaring(program: Array[Optimized], substitution: Substitution): Array[Set[Substitution]] =
+    val programMap = program.groupBy(optimized => optimized.identifier())
+    val rules = program.map(optimized=> program.filter(other => other.id()!=optimized.id()) :+ optimized)
+      .map(rules=> joinCyclicRoaring(rules, substitution))
+    rules
+
+  def joinAllParallel(program: Array[Optimized], substitution: Substitution): Array[Set[Substitution]] =
+    val programMap = program.groupBy(optimized => optimized.identifier())
+    val rules = program.map(optimized=> program.filter(other => other.id()!=optimized.id()) :+ optimized)
+      .map(rules=> joinCyclicParallel(rules, substitution))
     rules
 
   def joinCyclicParallel(program: Array[Optimized], substitution: Substitution): Set[Substitution] =
