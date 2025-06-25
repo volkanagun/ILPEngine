@@ -21,6 +21,7 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
     this
   }
 
+
   protected def computeRelative():Map[(Int, Int), Double] = {
     val map = Range(0, predicate.getArity()).flatMap(current => {
       val size1 = activeMap(current)

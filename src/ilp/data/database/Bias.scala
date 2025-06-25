@@ -71,8 +71,9 @@ class Bias() {
     rule.getBody().flatMap(predicate => {
       getPositions(predicate)
     }).foreach { position => {
-      if result.contains(position.name) then {
-        val crrName = result(position.name)
+      val rname = position.name
+      if result.contains(rname) && map.contains(position) then {
+        val crrName = result(rname)
         val crrCategory = map(position).name
         if crrName != crrCategory then
           return None
@@ -97,7 +98,6 @@ class Bias() {
         }
 
         position
-
       }
       }
 

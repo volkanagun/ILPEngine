@@ -3,41 +3,63 @@ package ilp.invent
 import ilp.data.Hypothesis
 import ilp.data.database.Engine
 
+import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
+import scala.util.control.Breaks
+
 class HeBinary(engine: Engine) extends HeI(engine):
-  override def source(): Set[Hypothesis] =
-    //Select from POS rate 1 and update by NEG rate 1
-    val selectedSet = sources.filter(h => h.negRate == 0.0)
+
+  override def source(): Array[Hypothesis] =
+    val selectedSet = sources.sortBy(_.posRate).reverse
     selectedSet
 
-
-  override def target(): Set[Hypothesis] =
-    //Select from POS rate 0 and update by NEG rate 0
-    val selectedSet = candidates.toSet.filter(h => h.negRate == 0.0)
+  override def target(): Array[Hypothesis] =
+    val selectedSet = candidates.sortBy(_.posRate).reverse
     selectedSet
 
-  def union(crr: Set[Hypothesis]): Set[Hypothesis] =
+  override def stopCondition(array: Array[Hypothesis]): Boolean = {
+    val isFound = array.exists(item => item.isFinished(scoreThreshold) && item.negRate == 0.0)
+    isFound
+  }
+
+/*  def union(crr: Set[Hypothesis]): Set[Hypothesis] =
     crr.groupBy(hypothesis => hypothesis.getHead())
       .map { case (head, set) => {
-        ig(Hypothesis(head, set.flatMap(_.rules).toArray))
+        igParallel(Hypothesis(head, set.flatMap(_.rules).toArray))
       }
-      }.toSet
+      }.toSet*/
+
+  override def addTarget(hypotheses: Array[Hypothesis]): this.type = {
+    this.candidates = candidates ++ hypotheses
+    this
+  }
+
+  override def inventNext(targets: Array[Hypothesis]): Array[Hypothesis] =
+    val currentSource = nextSource()
+    val currentTargets = targets.par.filter(targetHypothesis => {
+      currentSource.similarity(targetHypothesis, resembleWindow) < resembleThreshold
+    }).toArray
+
+    val results = metaApply(currentSource, currentTargets)
+    results
 
 
-  override def invent(): Set[Hypothesis] =
-    val sourceHypotheses = source()
-    val targetHypotheses = target()
 
-    val sourceName = Invention.genericLower()
-    val destinationName = Invention.genericLower()
+
+/*
 
     val result = sourceHypotheses.flatMap(sourceHypothesis => {
-      val crrRule = sourceHypothesis.getLast()
-      val r1 = crrRule.renameHead(sourceName).asRule()
-      val crrHypotheses = targetHypotheses.flatMap(targetHypothesis => {
+
+      val crrHypotheses = targetHypotheses.filter(targetHypothesis => {
+        sourceHypothesis.similarity(targetHypothesis, resembleWindow) < resembleThreshold
+      }).toArray
+
+      val crrResults = metaApply(sourceHypothesis, crrHypotheses)
+      crrResults
+        .flatMap(targetHypothesis => {
         val targetRule = targetHypothesis.getLast()
-        val r2 = targetRule.renameHead(destinationName).asRule()
+        val r2 = targetRule/*.renameHead(destinationName)*/.asRule()
         val newQueries = metaApply(r1.getHead(), r2.getHead())
-        val d = 0
+
         val resultHypotheses = newQueries.map(query => {
           val newName = Invention.genericLower()
           val newPredicate = query.getHead().setName(newName).asPredicate()
@@ -48,9 +70,8 @@ class HeBinary(engine: Engine) extends HeI(engine):
 
         resultHypotheses
       })
-
       crrHypotheses
-    })
 
-    result
+    })
+    result*/
 

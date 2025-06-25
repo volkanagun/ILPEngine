@@ -4,6 +4,7 @@ import ilp.data.database.{Bias, Database}
 import ilp.data.predicates.Predicate
 import ilp.data.{Hypothesis, Parser}
 
+import java.io.File
 import java.util.regex.Pattern
 import scala.io.Source
 
@@ -26,6 +27,7 @@ class Experiment(params: Params):
   def getNegatives() = negatives
 
   protected def loadSamples(): this.type =
+    println("Loading samples")
     val rSamples = "((pos|neg)\\((.*?)\\)\\.)"
     val pSamples = Pattern.compile(rSamples)
     Source.fromFile(folder + "exs.pl").getLines().map(_.trim)
@@ -40,7 +42,7 @@ class Experiment(params: Params):
           if negative then negatives += predicate.toNegative() else positives += predicate
       })
 
-
+    println("Loading samples finished.")
     this
 
   def loadDatabase(): this.type =
@@ -51,7 +53,7 @@ class Experiment(params: Params):
         val predicate = Parser.parsePredicate(line).get
         database.add(predicate)
       })
-
+    println("Loading database finished.")
     val bias = Bias().build(folder + "bias.pl")
     database.build().setBias(bias)
     this
@@ -59,14 +61,16 @@ class Experiment(params: Params):
 
   def loadQueries(): this.type =
     println("Loading queries: " + folder)
-    val rules = Source.fromFile(folder + "/query.pl").getLines().map(_.trim)
-      .filter(line => line.nonEmpty && !line.startsWith("%"))
-      .map(line => {
-        val rule = Parser.parseRule(line).get
-        rule
-      }).toArray
-
-    hypothesis = Hypothesis(rules)
+    val fname = folder + "/query.pl"
+    if File(fname).exists() then
+      val rules = Source.fromFile(folder + "/query.pl").getLines().map(_.trim)
+        .filter(line => line.nonEmpty && !line.startsWith("%"))
+        .map(line => {
+          val rule = Parser.parseRule(line).get
+          rule
+        }).toArray
+      hypothesis = Hypothesis(rules)
+    println("Loading queries finieshed.")
     this
 
   def load(): this.type =

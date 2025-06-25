@@ -29,7 +29,8 @@ class Plan(val db: Database) {
 
   def getStatistics(maxMap: Map[Int, Map[Int, Double]], predicate: Predicate): Statistics = {
     val id = predicate.identifier()
-    if statistics.contains(id) then statistics(id)
+    if statistics.contains(id) then
+      statistics(id).setPredicate(predicate)
     else if maxMap.contains(id) then
       Statistics(predicate, Set(predicate)).init(maxMap(id))
     else
@@ -146,14 +147,15 @@ class Plan(val db: Database) {
     array.head
 
   def optimizeExperimental(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] =
-    val rowCounts = attributes.map(current=> tables.filter(stats => stats.hasVariable(current)).map(stats=> stats.getActiveSize(current)).maxOption.getOrElse(1.0))
+    val rowCounts = attributes.map(current=> tables.filter(stats => stats.hasVariable(current))
+      .map(stats=> stats.getActiveSize(current)).maxOption.getOrElse(1.0))
     val zipAttributes = attributes.zip(rowCounts)
     val array = zipAttributes.map{case(current, rowCount) => {
       (current, rowCount) +: optimizeByExperimental(current, attributes.filter(variable => !variable.equals(current)), body, tables)
-    }}.sortBy(items => {
-      var multiplication = 1.0
-      items.foreach {case(_, score) => multiplication = multiplication * score}
-      multiplication
+    }}.sortBy(array => array.foldRight(1.0) { case ((attribute, score), main) => {
+      if attribute.isSymbol() then main
+      else score * main
+    }
     })
     array.head
 
@@ -206,6 +208,8 @@ class Plan(val db: Database) {
     val relations = query.getBody()
     val attributes = query.getAttributes().toArray
     val stats = relations.map(predicate => getStatistics(maxMap, predicate))
+    val sorted = optimizeMinMin(attributes, relations, stats).map(_._1)
+    val rowMap = getRowSizes(relations)
 
     val dataMap = relations.zipWithIndex.flatMap { case (predicate, index) => {
       val statistics = getStatistics(predicate)
@@ -214,8 +218,7 @@ class Plan(val db: Database) {
     }
     }.toMap
 
-    val sorted = optimizeMinMin(attributes, relations, stats).map(_._1)
-    val rowMap = getRowSizes(relations)
+
     Optimized(query, sorted, relations, bitsize).setData(dataMap)
       .initRows(rowMap)
 
@@ -223,16 +226,15 @@ class Plan(val db: Database) {
     val relations = query.getBody()
     val attributes = query.getAttributes().toArray
     val stats = relations.map(predicate => getStatistics(maxMap, predicate))
-
-    val dataMap = relations.zipWithIndex.flatMap { case (predicate, index) => {
+    val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
+    val sorted = optimizeExperimental(attributes, relations, stats).map(_._1)
+    val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
+    val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
       val statistics = getStatistics(predicate)
       if statistics.isDefined then Some(predicate.identifier(index) -> statistics.get.getData())
       else None
-    }
-    }.toMap
+    }}.toMap
 
-    val sorted = optimizeExperimental(attributes, relations, stats).map(_._1)
-    val sortedRelations = stats.sortBy(stat=> stat.getData().size).map(_.predicate)
     val rowMap = getRowSizes(sortedRelations)
     Optimized(query, sorted, sortedRelations, bitsize).setData(dataMap)
       .initRows(rowMap)
@@ -298,7 +300,7 @@ class Plan(val db: Database) {
 
   //Fix here, a better code structure is needed...
   def optimizeMinMin(query: Hypothesis): Array[Optimized] =
-    val presorted = query.getSorted()
+    val presorted = query.getRanked()
     var countMap = Map[Int, Map[Int, Double]]()
     presorted.foreach(rule => {
       val ruleHead = rule.getHead()
@@ -319,7 +321,7 @@ class Plan(val db: Database) {
     presorted.map(rule => optimizeMinMin(countMap, rule))
 
   def optimizeExperimental(query: Hypothesis): Array[Optimized] =
-    val presorted = query.getSorted()
+    val presorted = query.getRanked()
     var countMap = Map[Int, Map[Int, Double]]()
     presorted.foreach(rule => {
       val ruleHead = rule.getHead()
@@ -336,10 +338,13 @@ class Plan(val db: Database) {
       countMap = countMap.updated(id, map)
     })
 
-    presorted.map(rule => optimizeExperimental(countMap, rule))
+    presorted.map(rule => optimizeExperimental(countMap, rule)).map(optimized=>{
+      val isTarget = query.getHead() == optimized.getHead()
+      optimized.setTarget(isTarget)
+    })
 
   def optimizeMaxMin(query: Hypothesis): Array[Optimized] =
-    val presorted = query.getSorted()
+    val presorted = query.getRanked()
     var countMap = Map[Int, Map[Int, Double]]()
     presorted.foreach(rule => {
       val ruleHead = rule.getHead()
@@ -360,7 +365,7 @@ class Plan(val db: Database) {
     presorted.map(rule => optimizeMaxMin(countMap, rule))
 
   def optimizeAvgMin(query: Hypothesis): Array[Optimized] =
-    val presorted = query.getSorted()
+    val presorted = query.getRanked()
     var countMap = Map[Int, Map[Int, Double]]()
     presorted.foreach(rule => {
       val ruleHead = rule.getHead()
@@ -393,7 +398,7 @@ class Plan(val db: Database) {
       .initRows(rowMap)
 
   def optimizeNone(query: Hypothesis): Array[Optimized] =
-    val presorted = query.getSorted()
+    val presorted = query.getRanked()
     presorted.map(rule => optimizeNone(rule))
 
 }

@@ -3,6 +3,7 @@ package ilp.data
 import ilp.data.database.Bias
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
+import ilp.invent.Invention
 
 
 class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
@@ -21,15 +22,26 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
   def this(crr_head: Predicate, atom: Predicate) = this(crr_head, Array(atom))
 
+
+  def setHead(name: String) = {
+    head.setName(name)
+    this
+  }
+
+  def setBody(predicates: Array[Predicate]): this.type = {
+    this.body = predicates
+    this
+  }
+
   def idset(): Set[Set[Position]] =
     val allVariables = getAllVariables().toSet
-    val allPredicates = getBody() :+ head.copy("head")
+    val allPredicates = getSortedBody() :+ head.copy("head")
     allVariables.map(variable => {
-      val containingSet = allPredicates.zipWithIndex.filter { case (predicate, pindex) => predicate.contains(variable) }
-      val positionSet = containingSet.map { case (predicate, pindex) => predicate.getPosition(pindex, variable) }
+      allPredicates.zipWithIndex.filter { case (predicate, pindex) => predicate.contains(variable) }
+        .map { case (predicate, pindex) => predicate.getPosition(pindex, variable) }
         .toSet
-      positionSet
     })
+
 
   override def equals(obj: Any): Boolean = {
     obj.isInstanceOf[Rule] &&
@@ -38,73 +50,33 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
       }))
   }
 
+  override def hashCode(): Int =
+    getSortedBody()
+      .foldRight[Int](head.hashCode()) { case (predicate, main) => main * 7 + predicate.hashCode() }
 
-  override def renameHead(name:String):Query= {
-    val newRule  = Rule(head.copy(name), body)
+  override def renameHead(name: String): Query = {
+    val newRule = Rule(head.copy(name), body)
     newRule
   }
-
-  //<editor-fold desc="Commented Folded">
-  /*
-    def invalid():Boolean =
-      (body.size == 1 && body.head.getName().equals(head.getName()))
-
-      def doGeneralize():Boolean =
-      posRate <= 1.0 && negRate == 0
-
-    def doSpecify():Boolean =
-      posRate == 1.0 && negRate >= 0
-    override def addCopy(predicate: Predicate): Query =
-      Rule(head, body:+predicate)
-
-      def getName(): String =
-      this.head.getName()
-
-    def setName(name:String): this.type =
-      this.head.setName(name)
-      this
-
-    def newName(name:String): Rule =
-      val newHead = this.head.copy().setName(name)
-        .asPredicate()
-      Rule(newHead, body)
-
-    def randomPositive():Predicate =
-      val index = new Random(17).nextInt(positives.size)
-      positives.toSeq(index)
-
-
-    def abstraction(): Hypothesis =
-      val newName = body.map(_.getName()).mkString("_")
-      val substitution = Substitution(head.getName(), newName)
-      //Rule(head.setName(newName), getBody())
-      this.substitution(substitution, true)
-
-
-    def toRule(headName: String): Rule =
-      val newHead = head.toPredicate(headName)
-      val newBody = body.map(_.copy().asPredicate())
-      Rule(newHead, newBody)
-        .setPositives(positives)
-        .setNegatives(negatives)
-        .setPosRate(posRate)
-        .setNegRate(negRate)
-
-     def getComplexity(): Double =
-      if isRecursive() then body.foldRight(5.0){case(a, m)=> a.getComplexity() + m}
-      else body.foldRight(0.0){case(a, m)=> a.getComplexity() + m}
-      */
-  //</editor-fold>
 
   def getAllVariables(): Array[Variable] =
     val items = body :+ head
     items.flatMap(predicate => predicate.getRecursive())
 
+  def toGeneric():Rule =
+    val variables = getAllVariables().toSet
+    val subs = Substitution()
+    variables.foreach(variable=> {
+      val symbol = Invention.genericVariable()
+      subs.add(variable, symbol)
+    })
+    substitution(subs)
+
   def getSize(): Int =
     body.size
 
-  /*  def getNonRecursive():Array[Predicate] =
-      body.filter(p=> !p.equalByIdentifier(head))*/
+  def getRuleSize(): Int =
+    1
 
   def getNonRecursiveSize(): Int =
     getNonRecursive().getBody().size
@@ -126,9 +98,38 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     negatives
 
 
+  def getNegRate(): Double =
+    negRate
+
+
+  def validAritry(targetHead: Predicate): Boolean =
+    head.getArity() == targetHead.getArity()
+
+  def acceptNegRate(threshold: Double): Boolean =
+    negRate <= threshold
+
+  def getPosRate(): Double =
+    posRate
+
+  def acceptPosRate(threshold: Double): Boolean =
+    posRate >= threshold
+
   def isFinished(): Boolean =
     posRate == 1.0 && negRate == 0.0
 
+
+  def isFinished(threshold: Double): Boolean =
+    this.score >= threshold
+
+  def setScore(score: Double): this.type = {
+    this.score = score
+    this
+  }
+
+  def setFacts(facts: Set[Predicate]): this.type = {
+    this.genfacts = facts
+    this
+  }
 
   def setPositives(positives: Set[Predicate]): this.type =
     this.positives = positives
@@ -150,7 +151,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this.recursive = recursive
     this
 
-  def replace(index: Int, rule: Rule, keepHead:Boolean = true): Query =
+  def replace(index: Int, rule: Rule, keepHead: Boolean = true): Query =
     var newBody = Array[Predicate]()
     val crrHead = rule.getHead()
     val crrPredicates = rule.getBody()
@@ -201,6 +202,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     val nom = tp + tn
     val denom = nom + fn + fp
     acc = nom.toDouble / denom
+
     acc
 
   def ig(facts: Set[Predicate], posItems: Set[Predicate], negItems: Set[Predicate]): Double =
@@ -217,10 +219,4 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     score
 
 
-/*  override def copy(): Rule =
-    val r = Rule(head.copy().asPredicate(), body.map(_.copy().asPredicate()))
-      .setPositives(positives).setNegatives(negatives)
-      .setRecursion(recursive)
-      .setPosRate(posRate).setNegRate(negRate)
-    r*/
 

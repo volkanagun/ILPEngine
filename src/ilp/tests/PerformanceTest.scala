@@ -149,18 +149,12 @@ object PerformanceTest {
     text = text + s"${name}, No Index, Serial, Relative Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
-      val set = engine.joinCyclicParallel(optimizedNone, Substitution())
+      val set = engine.joinCyclic(optimizedNone, Substitution())
 
     }, 5)
 
     text = text + s"${name}, No Index, Parallel, No Optimization, " + crrTime.toString + "\n"
 
-    crrTime = measureMultipleTime({
-      val trie = TrieMap[String, Set[Substitution]]()
-      val set = engine.joinCyclicParallel(optimizedRel, Substitution())
-    }, 5)
-
-    text = text + s"${name}, No Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       val set = engine.joinCyclicRoaring(optimizedNone, Substitution())

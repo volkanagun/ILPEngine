@@ -21,6 +21,7 @@ class Variable(var name: String):
     this.name = name
     this
 
+
   def getComplexity():Double = 1.0
   def getSize():Int = 0
 
@@ -86,6 +87,7 @@ class Variable(var name: String):
   def isEmpty() = true
 
   def copy(): Variable = new Variable(name)
+  def copy(name:String): Variable = new Variable(name)
 
   def of(name: String) = new Variable(name)
 

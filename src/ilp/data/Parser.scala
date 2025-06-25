@@ -512,6 +512,13 @@ object Parser extends JavaTokenParsers {
     }
   }
 
+  def parseHypothesis(input:String):Option[Hypothesis]={
+    val inputSplit = input.split("\n")
+    val rules = inputSplit.flatMap(line=> parseRule(line))
+    if rules.isEmpty then None
+    else Some(Hypothesis(rules.last.getHead(), rules))
+  }
+
   def main(args: Array[String]): Unit = {
 
     val testPredicates = Array(

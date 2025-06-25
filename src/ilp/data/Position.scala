@@ -17,11 +17,8 @@ class Position(val predicate:Predicate, val pindex:Int, val index:Int) {
   }
 
   override def toString = predicate.name + "/"+ pindex + "_" + index + s"_${getName()}"
-/*
 
-  def getPositions():Array[Position] =
-    predicate.getPositions(pindex)
-*/
+
 
   def getValueIdentifier():Int =
     predicate.identifier() * 7 + index

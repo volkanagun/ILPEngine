@@ -11,6 +11,7 @@ class Sym(n: String, var value: String) extends Variable(n):
   override def isVariable() = false
 
   override def copy(): Variable = new Sym(name, value)
+  override def copy(name:String): Variable = new Sym(name, value)
 
   override def hashCode(): Int = value.hashCode
 

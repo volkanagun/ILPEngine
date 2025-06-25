@@ -18,6 +18,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def getArity(): Int =
     this.array.length
 
+  def rename(name:String):Predicate =
+    this.setName(name).asPredicate()
+
   override def getValue(): Variable = this
 
   def substitutionBy(predicate: Predicate):Substitution =
@@ -86,6 +89,10 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def toGeneric(): Predicate =
     Predicate(name, array.map(item => Variable(item.name)))
 
+  def toGeneric(rename:String): Predicate =
+    Predicate(rename, array.map(item => Variable(item.name)))
+
+
   def toNegative(): Negative =
     Negative(name, array)
 
@@ -117,6 +124,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   override def contains(variable: Variable): Boolean =
     array.find(item=> item.getName() == variable.getName())
       .isDefined
+
+  def contains(variables:Array[Variable]):Boolean =
+    variables.forall(variable=> contains(variable))
 
   def identifier(): Int =
     name.hashCode * 7 + length()
@@ -184,7 +194,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def copy(newArray: Array[Variable]): Predicate =
     Predicate(name, newArray)
 
-  def copy(newName: String): Predicate =
+  override def copy(newName: String): Predicate =
     Predicate(newName, array)
 
 

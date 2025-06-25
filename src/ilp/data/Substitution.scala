@@ -21,6 +21,9 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def getSymbols() = symbols
 
+  def contains(variable: Variable) = variables.contains(variable)
+  def containsAll(variables:Array[Variable]) = variables.forall(variable=>contains(variable))
+
   def length(): Int =
     variables.length
 
@@ -267,64 +270,8 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
 object Substitution {
 
-  def testEq1(): Unit = {
-    val s1 = Substitution(Variable("X"), Sym("X2", "c"))
-    val s2 = Substitution(Variable("X"), Sym("X2", "c"))
-    println(HashSet[Substitution](s1, s2).size)
-  }
-
-  def test1(): Unit = {
-    val p = Predicate("p", Array(Variable("X"), Variable("Y")))
-    val i = Predicate("p", Array[Variable](variables.Sym("X", "a"), variables.Sym("Y", "b")))
-    Substitution().of(p, i) match {
-      case Some(s) => println(p.substitution(s))
-    }
-
-  }
-
-  def test2(): Unit = {
-    val p = Predicate("p", Array(Variable("X"), Variable("X")))
-    val i = Predicate("p", Array[Variable](data.variables.Sym("X", "a"), data.variables.Sym("X", "a")))
-    Substitution().of(p, i) match {
-      case Some(s) => println(p.substitution(s))
-    }
-  }
-
-  def test3(): Unit = {
-    val p = Predicate("p", Array(Variable("X"), Variable("X")))
-    val i = Predicate("p", Array[Variable](data.variables.Sym("X", "a"), data.variables.Sym("X", "b")))
-
-    Substitution().of(p, i) match {
-      case Some(s) => println(p.substitution(s))
-    }
-  }
-
-  def test4(): Unit = {
-    val xVar = Variable("X")
-    val yVar = Variable("Y")
-    val uVar = Variable("U")
-    val zVar = Variable("Z")
-    val vVar = Variable("V")
-
-    val aSym = new variables.Sym("X", "a")
-    val dSym = new variables.Sym("U", "d")
-    val eSym = new variables.Sym("V", "e")
-    val gSym = new variables.Sym("Z", "g")
-
-    val sub1Var = Array(xVar, yVar, zVar)
-    val sub2Var = Array(uVar, vVar, zVar)
-
-    val sub1Sym = Array[Variable](aSym, uVar, vVar)
-    val sub2Sym = Array[Variable](dSym, eSym, gSym)
-
-    val p = new Substitution(sub1Var, sub1Sym)
-    val i = new Substitution(sub2Var, sub2Sym)
-
-    println(p.composition(i))
-  }
-
-  def main(args: Array[String]): Unit = {
-    testEq1()
-  }
+  def create(predicates:Array[(Predicate, Predicate)]):Substitution=
+    val variables = predicates.map(pair=> (pair._1.asVariable(),pair._2.asVariable()))
+    Substitution(variables)
 
 }

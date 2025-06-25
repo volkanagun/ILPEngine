@@ -14,20 +14,29 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
   var roaringBitmap: Map[Int, RoaringBitmap] = Map()
   var cudaBitmap: Map[Int, Array[Int]] = Map()
   var dataMap: Map[Int, Set[Predicate]] = Map()
-
+  var isTarget:Boolean = false
 
   def identifier():Int =
     getHead().identifier()
-
 
   def newData(): Optimized = {
     Optimized(query, variables, predicates, bitSize)
   }
 
+  def setTarget(isTarget:Boolean):this.type = {
+    this.isTarget = isTarget
+    this
+  }
+
+  def getTarget():Boolean = isTarget
+
   def newData(map: Map[Int, Set[Predicate]]): Optimized = {
     Optimized(query, variables, predicates, bitSize)
       .setData(map)
   }
+
+  def hasHead(predicate: Predicate):Boolean =
+    query.getHead().identifier() == predicate.identifier()
 
   def getQuery(): Query =
     query
@@ -36,7 +45,7 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
     query.getHead()
 
   def getVariables(): Array[Variable] =
-    variables
+    variables.filter(variable=> !variable.isSymbol())
 
   def getRelations(): Array[Predicate] =
     predicates
@@ -53,8 +62,9 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
   def isRecursive(): Boolean =
     query.isRecursive()
 
-  def id(): Int =
-    predicates.foldRight[Int](1) { case (predicate, main) => main * 7 + predicate.identifier() }
+  def queryId(): Int =
+    query.hashCode()
+/*
 
   def filter(ids: Array[(Predicate, Int)]): Optimized =
     val replaces = ids.zipWithIndex.map { case ((predicate, oldId), indice) => oldId -> predicate.identifier(indice) }
@@ -75,28 +85,31 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
       .setCudaBitmap(newCudaBitmap)
       .setRoaring(newRoaringBitmap)
 
+*/
+
+  /*
   def exclude(id: Int): Optimized =
     val ids = predicates.zipWithIndex.map { case (predicate, index) => {
       (predicate, predicate.identifier(index))
     }
     }.filter { case (predicate, _) => predicate.identifier() != id }
-    filter(ids)
+    filter(ids)*/
 
-  def include(id: Int): Optimized =
+/*  def include(id: Int): Optimized =
     val ids = predicates.zipWithIndex.map { case (predicate, index) => {
       (predicate, predicate.identifier(index))
     }
     }.filter { case (predicate, _) => predicate.identifier() == id }
-    filter(ids)
+    filter(ids)*/
 
-  def getRecursive(): Optimized = {
+/*  def getRecursive(): Optimized = {
     val crrId = query.getHead().identifier()
     include(crrId)
-  }
+  }*/
 
-  def getNonRecursive(): Optimized =
+/*  def getNonRecursive(): Optimized =
     val crrId = query.getHead().identifier()
-    exclude(crrId)
+    exclude(crrId)*/
 
   def setRows(map: Map[Int, Set[Int]]): this.type =
     rows = map

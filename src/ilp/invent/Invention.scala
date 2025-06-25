@@ -5,6 +5,8 @@ import ilp.data.database.Database
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
+import javax.print.attribute.standard.Destination
+import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
 
 object Invention:
@@ -21,8 +23,10 @@ object Invention:
     } yield
       xs + x
 
+
+
   def combinations(head: Predicate, array: Array[Variable]): Set[Predicate] =
-    val combinations = array.combinations(head.length())
+    val combinations = array.combinations(array.length)
     combinations.map(elements => head.copy(elements)).toSet
 
   def combinations(source: Array[Predicate], destination: Array[Predicate], metaRule: Rule, slots: Int): Array[Array[Predicate]] = {
@@ -31,7 +35,7 @@ object Invention:
   }
 
   def combinationsMeta(source: Array[Predicate], destination: Array[Predicate], slots: Int): Array[Array[Predicate]] = {
-    (1 until slots).flatMap { i =>
+    val result = (1 until slots).flatMap { i =>
       val fromSet1 = i
       val fromSet2 = slots - i
 
@@ -44,7 +48,29 @@ object Invention:
         Iterator.empty
       }
     }.toArray
+    result
   }
+
+  def igScore(positives:Set[Predicate], negatives:Set[Predicate], posItems:Set[Predicate], negItems:Set[Predicate]):Double=
+    val posRate = positives.size.toDouble / math.max(posItems.size, 1.0)
+    val negRate = negatives.size.toDouble / math.max(negItems.size, 1.0)
+    val score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
+    score
+
+
+  def heuristic(source:Hypothesis, hypotheses: Array[Hypothesis]): Boolean =
+    var posItems = source.positives
+    var negItems = source.negatives
+    hypotheses.foreach(hypothesis => {
+      //Problematic
+      posItems = posItems.union(hypothesis.positives)
+      negItems = negItems.intersect(hypothesis.negatives)
+    })
+
+    val ig = igScore(source.positives, source.negatives, posItems, negItems)
+
+    source.emptyScores() || ig > source.score
+  //posItems.size > source.positives.size || negItems.size < source.negatives.size
 
   def genericName(): String =
     val index = rnd.nextInt(uppercases.length)
@@ -54,6 +80,28 @@ object Invention:
   def genericLower(): String =
     genericName().toLowerCase()
 
+  def canonicalize(rule: Rule):Rule = {
+    val sorted = rule.getBody().sortBy(_.name)
+    val id = sorted.foldRight[Int](1){case(item, main)=> main * 7 + item.hashCode}
+    val absid = math.abs(id)
+    val name = "func" + absid
+    rule.setHead(name)
+      .setBody(sorted)
+  }
+  def canonicalize(predicate: Predicate):String = {
+    val id = predicate.getName().hashCode
+    val absid = math.abs(id)
+    val name = "func" + absid
+    name
+  }
+
+  def canonicalize(body: Array[Predicate]):String = {
+    val id = body.map(_.getName()).sorted.foldRight[Int](1) { case (item, main) => main * 7 + item.hashCode }
+    val absid = math.abs(id)
+    val name = "func" + absid
+    name
+  }
+
   def genericVariable(): Variable =
     Variable(genericName())
 
@@ -62,6 +110,98 @@ object Invention:
     val substitution = Substitution(renamePairs)
     metaRule.substitution(substitution)
 
+  def metaUnionAccept(source: Hypothesis, target: Hypothesis): Boolean = {
+    val sourcePositives = source.getPositives()
+    val destinationPositives = target.getPositives()
+    val unionSize = sourcePositives.union(destinationPositives).size.toDouble
+    unionSize > sourcePositives.size && unionSize > destinationPositives.size
+  }
+
+  def metaUnion(source:Hypothesis, target:Hypothesis):Hypothesis = {
+    val sourceHeadRules = source.getHeads()
+    val targetHeadRules = target.getHeads()
+    val mergeRules = sourceHeadRules ++ targetHeadRules
+    val mergeHeads = mergeRules.map(_.getHead())
+    val newHead = Variable(canonicalize(mergeHeads))
+    val substitutionPairs = mergeHeads.map(head=> (head.asVariable(), newHead))
+    val substitution = Substitution(substitutionPairs)
+    val newRules = mergeRules.map(rule=> rule.substitution(substitution))
+    val rules = (source.getNonHeads() ++ target.getNonHeads() ++ newRules)
+    Hypothesis(rules.distinct)
+  }
+
+
+/*  def metaWith(source: Hypothesis, candidates: Array[Hypothesis], metaRule: Rule): Array[Hypothesis] =
+    val sourceHead = source.getHead()
+    val metaBody = metaRule.getNonRecursive().getBody()
+
+    val n = metaBody.length - 1
+    val combinations = candidates.combinations(n)
+    val results = combinations.flatMap(array => {
+      val candidateCombination = (array :+ source).permutations
+      candidateCombination.flatMap(combinedCombinations => {
+        val pairs = metaBody.zip(combinedCombinations.map(hypothesis => hypothesis.getHead()))
+          .filter { case (meta, candidate) => meta.equalByArity(candidate) }
+
+        if pairs.size == combinedCombinations.size then
+          val substitution = Substitution.create(pairs)
+          val newRule = canonicalize(metaRule.substitution(substitution))
+          val combinedRules = combinedCombinations.flatMap(_.getRules()) :+ newRule
+          val newHypothesis = Hypothesis(newRule.getHead(), combinedRules)
+          Some(newHypothesis)
+        else
+          None
+      })
+    }).toArray
+
+    results*/
+
+
+  def metaWith(source:Hypothesis, candidates:Array[Hypothesis], metaRule:Rule):Array[Hypothesis]=
+    val sourceHead = source.getHead()
+    val metaBody = metaRule.getNonRecursive().getBody()
+    val n = metaBody.length - 1
+    val combinations = candidates.combinations(n).flatMap(array => array.permutations)
+    val results =  combinations.flatMap(candidateCombination => {
+
+      val combinedCombinations = source +: candidateCombination
+      val pairs = metaBody.zip(combinedCombinations.map(hypothesis=> hypothesis.getHead()))
+        .filter{case(meta, candidate)=> meta.equalByArity(candidate)}
+
+      if pairs.size == combinedCombinations.size then
+         val substitution = Substitution.create(pairs)
+         val newRule = canonicalize(metaRule.substitution(substitution))
+         val combinedRules = source.getRules() ++ candidateCombination.flatMap(_.getRules()) :+ newRule
+         val newHypothesis = Hypothesis(newRule.getHead(), combinedRules)
+         Some(newHypothesis)
+      else
+        None
+    }).toArray
+    results
+
+  def metaWithHeuristic(source:Hypothesis, candidates:Array[Hypothesis], metaRule:Rule):Array[Hypothesis]=
+    val sourceHead = source.getHead()
+    val metaBody = metaRule.getNonRecursive().getBody()
+    val n = metaBody.length - 1
+    val combinations = candidates.combinations(n).flatMap(array => array.permutations)
+    val results =  combinations.flatMap(candidateCombination => {
+
+      val combinedCombinations = source +: candidateCombination
+      val pairs = metaBody.zip(combinedCombinations.map(hypothesis=> hypothesis.getHead()))
+        .filter{case(meta, candidate)=> meta.equalByArity(candidate)}
+
+      val test = heuristic(source, candidateCombination)
+
+      if pairs.size == combinedCombinations.size && test then
+         val substitution = Substitution.create(pairs)
+         val newRule = canonicalize(metaRule.substitution(substitution))
+         val combinedRules = source.getRules() ++ candidateCombination.flatMap(_.getRules()) :+ newRule
+         val newHypothesis = Hypothesis(newRule.getHead(), combinedRules)
+         Some(newHypothesis)
+      else
+        None
+    }).toArray
+    results
 
   def metaWith(database: Database, source: Array[Predicate], destination: Array[Predicate], metaRule: Rule): Array[Rule] =
     var crrSubstitutions: Array[Substitution] = Array(Substitution())
@@ -80,10 +220,7 @@ object Invention:
           None
         }
         else {
-          var variableSubstitution = Substitution()
-          pairs.flatMap { case (r, p) => Unification().ofWithout(Substitution(), r, p) }
-            .foreach(substituiton => variableSubstitution = variableSubstitution.composition(substituiton))
-          val newRule = metaRule.substitution(predicateSubstitution).substitution(variableSubstitution.reverse())
+          val newRule = metaRule.substitution(predicateSubstitution)
           Some(newRule.asRule())
         }
       })
@@ -91,6 +228,28 @@ object Invention:
 
 //<editor-fold desc="Commented old code">
 /*
+
+  def metaWith(source:Hypothesis, candidates:Array[Hypothesis], metaRule:Rule):Array[Hypothesis]=
+    val sourceHead = source.getHead()
+    val metaBody = metaRule.getNonRecursive().getBody()
+    val n = metaBody.length - 1
+    val combinations = candidates.combinations(n).toArray.par.flatMap(array => array.permutations)
+    val results =  combinations.flatMap(candidateCombination => {
+
+      val combinedCombinations = source +: candidateCombination
+      val pairs = metaBody.zip(combinedCombinations.map(hypothesis=> hypothesis.getHead()))
+        .filter{case(meta, candidate)=> meta.equalByArity(candidate)}
+
+      if pairs.size == combinedCombinations.size then
+         val substitution = Substitution.create(pairs)
+         val newRule = metaRule.substitution(substitution)
+         val combinedRules = source.getRules() ++ candidateCombination.flatMap(_.getRules()) :+ newRule
+         val newHypothesis = Hypothesis(newRule.getHead(), combinedRules.distinct)
+         Some(newHypothesis)
+      else
+        None
+    }).toArray
+    results
 
   def generic(database: Database, metaPredicate: Predicate): Set[Predicate] =
     database.getTemplates(metaPredicate).map(_.toGeneric(uppercases)) ++

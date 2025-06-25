@@ -11,31 +11,21 @@ class Query(var head: Predicate, var body: Array[Predicate]):
 
   def getAttributes(): Set[Variable] =
     body.flatMap(predicate => predicate.getVariables())
-      .toSet//.filter(item => item.isVariable())
+      .toSet
 
   def getNonRecursive(): Query =
     Query(head, body.filter(predicate => !predicate.equalByIdentifier(head)))
 
 
-  def renameHead(name:String):Query= {
-    val newQuery  = Query(head.copy(name), body)
+  def renameHead(name: String): Query = {
+    val newQuery = Query(head.copy(name), body)
     newQuery
   }
 
-  /*  def getRecursiveHead(): Predicate =
-      body.filter(predicate => predicate.equalByIdentifier(head))
-        .head*/
-
- /* def compile(): this.type =
-    val allPositions = head.getPositions(-1) ++ body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }
-    positions = allPositions.map(crr => (crr -> allPositions.filter(other => crr.equalsByName(other)).toSet))
-      .toMap
-
-    val crrPositions = body.zipWithIndex.flatMap { case (p, pindex) => p.getPositions(pindex) }
-    positionsJoin = crrPositions.groupBy(p => p.getVariable().getName()).toArray
-      .sortBy { case (_, array) => array.map(p => p.pindex).sum }
-
-    this*/
+  def setHead(head: Predicate): this.type = {
+    this.head = head
+    this
+  }
 
   def setRecursive(recursive: Boolean): this.type =
     this.recursive = recursive
@@ -44,25 +34,16 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   def doRecursion(item: Predicate): Boolean =
     item.identifier() == head.identifier() && !item.isEmpty()
 
-
   def isAtom(): Boolean = body.isEmpty
+
   def isDefinite(): Boolean = head.isDefinite()
-  /*def isNegation(): Boolean = body.size == 1 && body.head.isNegative()*/
 
   def getBody(): Array[Predicate] = body
+  def getSortedBody(): Array[Predicate] = body.sortBy(_.getName())
 
-  /*def getPositions(): Map[Position, Set[Position]] = positions*/
-
-  /*def getJoinPositions(): Array[(String, Array[Position])] = positionsJoin*/
-
-/*  def getHeadBodyPredicates(): Array[Array[Int]] =
-    head.getVariables().map(variable => body.zipWithIndex
-      .filter(pair => pair._1.contains(variable))
-      .map { case (predicate, index) => predicate.identifier(index) })*/
+  def getBodyId() = getSortedBody().foldRight[Int](1){case(p, main) => main * 7 + p.hashCode()}
 
   def isRecursive(): Boolean = recursive
-
-  /*def nonRecursive(): Boolean = !recursive*/
 
   def isComplete(): Boolean =
     val set = Set(head) ++ body
@@ -78,28 +59,30 @@ class Query(var head: Predicate, var body: Array[Predicate]):
 
   def asRule(): Rule =
     asInstanceOf[Rule]
-/*
 
-  def removeRecursion(): Query = {
-    val newBody = body.filter(predicate => !predicate.equalByIdentifier(head))
-    Query(head, newBody).compile()
-  }
-*/
-
-  def toRule():Rule=
+  def toRule(): Rule =
     Rule(head, body)
 
-  def call(predicate: Predicate): Query = {
-    val new_variables = predicate.array
-    val crr_variables = head.array
+
+  def callByVariable(predicate: Predicate): Query = {
+    val variables = head.getVariables()
+    val symbols = predicate.getVariables()
+    val substitution = Substitution(variables,symbols)
+    call(substitution)
+  }
+
+
+  def callBySymbol(predicate: Predicate): Query = {
+    val new_variables = predicate.getVariables()
+    val crr_variables = head.getVariables()
     val substitution = Substitution()
     for i <- 0 until new_variables.length do
       val variable = crr_variables(i)
-      val symbol = new_variables(i).setName(variable.getName())
+      val symbol = new_variables(i)
+        .copy(variable.getName())
       substitution.add(variable, symbol)
 
     call(substitution)
-      //.compile()
   }
 
   def call(substitution: Substitution): Query =
@@ -107,13 +90,6 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     val newBody = body.map(item => item.substitution(substitution).asPredicate())
     Query(newHead, newBody)
       .setRecursive(recursive)
-      //.compile()
-
-
-/*  def addCopy(predicate: Predicate): Query =
-    Query(head, body :+ predicate)
-      .setRecursive(recursive)
-      .compile()*/
 
 
   def contains(predicate: Predicate): Boolean =
@@ -126,54 +102,23 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   def calledFrom(otherRule: Query): Boolean =
     otherRule.getBody().exists(otherPredicate => otherPredicate.identifier() == identifier())
 
+  def calls(otherRule: Query): Boolean = {
+    val predicate = otherRule.getHead()
+    body.exists(bodyPredicate => predicate.equalByIdentifier(bodyPredicate))
+  }
+
   def getAritry(): Int =
     head.getArity()
+
 
   def getHead(): Predicate =
     head
 
-/*
-  def getAbstractName(): String =
-    body.map(p => p.getName()).mkString("_")*/
-
-  /*
-  def expandCall(rule: Hypothesis): Rule =
-    var newBody = Array[Predicate]()
-    for target <- body do
-      if target.identifier() == rule.identifier() then
-        newBody ++= rule.call(target).getBody()
-      else
-        newBody :+= target
-
-    Rule(head, newBody)*/
-
-  /*  def expandCall(rules: Set[Hypothesis]): Rule =
-      var newBody = Array[Predicate]()
-      for target <- body do
-        for rule <- rules do
-          if target.identifier() == rule.identifier() then
-            newBody ++= rule.call(target).getBody()
-          else
-            newBody :+= target
-
-
-      Rule(head, newBody)*/
-
-  /*def addPredicate(predicate: Predicate): Boolean =
-    var r = false
-    if !body.contains(predicate) then
-      body :+= predicate
-      r = true
-
-    r*/
-
-/*  def add(predicate: Predicate): this.type =
-    if !body.contains(predicate) then
-      body :+= predicate
-    this*/
+  def getHeadIdentifier(): Int =
+    head.identifier()
 
   override def hashCode(): Int =
-    body.foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
+    getSortedBody().foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
 
   override def equals(obj: Any): Boolean =
     if obj.isInstanceOf[Query] then
@@ -186,75 +131,3 @@ class Query(var head: Predicate, var body: Array[Predicate]):
   override def toString: String =
     if body.nonEmpty then head.toString + " :- " + body.map(_.toString).mkString(" & ") + "."
     else head.toString + "."
-
-/*  def copy(): Query =
-    Query(head.copy().asPredicate(), body.map(_.copy().asPredicate()))*/
-/*
-  def boundHead(): Set[Variable] =
-    head.array.filter(variable => body.exists(predicate => predicate.contains(variable)))
-      .toSet*/
-
- /* def boundBody(): Set[Variable] =
-    val variables = body.map(predicate => predicate.getVariables())
-    body.zipWithIndex.flatMap { case (predicate, index) => {
-      val otherVariables = body.zipWithIndex.filter(_._2 != index).flatMap(_._1.getVariables()).toSet
-      predicate.getVariables().filter(variable => otherVariables.contains(variable))
-    }
-    }.toSet*/
-/*
-  def boundPosition(): Set[(Int, Set[Position])] =
-    val variables = body.map(predicate => predicate.getVariables())
-    body.zipWithIndex.map { case (predicate, pindex) => {
-      val otherVariables = body.zipWithIndex.filter(_._2 != pindex).flatMap(_._1.getVariables()).toSet
-      (pindex, predicate.getVariables().zipWithIndex.filter { case (variable, position) => otherVariables.contains(variable) }
-        .map(pair => Position(predicate, pindex, pair._2)).toSet)
-    }
-    }.toSet*/
-/*
-
-  def unboundHead(): Set[Variable] =
-    head.array.filter(variable => !body.exists(predicate => predicate.contains(variable)))
-      .toSet
-*/
-/*
-
-  def unboundBody(): Set[Variable] =
-    body.flatMap(predicate => predicate.array)
-      .filter(variable => !head.contains(variable)).toSet
-*/
-/*
-
-  def unboundAll(): Set[Variable] =
-    val set = Set(head) ++ body
-    set.map(predicate => (predicate, set.filter(!_.equals(predicate))))
-      .flatMap { case (predicate, others) => {
-        predicate.array.filter(variable => !others.exists(other => other.contains(variable)))
-      }
-      }
-*/
-
-/*
-
-  def unboundBodyPositions(): Set[Position] =
-    val set = body
-    set.zipWithIndex.map { case (predicate, pindex) => (predicate, pindex, set.filter(!_.equals(predicate))) }
-      .flatMap { case (predicate, pindex, others) => {
-        predicate.array.zipWithIndex
-          .filter { case (variable, index) => !others.exists(other => other.contains(variable)) }
-          .map { case (_, index) => Position(predicate, pindex, index) }
-      }
-      }.toSet
-*/
-/*
-
-  def unboundHeadPositions(): Set[Position] =
-    body.zipWithIndex.flatMap { case (predicate, pindex) => {
-      predicate.getArray().zipWithIndex.filter { case (variable, index) => !head.contains(variable) }
-        .map { case (variable, index) => {
-          Position(predicate, pindex, index)
-        }
-        }
-    }
-    }.toSet
-
-*/
