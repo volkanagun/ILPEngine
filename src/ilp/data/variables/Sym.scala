@@ -20,12 +20,12 @@ class Sym(n: String, var value: String) extends Variable(n):
   override def equalValue(variable: Variable): Boolean = variable.isSymbol() && variable.asSymbol().value == value
 
   override def equals(obj: Any): Boolean =
-    if obj.isInstanceOf[Sym] then
-      val other = obj.asInstanceOf[Sym]
-      other.value.equals(value)
-    else
-      name.equals(obj.asInstanceOf[Variable].name)
+    obj match {
+      case other: Sym =>
+        other.value.equals(value)
+      case _ => name.equals(obj.asInstanceOf[Variable].name)
+    }
 
 
 
-  override def toString: String = value.toLowerCase()
+  override def toString: String = name +"=" + value.toLowerCase()

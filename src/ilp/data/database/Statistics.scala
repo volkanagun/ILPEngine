@@ -7,8 +7,8 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
 
   def this(predicate: Predicate) = this(predicate, Set(predicate))
 
-  var activeMap = Range(0, predicate.getArity()).map(index => index -> computeActiveSize(index)).toMap
-  var relativeMap = computeRelative()
+  private var activeMap = Range(0, predicate.getArity()).map(index => index -> computeActiveSize(index)).toMap
+  private var relativeMap = computeRelative()
 
   def identifier():Int =
     predicate.identifier()
@@ -22,7 +22,7 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
   }
 
 
-  protected def computeRelative():Map[(Int, Int), Double] = {
+  private def computeRelative():Map[(Int, Int), Double] = {
     val map = Range(0, predicate.getArity()).flatMap(current => {
       val size1 = activeMap(current)
       Range(0, predicate.getArity()).map(next => {
@@ -49,20 +49,20 @@ class Statistics(var predicate: Predicate, val data: Set[Predicate]) {
      activeMap(position)
 
   def getActiveSize(variable:Variable):Double =
-     val position = predicate.getIndex(variable)
+     val position = predicate.getPosition(variable)
      activeMap(position)
 
   def getActiveSize(predicate:Predicate, variable: Variable):Double = {
-    val index = predicate.getIndex(variable)
+    val index = predicate.getPosition(variable)
     activeMap.getOrElse(index, 1.0)
   }
 
   def getRelativeRatio(predicate:Predicate, current:Variable, next:Variable):Double = {
-    val pair = (predicate.getIndex(current), predicate.getIndex(next))
+    val pair = (predicate.getPosition(current), predicate.getPosition(next))
     relativeMap.getOrElse(pair, 1.0)
   }
 
-  def computeActiveSize(position: Int): Double = {
+  private def computeActiveSize(position: Int): Double = {
     data.map(predicate => predicate.getVariable(position)).size
   }
 }

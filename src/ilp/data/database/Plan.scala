@@ -14,7 +14,7 @@ case class Key(predicate: Predicate, index: Int) {
 
 class Plan(val db: Database) {
 
-  val bitsize = db.bitsize
+
   val statistics = db.getStatistics()
 
   def getStatistics(predicate: Predicate): Option[Statistics] = {
@@ -38,13 +38,13 @@ class Plan(val db: Database) {
   }
 
   def getRowSizes(relations: Array[Predicate]): Map[Int, Int] =
-    relations.zipWithIndex.map { case (predicate, index) => {
+    relations.zipWithIndex.flatMap { case (predicate, index) => {
         val id = predicate.identifier(index)
         val stats = getStatistics(predicate)
         if stats.isDefined then
-          id -> stats.get.rowSize()
+          Some(id -> stats.get.rowSize())
         else
-          id -> 1
+          None
       }
       }
       .toMap
@@ -52,12 +52,12 @@ class Plan(val db: Database) {
   def getMaxMinScore(attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
     val scores = attributes.map(next => (next, statistics.zip(body).map { case (statistic, predicate) => statistic.getActiveSize(predicate, next) }.max))
     val found = scores.map(pair => (pair._1, pair._2))
-    found.sortBy(_._2).head
+    found.minBy(_._2)
 
   def getMaxMinRelativeScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
     val scores = attributes.map(next => (next, statistics.zip(body).map { case (statistic, predicate) => statistic.getRelativeRatio(predicate, current, next) }.max))
     val found = scores.map(pair => (pair._1, pair._2))
-    found.sortBy(_._2).head
+    found.minBy(_._2)
 
   def getAvgMinRelativeScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
     val scores = attributes.map(next => (next, {
@@ -65,12 +65,12 @@ class Plan(val db: Database) {
       scores.sum / scores.length
     }))
     val found = scores.map(pair => (pair._1, pair._2))
-    found.sortBy(_._2).head
+    found.minBy(_._2)
 
   def getMinMinRelativeScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
     val scores = attributes.map(next => (next, statistics.zip(body).map { case (statistic, predicate) => statistic.getRelativeRatio(predicate, current, next) }.min))
     val found = scores.map(pair => (pair._1, pair._2))
-    found.sortBy(_._2).head
+    found.minBy(_._2)
 
   def getMinMaxScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
     val scores = attributes.map(next => (next, {
@@ -78,7 +78,7 @@ class Plan(val db: Database) {
       values.min
     }))
     val found = scores.map(pair => (pair._1, pair._2))
-    found.sortBy(_._2).last
+    found.maxBy(_._2)
 
 
   def optimizeByRecursive(current: Variable, attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] =
@@ -190,7 +190,7 @@ class Plan(val db: Database) {
     val dataMap = stats.zipWithIndex.map { case (statistics, index) => statistics.predicate.identifier(index) -> statistics.data }
       .toMap
     val sorted = optimizeByRecursive(attributes, relations, stats).map(_._1)
-    Optimized(query, sorted, relations, bitsize).setData(dataMap)
+    Optimized(query, sorted, relations).setData(dataMap)
       .initRows(rowMap)
 
   def optimizeRelative(query: Query): Optimized =
@@ -201,7 +201,7 @@ class Plan(val db: Database) {
     val dataMap = stats.zipWithIndex.map { case (statistics, index) => statistics.predicate.identifier(index) -> statistics.data }
       .toMap
     val sorted = optimizeMinMin(attributes, relations, stats).map(_._1)
-    Optimized(query, sorted, relations, bitsize).setData(dataMap)
+    Optimized(query, sorted, relations).setData(dataMap)
       .initRows(rowMap)
 
   def optimizeMinMin(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
@@ -219,7 +219,7 @@ class Plan(val db: Database) {
     }.toMap
 
 
-    Optimized(query, sorted, relations, bitsize).setData(dataMap)
+    Optimized(query, sorted, relations).setData(dataMap)
       .initRows(rowMap)
 
   def optimizeExperimental(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
@@ -236,7 +236,7 @@ class Plan(val db: Database) {
     }}.toMap
 
     val rowMap = getRowSizes(sortedRelations)
-    Optimized(query, sorted, sortedRelations, bitsize).setData(dataMap)
+    Optimized(query, sorted, sortedRelations).setData(dataMap)
       .initRows(rowMap)
 
   def optimizeMaxMin(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
@@ -253,7 +253,7 @@ class Plan(val db: Database) {
 
     val sorted = optimizeMaxMin(attributes, relations, stats).map(_._1)
     val rowMap = getRowSizes(relations)
-    Optimized(query, sorted, relations, bitsize).setData(dataMap)
+    Optimized(query, sorted, relations).setData(dataMap)
       .initRows(rowMap)
 
   def optimizeAvgMin(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
@@ -270,7 +270,7 @@ class Plan(val db: Database) {
 
     val sorted = optimizeAvgMin(attributes, relations, stats).map(_._1)
     val rowMap = getRowSizes(relations)
-    Optimized(query, sorted, relations, bitsize).setData(dataMap)
+    Optimized(query, sorted, relations).setData(dataMap)
       .initRows(rowMap)
 
 
@@ -387,18 +387,21 @@ class Plan(val db: Database) {
 
   def optimizeNone(query: Query): Optimized =
     val relations = query.getBody()
-    val attributes = query.getAttributes().toArray
+    val attributes = query.getAttributeArray()
     val stats = relations.flatMap(predicate => getStatistics(predicate))
     val rowMap = getRowSizes(relations)
     val dataMap = stats.zipWithIndex.map { case (statistics, index) => statistics.predicate.identifier(index) -> statistics.data }
       .toMap
     val sorted = attributes
-    Optimized(query, sorted, relations, bitsize)
+    Optimized(query, sorted, relations)
       .setData(dataMap)
       .initRows(rowMap)
 
   def optimizeNone(query: Hypothesis): Array[Optimized] =
     val presorted = query.getRanked()
-    presorted.map(rule => optimizeNone(rule))
+    presorted.map(rule => optimizeNone(rule)).map(optimized => {
+      val isTarget = query.getHead() == optimized.getHead()
+      optimized.setTarget(isTarget)
+    })
 
 }

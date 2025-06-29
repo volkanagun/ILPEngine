@@ -19,10 +19,41 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def getVariables() = variables
 
+  def getVariable(index: Int) = variables(index)
+
   def getSymbols() = symbols
 
+  def getSymbol(index: Int) = symbols(index)
+
+  def getSymbol(variable: Variable): Option[Variable] = {
+    for (index <- 0 until variables.length) {
+      if variables(index).getName() == variable.getName() then
+        return Some(symbols(index))
+    }
+    None
+  }
+
   def contains(variable: Variable) = variables.contains(variable)
-  def containsAll(variables:Array[Variable]) = variables.forall(variable=>contains(variable))
+
+  def containsAll(variables: Array[Variable]) = variables.forall(variable => contains(variable))
+
+  def copy(): Substitution =
+    Substitution(variables, symbols)
+
+  def get(variables: Array[Variable]) = {
+    var newVariables = Array[Variable]()
+    var newSymbols = Array[Variable]()
+    for (index <- 0 until length()) {
+      val variable = getVariable(index)
+      val symbol = getSymbol(index)
+      if variables.contains(variable) then {
+        newVariables :+= variable
+        newSymbols :+= symbol
+      }
+    }
+
+    Substitution(newVariables, newSymbols)
+  }
 
   def length(): Int =
     variables.length
@@ -40,7 +71,37 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def filter(predicate: Predicate): Substitution = {
     val newSet = variables.zip(symbols).filter(pair => predicate.contains(pair._1))
-    Substitution(newSet.map(_._1), newSet.map(_._2))
+    Substitution(newSet)
+  }
+
+  def filterReplace(predicate: Predicate): Substitution = {
+    val newSet = variables.zip(symbols).filter(pair => predicate.contains(pair._1))
+      .map(pair => (pair._2, predicate.findVariable(pair._1).setName(pair._2.getName())))
+    Substitution(newSet)
+  }
+
+  def normalize(): Substitution = {
+    var newVariables = Array[Variable]()
+    var newSymbols = Array[Variable]()
+    for (v <- 0 until variables.length) {
+      val symbol = symbols(v)
+      if symbol.isSymbol() then {
+        newVariables :+= variables(v)
+        newSymbols :+= symbols(v)
+      }
+    }
+    variables = newVariables
+    symbols = newSymbols
+    this
+  }
+
+  def hasConflict(substitution: Substitution): Boolean = {
+    for (index <- 0 until substitution.length()) {
+      val variable = substitution.getVariable(index)
+      if contains(variable) && getSymbol(variable).exists(variable => variable != substitution.getSymbol(index)) then
+        return true;
+    }
+    false
   }
 
   def hasConflict(): Boolean = {
@@ -48,7 +109,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
       .groupBy(pair => pair._1.getName())
       .view
       .mapValues(values =>
-        values.map(_._2).toSet.toArray)
+        values.map(_._2).distinct)
       .exists(items => {
         items._2.length > 1
       })
@@ -101,12 +162,23 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     val newsyms = symbols :+ value
     Substitution(newvars, newsyms)
 
+  def replaceNew(variable: Variable, value: Variable): Substitution =
+    val clue = indexVariable(variable)
+    if clue.isEmpty then
+      val newvars = variables :+ variable
+      val newsyms = symbols :+ value
+      Substitution(newvars, newsyms)
+    else
+      val indice = clue.get
+      val newsyms = symbols.map(identity)
+      newsyms(indice) = value
+      Substitution(variables, newsyms)
+
   def hasVariable(variable: Variable): Boolean =
-    this.variables.find(crrVariable => crrVariable.equalName(variable))
-      .isDefined
+    this.variables.exists(crrVariable => crrVariable.equalName(variable))
 
   def hasValue(variable: Variable): Boolean =
-    this.symbols.find(crrSymbol => crrSymbol.equals(variable)).isDefined
+    this.symbols.exists(crrSymbol => crrSymbol.equals(variable))
 
   def variableByValue(variable: Variable): Option[Variable] = {
     val find = symbols.zipWithIndex.find(pair => pair._1.equals(variable))
@@ -120,6 +192,14 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.equalName(variable) }
     if find.isDefined then
       Some(symbols(find.get._2))
+    else
+      None
+  }
+
+  def indexVariable(variable: Variable): Option[Int] = {
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.equalName(variable) }
+    if find.isDefined then
+      Some(find.get._2)
     else
       None
   }
@@ -149,6 +229,9 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
       else variable
     })
 
+  def composition(variable: Variable): Substitution =
+    val substitution = Substitution(variable, variable)
+    composition(substitution)
 
   def composition(variable: Variable, attribute: Variable): Substitution =
     val substitution = Substitution(variable, attribute.copy().setName(variable.getName()))
@@ -262,6 +345,20 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     substitution.getVariables().forall(variable => hasVariable(variable)) &&
       substitution.getVariables().forall(variable => valueByVariable(variable).get.equalValue(substitution.valueByVariable(variable).get))
 
+  def conflicts(substitution: Substitution): Boolean = {
+    for (i <- 0 until substitution.length()) {
+      val variable = substitution.getVariable(i)
+      val symbol = substitution.getSymbol(i)
+      getSymbol(variable).foreach(currentSymbol => {
+        if currentSymbol != symbol then {
+          return true
+        }
+      })
+    }
+
+    false
+  }
+
   override def hashCode(): Int =
     val state = variables ++ symbols
     val id = state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
@@ -270,8 +367,8 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
 object Substitution {
 
-  def create(predicates:Array[(Predicate, Predicate)]):Substitution=
-    val variables = predicates.map(pair=> (pair._1.asVariable(),pair._2.asVariable()))
+  def create(predicates: Array[(Predicate, Predicate)]): Substitution =
+    val variables = predicates.map(pair => (pair._1.asVariable(), pair._2.asVariable()))
     Substitution(variables)
 
 }

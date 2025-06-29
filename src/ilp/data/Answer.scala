@@ -23,7 +23,7 @@ class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set(
     newPredicates
 
 
-  def getCombinedSubstituions(): Set[Substitution] = substitutions.map(substitution => substitution.append(main))
+  def getCombinedSubstitutions(): Set[Substitution] = substitutions.map(substitution => substitution.append(main))
     .toArray
     .toSet
 

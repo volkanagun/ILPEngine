@@ -92,8 +92,8 @@ class Execution(var engine: Engine):
     var isFinished = stopCondition(sourceHypothesis)
     var count = 1
 
-    while (!isFinished && sourceHypothesis.nonEmpty && count < iteration) do
-      println(s"Iteration: ${count} with size: ${sortedCandidates.size}")
+    while !isFinished && sourceHypothesis.nonEmpty && count < iteration do
+      println(s"Iteration: ${count} with size: ${sortedCandidates.length}")
       val templateIter = templates.iterator
       sourceHypothesis = Set[Hypothesis]()
       while !isFinished && templateIter.hasNext do
@@ -109,7 +109,7 @@ class Execution(var engine: Engine):
         sourceHypothesis ++= currentHypothesis
 
       previousCandidates = sourceHypothesis +: previousCandidates
-      sortedCandidates = previousCandidates.take(targetWindow).flatMap(arr => arr).toSet.toArray
+      sortedCandidates = previousCandidates.take(targetWindow).flatten.distinct
       isFinished = stopCondition(sourceHypothesis)
 
       count += 1

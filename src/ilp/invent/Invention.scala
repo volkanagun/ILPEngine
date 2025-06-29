@@ -168,7 +168,7 @@ object Invention:
       val pairs = metaBody.zip(combinedCombinations.map(hypothesis=> hypothesis.getHead()))
         .filter{case(meta, candidate)=> meta.equalByArity(candidate)}
 
-      if pairs.size == combinedCombinations.size then
+      if pairs.length == combinedCombinations.length then
          val substitution = Substitution.create(pairs)
          val newRule = canonicalize(metaRule.substitution(substitution))
          val combinedRules = source.getRules() ++ candidateCombination.flatMap(_.getRules()) :+ newRule
@@ -192,7 +192,7 @@ object Invention:
 
       val test = heuristic(source, candidateCombination)
 
-      if pairs.size == combinedCombinations.size && test then
+      if pairs.length == combinedCombinations.length && test then
          val substitution = Substitution.create(pairs)
          val newRule = canonicalize(metaRule.substitution(substitution))
          val combinedRules = source.getRules() ++ candidateCombination.flatMap(_.getRules()) :+ newRule
@@ -208,7 +208,7 @@ object Invention:
     val crrMetaBody = metaRule.getNonRecursive().getBody()
     val crrCombinations = combinations(source, destination, metaRule, crrMetaBody.length)
     val newRules = crrCombinations.map(predicates => crrMetaBody.zip(predicates)
-        .filter { case (r, p) => r.equalByArity(p) }).filter(item => item.size == crrMetaBody.length)
+        .filter { case (r, p) => r.equalByArity(p) }).filter(item => item.length == crrMetaBody.length)
       .flatMap(pairs => {
         val replacements = pairs.map { case (r, p) => {
           (r.asVariable(), p.asVariable())

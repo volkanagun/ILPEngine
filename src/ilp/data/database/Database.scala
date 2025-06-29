@@ -3,25 +3,26 @@ package ilp.data.database
 import ilp.data.*
 import ilp.data.predicates.*
 import ilp.data.variables.*
+import org.roaringbitmap.RoaringBitmap
 
-class Database(name: String, val bitsize:Int = 32):
+class Database(name: String):
 
   var symbols = Array[Collection]()
-  var sets = Set[Predicate]()
+  private var sets = Set[Predicate]()
   var templates = Map[Int, Set[Predicate]]()
-  var templates2 = Map[Int, Set[Predicate]]()
+  private var templates2 = Map[Int, Set[Predicate]]()
   var attachments = Map[Position, Set[Position]]()
   //var symbolPositions = Map[Sym, Set[Position]]()
   var index = Map[Int, Index]()
   var stats = Map[Int, Statistics]()
 
-  var preRules = Set[Rule]()
+  private var preRules = Set[Rule]()
   var bias : Bias = null
 
   def build(): this.type =
     println("Building database ...")
 
-    index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray, bitsize).build()}
+    index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray).build()}
     stats = templates.map{case(index, data)=> index-> Statistics(data.head, data)}
 
     println("Building finished ...")
@@ -29,6 +30,19 @@ class Database(name: String, val bitsize:Int = 32):
 
   def setBias(bias:Bias):this.type = {
     this.bias = bias
+    this
+  }
+
+  def getIndex(id: Int):Index =
+    index(id)
+
+  def getValues(predicateId:Int, position:Int, bitset:RoaringBitmap):Set[Variable] =
+    index(predicateId).getValues(bitset, position)
+
+  def index(predicate:Predicate, samples:Set[Predicate]):this.type = {
+    val id = predicate.identifier()
+    index = index.updated(id, index.getOrElse(id, Index(predicate, Array[Predicate]()))
+      .addIndex(samples))
     this
   }
 
@@ -67,7 +81,7 @@ class Database(name: String, val bitsize:Int = 32):
     }
     this
 
-  protected def addPredicate(predicate: Predicate): Boolean =
+  private def addPredicate(predicate: Predicate): Boolean =
     if !sets.contains(predicate) then {
       val identifier = predicate.identifier()
       templates = templates.updated(identifier,
@@ -81,7 +95,7 @@ class Database(name: String, val bitsize:Int = 32):
       false
     }
 
-  protected def removePredicate(predicate: Predicate): Boolean =
+  private def removePredicate(predicate: Predicate): Boolean =
     if sets.contains(predicate) then {
       val identifier = predicate.identifier()
       templates = templates.updated(identifier, templates(identifier) - predicate)
@@ -102,6 +116,9 @@ class Database(name: String, val bitsize:Int = 32):
     val isFound = set.contains(predicate) || sets.contains(predicate)
     (predicate.isNegative() && !isFound) || (!predicate.isNegative() && isFound)
 
+  def getSubstitutions(callPredicate: Predicate):Set[Substitution] =
+    val predicates = getTemplates(callPredicate)
+    predicates.map(crrPredicate => crrPredicate.toSubstitution(callPredicate))
 
   def getTemplates(predicate: Predicate): Set[Predicate] =
     if predicate.isNegative() && templates2.contains(predicate.getArity()) then

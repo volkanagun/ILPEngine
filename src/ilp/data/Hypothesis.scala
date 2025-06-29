@@ -22,11 +22,11 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
   def this(head: Predicate, rule1: Rule, rule2: Rule, rule3: Rule) = this(head, Array(rule1, rule2, rule3))
 
-  def this(rule1: Rule, rule2: Rule) = this(rule1.getHead(), Array(rule1, rule2))
+  def this(rule1: Rule, rule2: Rule) = this(rule2.getHead(), Array(rule1, rule2))
 
-  def this(rule1: Rule, rule2: Rule, rule3: Rule) = this(rule1.getHead(), Array(rule1, rule2, rule3))
+  def this(rule1: Rule, rule2: Rule, rule3: Rule) = this(rule3.getHead(), Array(rule1, rule2, rule3))
 
-  def this(set: Array[Rule]) = this(set.head.getHead(), set)
+  def this(set: Array[Rule]) = this(set.last.getHead(), set)
 
   def print(): this.type = {
     println("====Hypothesis====")
@@ -82,7 +82,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     this
   }
 
-  def emptyScores() = positives.size == 0 && negatives.size == 0
+  def emptyScores() = positives.isEmpty && negatives.isEmpty
 
   def compact(): Hypothesis = {
     val subs = Substitution()
@@ -93,7 +93,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     reversed.foreach { rule => {
       val replacement = array.find(storedRule => storedRule.equals(rule))
       val exists = array.exists(storedRule => rule.calledFrom(storedRule))
-      if exists && !replacement.isDefined then
+      if exists && replacement.isEmpty then
         array :+= rule
       else if replacement.isDefined then {
         val variable = Variable(rule.getHead().getName())
@@ -197,18 +197,17 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     rules.map(_.getHead().getName()).sorted.foldRight[Int](1){case(name, main)=> name.hashCode() + 7 * main}
 
   override def getRuleSize(): Int =
-    sorted.size
+    sorted.length
 
   override def equals(obj: Any): Boolean =
-    if obj.isInstanceOf[Hypothesis] then
-      val other = obj.asInstanceOf[Hypothesis]
-      val test = rules.forall(rule => other.contains(rule)) && other.getRuleSize() == getRuleSize()
-      test
-    else if obj.isInstanceOf[Rule] then
-      val crr = obj.asInstanceOf[Rule]
-      rules.size == 1 && rules.contains(crr)
-    else
-      false
+    obj match {
+      case other: Hypothesis =>
+        val test = rules.forall(rule => other.contains(rule)) && other.getRuleSize() == getRuleSize()
+        test
+      case crr: Rule =>
+        rules.size == 1 && rules.contains(crr)
+      case _ => false
+    }
 
   def contains(rule:Rule) =
     rules.contains(rule)
@@ -216,8 +215,8 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def similarity(targetHypothesis: Hypothesis, window: Int): Double =
     val currentRules = rules.map(_.getHead().getName())
     val otherRules = targetHypothesis.getRules().map(rule => rule.getHead().getName()).sliding(window, 1).toSet
-    val otherSize = math.max(otherRules.size, currentRules.size.toDouble / window)
-    val resembleSize = otherRules.filter(array => array.forall(name => currentRules.contains(name))).size
+    val otherSize = math.max(otherRules.size, currentRules.length.toDouble / window)
+    val resembleSize = otherRules.count(array => array.forall(name => currentRules.contains(name)))
     val score = resembleSize.toDouble / otherSize
     score
 

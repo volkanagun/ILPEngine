@@ -205,6 +205,11 @@ object Parser extends JavaTokenParsers {
       case "equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
     }
 
+  def equalSym: Parser[Predicate] =
+    variable ~ "==" ~ variable ^^ {
+      case v1 ~ "==" ~ v2  => Equal("r", v1, v2)
+    }
+
   def equalIsCall: Parser[Predicate] =
     (symbol <~ keywordIs) ~ argument ^^ {
       case (sym ~ (myargument)) => Equal(myargument.getName(), sym, myargument)
@@ -232,6 +237,7 @@ object Parser extends JavaTokenParsers {
       modModCall |
       negativeCall |
       negativePlusCall |
+      equalSym |
       equalCall |
       equalIsCall |
       notEqualArgument |
@@ -251,6 +257,7 @@ object Parser extends JavaTokenParsers {
       modModCall |
       negativeCall |
       negativePlusCall |
+      equalSym |
       equalCall |
       equalIsCall |
       functionCall |
@@ -355,16 +362,6 @@ object Parser extends JavaTokenParsers {
       case "count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" ~ "." => Count(name, argumentNames(args.toArray), num.toInt)
     }
 
-  def single_equal: Parser[Predicate] =
-    equalCall ~ "." ^^ {
-      case predicate ~ "." => predicate
-    }
-
-  def single_equal_is: Parser[Predicate] = {
-    equalIsCall <~ "." ^^ {
-      case predicate => predicate
-    }
-  }
 
   def single_mod: Parser[Predicate] =
     "mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
@@ -418,9 +415,9 @@ object Parser extends JavaTokenParsers {
       case "empty([])" => Empty("empty", NumList("L"))
     }
 
-  def equalIsArgument: Parser[Equal] =
-    (symbol ~ keywordIs) ~ argument ^^ {
-      case variable ~ "is" ~ predicate => Equal(predicate.getName(), variable, predicate)
+  def assignArgument: Parser[Assign] =
+    (variable ~ keywordIs) ~ variable ^^ {
+      case var1 ~ "is" ~ var2 => Assign(var1, var2)
     }
 
   def modArgument: Parser[Mod] =
@@ -430,7 +427,7 @@ object Parser extends JavaTokenParsers {
 
   def predicate_input: Parser[Predicate] = {
     notEqualArgument | expansionArgument |
-      minusArgument | minusEqualArgument | plusArgument | plusEqualArgument | greaterArgument | greaterEqualArgument | lowerArgument | lowerEqualArgument | equalArgument | equalIsArgument |
+      minusArgument | minusEqualArgument | plusArgument | plusEqualArgument | greaterArgument | greaterEqualArgument | lowerArgument | lowerEqualArgument | equalArgument | assignArgument |
       negativeCall | negativePlusCall | appendArgument | headNameArgument | tailNameArgument | modArgument | countArgument |
       predicate_argument
   }
@@ -539,7 +536,8 @@ object Parser extends JavaTokenParsers {
 
     val testRules = Array(
       "anchestor(X, Y) :- parent(X, Z) & parent(Z,Y).",
-      "anchestor(X, Y) :- parent(X, Z) & ~parent(Z,Y)."
+      "anchestor(X, Y) :- parent(X, Z) & ~parent(Z,Y).",
+      "assign(X,Y) :- X is Y."
     )
 
     println("Parsing")

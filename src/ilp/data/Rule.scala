@@ -33,7 +33,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this
   }
 
-  def idset(): Set[Set[Position]] =
+  private def idset(): Set[Set[Position]] =
     val allVariables = getAllVariables().toSet
     val allPredicates = getSortedBody() :+ head.copy("head")
     allVariables.map(variable => {
@@ -73,13 +73,13 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     substitution(subs)
 
   def getSize(): Int =
-    body.size
+    body.length
 
   def getRuleSize(): Int =
     1
 
   def getNonRecursiveSize(): Int =
-    getNonRecursive().getBody().size
+    getNonRecursive().getBody().length
 
   def getScore(): Double =
     score

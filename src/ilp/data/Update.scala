@@ -13,10 +13,10 @@ class Update(var head: Array[Predicate], var body: Array[Predicate]):
     body.foldRight(hash) { case (a, m) => a.hashCode() + 7 * m }
 
   override def equals(obj: Any): Boolean =
-    if obj.isInstanceOf[Update] then
-      obj.asInstanceOf[Update].hashCode() == hashCode()
-    else
-      false
+    obj match {
+      case update: Update => update.hashCode() == hashCode()
+      case _ => false
+    }
 
   override def toString: String =
     head.mkString(" & ") + " ==> " + body.mkString(" & ")

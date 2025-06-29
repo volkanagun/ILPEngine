@@ -7,7 +7,7 @@ public class Cuda extends Kernel {
     private int[] rows;
     private int[][] new_rows;
     private int[][] result;
-    private int size;
+    private final int size;
     public Cuda(int[] rows, int[][] new_rows, int size) {
         this.rows = rows;
         this.new_rows = new_rows;

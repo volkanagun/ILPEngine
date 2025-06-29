@@ -9,20 +9,20 @@ import java.util
 
 object CudaManager {
 
-  var totalMemorySize = Map[Long, Double]()
-  var availableMemorySize = Map[Long, Double]()
-  var devices = list()
-  var switch = true
+  var totalMemorySize: Map[Long, Double] = Map[Long, Double]()
+  var availableMemorySize: Map[Long, Double] = Map[Long, Double]()
+  private var devices: Array[Device] = list()
+  private var switch = true
 
   def setCPU():this.type =
-    val deviceList = new util.LinkedHashSet[Device]();
-    deviceList.add(devices.tail.head);
+    val deviceList = new util.LinkedHashSet[Device]()
+    deviceList.add(devices.tail.head)
     KernelManager.instance().setDefaultPreferredDevices(deviceList)
     this
 
   def setGPU():this.type =
-    val deviceList = new util.LinkedHashSet[Device]();
-    deviceList.add(devices.head);
+    val deviceList = new util.LinkedHashSet[Device]()
+    deviceList.add(devices.head)
     KernelManager.instance().setDefaultPreferredDevices(deviceList)
     this
 
@@ -111,7 +111,7 @@ object CudaManager {
     preferences.getPreferredDevices(null).toArray[Device](Array[Device]())
   }
 
-  def best(): Device = {
+  private def best(): Device = {
     val device = if (switch) devices.head
     else devices.tail.head
     switch = !switch
@@ -126,31 +126,31 @@ object CudaManager {
 
     System.out.println("com.aparapi.examples.info.Main")
 
-    val platforms = (new OpenCLPlatform()).getOpenCLPlatforms().toArray[OpenCLPlatform](Array[OpenCLPlatform]())
+    val platforms = new OpenCLPlatform().getOpenCLPlatforms().toArray[OpenCLPlatform](Array[OpenCLPlatform]())
     System.out.println("Machine contains " + platforms.size + " OpenCL platforms")
-    var platformc = 0
+    var platformCount = 0
 
     for (platform <- platforms) {
-      System.out.println("Platform " + platformc + "{")
+      System.out.println("Platform " + platformCount + "{")
       System.out.println("   Name    : \"" + platform.getName + "\"")
       System.out.println("   Vendor  : \"" + platform.getVendor + "\"")
       System.out.println("   Version : \"" + platform.getVersion + "\"")
       val devices = platform.getOpenCLDevices().toArray[Device](Array[Device]())
       System.out.println("   Platform contains " + devices.size + " OpenCL devices")
-      var devicec = 0
+      var deviceCount = 0
 
       for (device <- devices) {
-        System.out.println("   Device " + devicec + "{")
+        System.out.println("   Device " + deviceCount + "{")
         System.out.println("       Type                  : " + device.getType)
         System.out.println("       MaxWorkGroupSizes     : " + device.getMaxWorkGroupSize)
         System.out.println("       MaxWorkItemDimensions : " + device.getMaxWorkItemDimensions)
         System.out.println("       Description : " + device.getShortDescription)
         System.out.println("   }")
-        devicec += 1
+        deviceCount += 1
       }
 
       System.out.println("}")
-      platformc += 1
+      platformCount += 1
     }
     val preferences = KernelManager.instance.getDefaultPreferences()
     System.out.println("\nDevices in preferred order:\n")

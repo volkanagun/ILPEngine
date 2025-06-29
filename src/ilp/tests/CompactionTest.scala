@@ -47,7 +47,7 @@ object CompactionTest {
     println(h.build().compact())
   }
 
-  def test4(): Unit = {
+  private def test4(): Unit = {
     val r = "func140606315(A,B) :- has_load(A,B).\n"+
     "func1074353433(A) :- three_load(A).\n" +
       "func697263279(A,B) :- has_car(A,B).\n" +

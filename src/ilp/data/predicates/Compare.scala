@@ -13,6 +13,9 @@ class Equal(result: String, e1: Variable, e2: Variable) extends Functional("equa
     e1.isSymbol() == e2.isSymbol()
   }
 
+  override def getVariables(): Array[Variable] =
+    Array(e1, e2)
+
   override def getValue(): Variable =
     val r = e1.getValue() == e2.getValue()
     new Sym(result, r.toString)
@@ -92,16 +95,19 @@ class GreaterEqual(result:String, e1: Variable, e2: Variable) extends Predicate(
     GreaterEqual(result, e1new, e2new)
 
 
-
-
 class Lower(result:String, e1: Variable, e2: Variable) extends Predicate("lower", Array[Variable](e1, e2, Variable(result))):
+
+  override def isFunctional(): Boolean = true
 
   override def isExecutable(): Boolean =
     isDefinite() && e1.asNumber().lower(e2)
 
   override def isDefinite(): Boolean = {
-    e1.isNumber() == e2.isNumber()
+    e1.isNumber() && e2.isNumber()
   }
+
+  override def getVariables(): Array[Variable] =
+    Array(e1, e2)
 
   override def getValue(): Variable =
     val r = e1.asNumber().getNumber() < e2.asNumber().getNumber()
@@ -181,4 +187,6 @@ class Greater(result:String, e1: Variable, e2: Variable) extends Predicate("grea
     val e1new = e1.substitution(substitution)
     val e2new = e2.substitution(substitution)
     Greater(result, e1new, e2new)
+
+  override def isFunctional(): Boolean = true
 

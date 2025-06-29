@@ -6,6 +6,8 @@ import ilp.data.variables.Variable
 class Query(var head: Predicate, var body: Array[Predicate]):
 
   var recursive = false
+  var inputVariables = head.getVariables()
+
   var positions = Map[Position, Set[Position]]()
   var positionsJoin = Array[(String, Array[Position])]()
 
@@ -13,9 +15,22 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     body.flatMap(predicate => predicate.getVariables())
       .toSet
 
+  def getAttributeArray(): Array[Variable] =
+    body.flatMap(predicate => predicate.getVariables()).distinct
+
+
   def getNonRecursive(): Query =
     Query(head, body.filter(predicate => !predicate.equalByIdentifier(head)))
 
+
+  def setInputVariables(variables:Array[Variable]):this.type = {
+    this.inputVariables = variables
+    this
+  }
+
+  def getInputVariables():Array[Variable] = {
+    this.inputVariables
+  }
 
   def renameHead(name: String): Query = {
     val newQuery = Query(head.copy(name), body)
@@ -76,7 +91,7 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     val new_variables = predicate.getVariables()
     val crr_variables = head.getVariables()
     val substitution = Substitution()
-    for i <- 0 until new_variables.length do
+    for i <- new_variables.indices do
       val variable = crr_variables(i)
       val symbol = new_variables(i)
         .copy(variable.getName())
@@ -121,12 +136,12 @@ class Query(var head: Predicate, var body: Array[Predicate]):
     getSortedBody().foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
 
   override def equals(obj: Any): Boolean =
-    if obj.isInstanceOf[Query] then
-      val other = obj.asInstanceOf[Query]
-      other.head.equals(head) && other.getBody().forall(predicate => contains(predicate)) &&
-        getBody().forall(predicate => other.contains(predicate))
-    else
-      false
+    obj match {
+      case other: Query =>
+        other.head.equals(head) && other.getBody().forall(predicate => contains(predicate)) &&
+          getBody().forall(predicate => other.contains(predicate))
+      case _ => false
+    }
 
   override def toString: String =
     if body.nonEmpty then head.toString + " :- " + body.map(_.toString).mkString(" & ") + "."

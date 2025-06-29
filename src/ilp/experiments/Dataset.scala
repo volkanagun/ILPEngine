@@ -4,20 +4,20 @@ import java.io.PrintWriter
 import scala.io.Source
 import scala.util.Random
 
-class Dataset():
+class Dataset:
 
-  val dunnhumby = "resources/datasets/dunnhumby/"
-  def readCSV(filename:String):Array[Array[String]] =
+  private val dunnhumby = "resources/datasets/dunnhumby/"
+  private def readCSV(filename:String):Array[Array[String]] =
     Source.fromFile(filename).getLines().toArray.tail.map(line=>{
       line.split("\\,")
     })
 
-  def construct(filename:String, predicate:String, array:Array[Int]):Array[String] =
+  private def construct(filename:String, predicate:String, array:Array[Int]):Array[String] =
     val csv = readCSV(filename)
     csv.map(line=> array.map(i=> line(i).toLowerCase.replaceAll("[\\s\\-\\_\\.\\/\\&]","").trim).filter(_.nonEmpty))
       .filter(items=> items.length == array.length).map(items=> items.mkString(predicate + "(",",",")."))
 
-  def construct(predicate:String, size:Int, attrSize:Int, range:Int):Array[String] =
+  private def construct(predicate:String, size:Int, attrSize:Int, range:Int):Array[String] =
     Range(0, size).map(_=> {
       predicate +"(" + Range(0, attrSize).map(_=>{
         Random.nextInt(range)

@@ -7,29 +7,25 @@ import org.roaringbitmap.RoaringBitmap
 
 import scala.collection.concurrent.TrieMap as ConcurrentMap
 import scala.collection.immutable.{BitSet, Set}
-import scala.collection.parallel.CollectionConverters.{ConcurrentTrieMapIsParallelizable, ImmutableIterableIsParallelizable}
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 
 class Engine(val database: Database, val recursiveDepth: Int = 5) {
 
-  val bitsize = database.bitsize
-  var dataIndex = database.getIndex()
   var globalCache = ConcurrentMap[Int, Set[Substitution]]()
 
   def getDatabase() = database
 
-  def addIndex(predicate: Predicate, set: Set[Substitution]): this.type = {
-    val id = predicate.identifier()
-    val predicates = set.map(substitution => predicate.substitution(substitution).asPredicate())
-    dataIndex = dataIndex.updated(id, dataIndex.getOrElse(id, Index(predicate, Array[Predicate](), bitsize)).addIndex(predicates))
-    this
+  def validHypothesis(hypothesis: Hypothesis): Boolean =
+    database.getBias().getHypothesis(hypothesis).isDefined
+
+  def atomSubstitutions(headPredicate: Predicate, substitution: Substitution): Set[Substitution] = {
+    val substitutions = database.getSubstitutions(headPredicate)
+    substitutions.filter(crrSubstitution => !crrSubstitution.conflicts(substitution))
   }
 
-  def validHypothesis(hypothesis: Hypothesis): Boolean =
-    database.getBias().getHyposthesis(hypothesis).isDefined
-
   def cacheID(depth: Int, rule: Optimized, substitution: Substitution, nextAttribute: Variable): Int = {
-    val items = Array(depth, rule.queryId(), nextAttribute.hashCode())
+    val items = Array(depth, rule.getQueryId(), nextAttribute.hashCode())
     items.foldRight(1) { case (crr, main) => main * 7 + crr }
   }
 
@@ -65,22 +61,13 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
     bits
   }
 
-  def filter(rowMap: Map[Int, Set[Int]], relations: Array[Predicate], attribute: Variable, value: Variable): Map[Int, Set[Int]] =
-    val newMap = relations.zipWithIndex
-      .map { case (predicate, index) => {
-        val id = predicate.identifier(index)
-        val crrIndex = dataIndex(predicate.identifier())
-        val crrRows = rowMap(id)
-        if predicate.contains(attribute) then
-          val indice = predicate.getIndex(attribute)
-          val newRows = crrIndex.getRows(crrRows, value, indice)
-          id -> newRows
-        else
-          id -> crrRows
-      }
-      }.toMap
-
-    newMap
+  def intersection(domains: Array[Set[Variable]]): Set[Variable] =
+    if domains.isEmpty then {
+      Set.empty
+    }
+    else {
+      domains.reduce(_ intersect _)
+    }
 
   def filterData(dataMap: Map[Int, Set[Predicate]], relations: Array[Predicate], attribute: Variable, value: Variable): Map[Int, Set[Predicate]] =
     val newMap = relations.zipWithIndex
@@ -89,9 +76,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
         if dataMap.contains(id) then
           val crrData = dataMap(id)
           if predicate.contains(attribute) then
-            val indice = predicate.getIndex(attribute)
-            val newRows = crrData.filter(predicate => predicate.getVariable(indice).equalValue(value))
-            Some(id -> newRows)
+            val indice = predicate.getPosition(attribute)
+            val newPredicates = crrData.filter(predicate => predicate.getVariable(indice).equalValue(value))
+            Some(id -> newPredicates)
           else
             Some(id -> crrData)
         else
@@ -101,42 +88,22 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
 
     newMap
 
-
-  def filterBitmap(rowMap: Map[Int, BitSet], relations: Array[Predicate], attribute: Variable, value: Variable): Map[Int, BitSet] =
-    val newMap = relations.zipWithIndex
-      .map { case (predicate, index) => {
-        val predicateId = predicate.identifier()
-        val id = predicate.identifier(index)
-
-        val crrRows = rowMap(id)
-        if dataIndex.contains(predicateId) && predicate.contains(attribute) then
-          val crrIndex = dataIndex(predicateId)
-          val indice = predicate.getIndex(attribute)
-          val newRows = crrIndex.getRows(crrRows, value, indice)
-          id -> newRows
-        else
-          id -> crrRows
-      }
-      }.toMap
-
-    newMap
-
   def filterRoaring(rowMap: Map[Int, RoaringBitmap], relations: Array[Predicate], attribute: Variable, value: Variable): Map[Int, RoaringBitmap] =
     val newMap = relations.zipWithIndex
-      .flatMap { case (predicate, index) => {
-        val id = predicate.identifier(index)
-        //if rowMap.contains(id) then
-        val predicateId = predicate.identifier()
-        val crrRows = rowMap(id)
-        if predicate.contains(attribute) && dataIndex.contains(predicateId) then
-          val crrIndex = dataIndex(predicateId)
-          val indice = predicate.getIndex(attribute)
-          val newRows = crrIndex.getHavingRows(crrRows, value, indice)
-          Some(id -> newRows)
+      .flatMap { case (predicate, position) => {
+        val pid = predicate.identifier(position)
+        if rowMap.contains(pid) then
+          val crrRows = rowMap(pid)
+          if predicate.contains(attribute) then
+            val predicateId = predicate.identifier()
+            val crrIndex = database.getIndex(predicateId)
+            val indice = predicate.getPosition(attribute)
+            val newRows = crrIndex.getHavingRows(crrRows, value, indice)
+            Some(pid -> newRows)
+          else
+            Some(pid -> crrRows)
         else
-          Some(id -> crrRows)
-        //else
-        //  None
+          None
       }
       }.toMap
 
@@ -157,7 +124,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
         else if !predicate.isFunctional() && predicate.contains(attribute) then
           val predicateId = predicate.identifier()
           val id = predicate.identifier(index)
-          val position = predicate.getIndex(attribute)
+          val position = predicate.getPosition(attribute)
 
           val crrResults = filterMap.getOrElse(id, Set[Predicate]()).map(predicate => predicate.getVariable(position))
             .filter(variable => attribute.equalValue(variable))
@@ -193,7 +160,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
     if (domains.isEmpty) Set.empty else domains.reduce(_ intersect _)
   }
 
-  def activeCyclic(programMap: Map[Int, Array[Optimized]], context: Context,
+  def activeCyclic(programMap: Map[Int, Array[Optimized]], context: ContextData,
                    attribute: Variable): Set[Variable] = {
     val domains = context.getRelations().zipWithIndex.flatMap {
       case (predicate, index) => {
@@ -202,7 +169,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
         else if !predicate.isFunctional() && predicate.contains(attribute) then
           val predicateId = predicate.identifier()
           val id = predicate.identifier(index)
-          val position = predicate.getIndex(attribute)
+          val position = predicate.getPosition(attribute)
 
           val crrResults = context.getDataMap().getOrElse(id, Set[Predicate]()).map(predicate => predicate.getVariable(position))
             .filter(variable => attribute.equalValue(variable))
@@ -213,7 +180,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
             val newRules = programMap.getOrElse(predicateId, Array[Optimized]())
 
             val otherResults = newRules.toSet.flatMap(newRule => {
-              val newContext = Context(newRule, predicate, context.getSubstitution(), attribute, position, context.getDepth() + 1)
+              val newContext = ContextData(newRule, predicate, context.getSubstitution(), attribute, position, context.getDepth() + 1)
               val newVariable = newContext.getTargetVariable()
               val substitutions = joinCyclic(programMap, newContext)
               substitutions.map(substitution => substitution.valueByVariable(newVariable, attribute.getName()).get)
@@ -229,133 +196,136 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
     if (domains.isEmpty) Set.empty else domains.reduce(_ intersect _)
   }
 
-  def activeParallel(context: Context, attribute: Variable): Set[Variable] = {
+  def activeParallel(contextMap: Map[Int, Array[ContextData]],
+                     programContext: ContextData,
+                     nextContext: ContextData): Set[Variable] = {
 
-    val dataMap = context.getDataMap()
-    val substitution = context.getSubstitution()
+    val dataMap = nextContext.getDataMap()
+    val attribute = nextContext.getTargetVariable()
+
+    val domains = nextContext.getRelations().zipWithIndex.flatMap {
+      case (predicate, index) => {
+
+        if predicate.isFunctional() && predicate.contains(attribute) && attribute.isSymbol() then
+
+          Some(Set[Variable](attribute))
+        else if !predicate.isFunctional() && predicate.contains(attribute) then
+          val predicateId = predicate.identifier()
+          val id = predicate.identifier(index)
+          val position = predicate.getPosition(attribute)
+          val crrResults = dataMap.getOrElse(id, Set[Predicate]()).map(predicate => predicate.getVariable(position).setName(attribute.getName()))
+            .filter(variable => attribute.equalValue(variable))
+
+          if crrResults.isEmpty then
+
+            val results = contextMap(predicateId)
+              .flatMap(currentContext => {
+                currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
+              }).flatMap(currentContext => {
+                val substitutions = joinParallel(contextMap, programContext, currentContext)
+                val newVariable = currentContext.getHead().getVariable(position)
+                if newVariable.getName() == "X1" then
+                  val debug = 0;
+                val newValues = substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, attribute.getName())
+                  .map(variable => variable))
+                newValues
+              }).toSet
+
+            if results.nonEmpty then Some(results)
+            else None
+          else
+            Some(crrResults)
+        else
+          None
+      }
+    }
+
+    intersection(domains)
+  }
+
+
+  def activeCyclicRoaring(contextMap: Map[Int, Array[ContextRows]], context: ContextRows): Set[Variable] = {
+
+    val rowMap = context.getRowMap()
+    val attribute = context.getTargetVariable()
+    val newSubstitution = context.getSubstitution()
 
     val domains = context.getRelations().zipWithIndex.flatMap {
       case (predicate, index) => {
         if predicate.isFunctional() && attribute.isSymbol() then
           Some(Set[Variable](attribute))
-        else if !predicate.isFunctional() && predicate.contains(attribute) then
+        else if !predicate.isFunctional() && predicate.contains(attribute) then {
           val predicateId = predicate.identifier()
-          val id = predicate.identifier(index)
-          val position = predicate.getIndex(attribute)
-          val crrResults = dataMap.getOrElse(id, Set[Predicate]()).map(predicate => predicate.getVariable(position).setName(attribute.getName()))
-            .filter(variable => attribute.equalValue(variable))
-          Some(crrResults)
-        else
-          None
-      }
-    }
+          val pid = predicate.identifier(index)
+          val bitset = rowMap.getOrElse(pid, RoaringBitmap())
+          val position = predicate.getPosition(attribute)
 
-    if (domains.isEmpty) Set.empty else domains.reduce(_ intersect _)
-  }
+          val dataValues = database.getValues(predicateId, position, bitset)
+          val crrResults = dataValues.filter(variable => attribute.equalValue(variable))
 
-  def activeCyclicBitmap(cache: ConcurrentMap[Int, Set[Substitution]], programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
-                         crrQuery: Optimized,
-                         rowMap: Map[Int, BitSet],
-                         relations: Array[Predicate],
-                         attributes: Array[Variable],
-                         attribute: Variable,
-                         crrDepth: Int): Set[Variable] = {
-    val domains = crrQuery.getRelations().zipWithIndex.flatMap {
-      case (predicate, index) => {
-        if predicate.isFunctional() && attribute.isSymbol() then
-          Some(Set[Variable](attribute))
-        else if !predicate.isFunctional() && predicate.contains(attribute) then
-          val predicateId = predicate.identifier()
-          val rowId = predicate.identifier(index)
-          val position = predicate.getIndex(attribute)
-          val bitset = rowMap(rowId)
-          val hasIndex = dataIndex.contains(predicateId)
-          val crrResults = if hasIndex then dataIndex(predicateId).getValues(bitset, predicate.getIndex(attribute))
-            .filter(variable => attribute.equalValue(variable)) else Set()
+          if crrResults.isEmpty then
+            val newContexts = contextMap(predicateId).map(contextRow => contextRow
+              .switchContext(newSubstitution, predicate, context.depth + 1))
 
+            val results = newContexts.flatMap(newContext => {
+              val substitutions = joinRoaringParallel(contextMap, newContext)
+              val newVariable = newContext.getTargetVariable()
+              substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, attribute.getName()))
+            }).toSet
 
-          if crrResults.nonEmpty then
+            Some(results)
+          else
             Some(crrResults)
-          else {
-            val newRules = programMap.getOrElse(predicateId, Array[Optimized]())
-
-            val otherResults = newRules.toSet.flatMap(newRule => {
-              val newHead = newRule.getHead()
-              val newVariable = newHead.getVariable(position)
-              val newSubstitution = predicate.call(newHead, crrSubstitution)
-                .composition(newVariable, attribute)
-              val newAttributes = newRule.getVariables()
-              val newRelations = newRule.getRelations()
-              val newMap = newRule.getBitmapMap()
-
-              val substitutions = joinCyclicBitmap(cache, programMap, newSubstitution, newRule, newMap,
-                newRelations,
-                newAttributes,
-                crrDepth + 1)
-              substitutions.map(substitution => substitution.valueByVariable(newVariable, attribute.getName()).get)
-            })
-
-            Some(otherResults)
-          }
+        }
         else
           None
       }
     }
 
-    if (domains.isEmpty) Set.empty else domains.reduce(_ intersect _)
+    intersection(domains)
   }
+  /*
 
-  def activeCyclicRoaring(cache: ConcurrentMap[Int, Set[Substitution]], programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
-                          crrQuery: Optimized,
-                          rowMap: Map[Int, RoaringBitmap],
-                          relations: Array[Predicate],
-                          attributes: Array[Variable],
-                          attribute: Variable,
-                          crrDepth: Int): Set[Variable] = {
-    val domains = crrQuery.getRelations().zipWithIndex.flatMap {
-      case (predicate, index) => {
-        if predicate.isFunctional() && attribute.isSymbol() then
-          Some(Set[Variable](attribute))
-        else if !predicate.isFunctional() && predicate.contains(attribute) then
-          val predicateId = predicate.identifier()
-          val rowId = predicate.identifier(index)
-          val position = predicate.getIndex(attribute)
-          val bitset = rowMap(rowId)
-          val hasIndex = dataIndex.contains(predicateId)
-          val crrResults = if hasIndex then dataIndex(predicateId).getValues(bitset, predicate.getIndex(attribute))
-            .filter(variable => attribute.equalValue(variable)) else Set()
+    def activeCyclicRoaring(contextMap: Map[Int, Array[ContextRows]], context: ContextRows,
+                            newSubstitution: Substitution,
+                            attribute: Variable): Set[Variable] = {
 
-          if crrResults.nonEmpty then
-            Some(crrResults)
-          else {
-            val newRules = programMap.getOrElse(predicateId, Array[Optimized]())
+      val rowMap = context.getRowMap()
 
-            val otherResults = newRules.toSet.flatMap(newRule => {
-              val newHead = newRule.getHead()
-              val newVariable = newHead.getVariable(position)
-              val newSubstitution = predicate.call(newHead, crrSubstitution)
-                .composition(newVariable, attribute)
-              val newAttributes = newRule.getVariables()
-              val newRelations = newRule.getRelations()
-              val newMap = newRule.getRoaringMap()
+      val domains = context.getRelations().zipWithIndex.flatMap {
+        case (predicate, index) => {
+          if predicate.isFunctional() && attribute.isSymbol() then
+            Some(Set[Variable](attribute))
+          else if !predicate.isFunctional() && predicate.contains(attribute) then {
+            val predicateId = predicate.identifier()
+            val pid = predicate.identifier(index)
+            val bitset = rowMap(pid)
+            val position = predicate.getPosition(attribute)
+            val dataValues = database.getValues(predicateId, position, bitset)
+            val crrResults = dataValues.filter(variable => attribute.equalValue(variable))
 
-              val substitutions = joinCyclicRoaring(cache, programMap, newSubstitution, newRule, newMap,
-                newRelations,
-                newAttributes,
-                crrDepth + 1)
-              substitutions.map(substitution => substitution.valueByVariable(newVariable, attribute.getName()).get)
-            })
+            if crrResults.isEmpty then
+              val newContexts = contextMap(predicateId).map(contextRow => contextRow
+                .newContext(newSubstitution, context.depth + 1))
 
-            Some(otherResults)
+              val results = newContexts.flatMap(newContext => {
+                val substitutions = joinRoaringParallel(contextMap, newContext)
+                val newVariable = newContext.getTargetVariable()
+                substitutions.map(substitution => substitution.valueByVariable(newVariable, attribute.getName()).get)
+              }).toSet
+
+              Some(results)
+            else
+              Some(crrResults)
           }
-        else
-          None
+          else
+            None
+        }
       }
+
+      intersection(domains)
     }
-
-    if (domains.isEmpty) Set.empty else domains.reduce(_ intersect _)
-  }
-
+  */
 
   def joinCyclic(programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
                  crrQuery: Optimized, dataMap: Map[Int, Set[Predicate]],
@@ -382,10 +352,10 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
       }).toArray.toSet
   }
 
-  def joinCyclic(programMap: Map[Int, Array[Optimized]], context: Context): Set[Substitution] = {
+  def joinCyclic(programMap: Map[Int, Array[Optimized]], context: ContextData): Set[Substitution] = {
     if context.getDepth() > recursiveDepth then
       Set[Substitution]()
-    else if context.emptyAttibutes() then Set(Substitution())
+    else if context.emptyAttributes() then Set(Substitution())
     else
 
       val attributes = context.getAttributes()
@@ -405,173 +375,317 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
       }).toArray.toSet
   }
 
-  def joinParallel(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
-    //create dataMap for missing values
-    val contexts = programs.map(rule => Context(rule, substitution))
-    val map = programs.groupBy(optimized => optimized.identifier())
+  def joinParallel(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ContextData(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
     var substitutions = Set[Substitution]()
-    contexts.foreach(context => {
-      val crrSubstitutions = joinParallel(context)
-        .filter(substitution => substitution.containsAll(context.getHeadVariables()))
+    contextProgram.foreach(context => {
+      if context.isTarget() then context.setSubstitution(substitution)
+
+      val headPredicate = context.getHead()
+      val crrSubstitutions = joinParallel(contextMap, context, context)
+        .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+      val crrPredicates = context.get(crrSubstitutions)
       substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-      contexts.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateData(context.getHead(), context.get(crrSubstitutions)))
+      contextProgram.filter(other => context.calledFrom(other))
+        .foreach(other => other.updateData(headPredicate, crrPredicates))
     })
+
     substitutions
   }
 
-  def joinProgramCache(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
-    //create dataMap for missing values
-    val contexts = programs.map(rule => Context(rule, substitution))
+  def joinSerial(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ContextData(rule, substitution))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
+    var substitutions = Set[Substitution]()
+
+    contextProgram.foreach(context => {
+
+      val headPredicate = context.getHead()
+      val crrSubstitutions = joinSerial(contextMap, context, context)
+        .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+      val crrPredicates = context.get(crrSubstitutions)
+      substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+      contextProgram.filter(other => context.calledFrom(other))
+        .foreach(other => other.updateData(headPredicate, crrPredicates))
+    })
+
+    substitutions
+  }
+
+  def joinRoaringParallel(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
+
+    val contextOrder = programs.map(rule => ContextRows(rule, substitution))
+    val contextMap = contextOrder.groupBy(context => context.getHead().identifier())
+
+
     val map = programs.groupBy(optimized => optimized.identifier())
     var substitutions = Set[Substitution]()
-    contexts.foreach(context => {
-      val contextId = context.getId()
-      val crrSubstitutions =  if cacheHAS(globalCache, contextId) then {
-        cacheGET(globalCache, contextId)
-      }
-      else{
-        val substitutions = joinParallel(context)
-          .filter(substitution => substitution.containsAll(context.getHeadVariables()))
-        cacheADD(globalCache, contextId, substitutions)
-      }
+    contextOrder.foreach(context => {
+      val headPredicate = context.getHead()
+      val crrSubstitutions = joinRoaringParallel(contextMap, context)
+        .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+      val crrPredicates = context.get(crrSubstitutions)
+
+      database.index(headPredicate, crrPredicates)
 
       substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-      contexts.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateData(context.getHead(), context.get(crrSubstitutions)))
+      contextOrder.filter(other => context.calledFrom(other))
+        .foreach(other => other.updateData(context.getHead(), crrPredicates))
     })
+
     substitutions
   }
 
-  def joinCyclicBottomUp(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
-    //create dataMap for missing values
-    val contexts = programs.map(rule => Context(rule, substitution))
-    val map = programs.groupBy(optimized => optimized.identifier())
+  def joinParallelCache(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
+
+    val contextMap = programs.map(rule => ContextData(rule, substitution))
+      .groupBy(context => context.getHead().identifier())
+
     var substitutions = Set[Substitution]()
-    contexts.foreach(context => {
-      substitutions = joinBottomUp(map, context)
-      substitutions = substitutions.filter(substitution => substitution.containsAll(context.getHeadVariables()))
-      val predicates = context.get(substitutions)
-      //Update other context data
-      contexts.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateData(context.getHead(), predicates))
-    })
+    contextMap.foreach { case (id, contexts) => {
+
+      contexts.foreach(context => {
+        val headPredicate = context.getHead()
+        val ruleId = context.getRuleId()
+        val crrSubstitutions = if cacheHAS(globalCache, ruleId) then {
+          cacheGET(globalCache, ruleId)
+        }
+        else {
+          val substitutions = joinParallel(contextMap, context, context)
+            .map(substitution => substitution.get(headPredicate.getVariables())) ++
+            atomSubstitutions(headPredicate, substitution)
+
+          cacheADD(globalCache, ruleId, substitutions)
+        }
+
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contexts.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(context.getHead(), context.get(crrSubstitutions)))
+      })
+    }
+    }
+
     substitutions
   }
+  /*
+    def joinCyclicBottomUp(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
+      //create dataMap for missing values
+      val contexts = programs.map(rule => ContextData(rule, substitution))
+      val map = programs.groupBy(optimized => optimized.identifier())
+      var substitutions = Set[Substitution]()
+      contexts.foreach(context => {
+        substitutions = joinBottomUp(map, context)
+        substitutions = substitutions.filter(substitution => substitution.containsAll(context.getHeadVariables()))
+        val predicates = context.get(substitutions)
+        contexts.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(context.getHead(), predicates))
+      })
+      substitutions
+    }*/
 
-  def joinParallel(context: Context): Set[Substitution] = {
-
-    if context.emptyAttibutes() then Set(Substitution())
+  def joinSerial(contextMap: Map[Int, Array[ContextData]], programContext: ContextData, context: ContextData): Set[Substitution] = {
+    if (context.getDepth() > recursiveDepth || context.emptyAttributes()) && execute(context).isDefined then
+      Set(Substitution())
     else
-      val newExecuteSubstitution = execute(context)
-      val attributes = context.getAttributes()
-      val restAttributes = newExecuteSubstitution.compose(attributes.tail)
-      val nextAttribute = newExecuteSubstitution.compose(attributes.head)
+      val newExecuteResult = execute(context)
+      if newExecuteResult.isEmpty then Set()
+      else {
+        val newSubstitution = newExecuteResult.get
+        val nextContext = context.nextContext(newSubstitution)
+        val nextVariable = nextContext.getTargetVariable()
+        val activeDomain = activeParallel(contextMap, programContext, nextContext)
 
-      val activeDomain = activeParallel(context, nextAttribute)
-      val results = activeDomain.par.flatMap(value => {
-        val filteredMap = filterData(context.getDataMap(), context.getRelations(), nextAttribute, value)
-        val newContext = context.newContext(newExecuteSubstitution, nextAttribute, restAttributes)
+        val results = activeDomain.flatMap(value => {
+          val filteredMap = filterData(nextContext.getDataMap(), nextContext.getRelations(), nextContext.getTargetVariable(), value)
+          val newContext = nextContext.newContext(newSubstitution.composition(value))
+            .setDataMap(filteredMap)
+
+          val partialResults = joinSerial(contextMap, programContext, newContext)
+          val substitutions = partialResults.map(partial => {
+            partial.appendNew(nextVariable.toVariable(), value.setName(nextVariable.getName()))
+          })
+          substitutions
+        }).toArray.toSet
+
+        results
+
+      }
+
+  }
+
+  def joinParallel(contextMap: Map[Int, Array[ContextData]], programContext: ContextData, currentContext: ContextData): Set[Substitution] = {
+
+    val executedContext = execute(currentContext)
+
+
+    if executedContext.isEmpty then Set()
+    //else if currentContext.emptyAttributes() && programContext.conflictContext(currentContext) then Set()
+    else if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) && executedContext.isDefined then
+      Set(Substitution())
+    else {
+      val newSubstitution = executedContext.get
+      val nextContext = currentContext.nextContext(newSubstitution)
+      val nextVariable = nextContext.getTargetVariable()
+      val activeDomain = activeParallel(contextMap, programContext, nextContext)
+
+      if activeDomain.size == 0 then
+        val de = 0;
+
+      val results = activeDomain.flatMap(value => {
+        val filteredMap = filterData(currentContext.getDataMap(), currentContext.getRelations(), nextVariable, value)
+
+        val newContext = nextContext.newContext(newSubstitution.composition(value))
           .setDataMap(filteredMap)
 
-        val partialResults = joinParallel(newContext)
+        if (value.getName() == "Y2" || value.getName() == "X2") && newContext.getHead().getName().startsWith("f") then
+          val debug = 0
+
+        val partialResults = joinParallel(contextMap, programContext, newContext)
         val substitutions = partialResults.map(partial => {
-          partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
+          partial.replaceNew(nextVariable, value.setName(nextVariable.getName()))
         })
         substitutions
       }).toArray.toSet
 
       results
+    }
+
 
   }
 
-  def joinBottomUp(programMap: Map[Int, Array[Optimized]], context: Context): Set[Substitution] = {
-
-    if context.emptyAttibutes() then Set(Substitution())
-    else
-      val newExecuteSubstitution = execute(context)
+  def joinExecution(context: ContextRows): Option[ContextRows] =
+    val newExecuteSubstitution = execute(context)
+    if newExecuteSubstitution.isEmpty then None
+    else if context.getDepth() > recursiveDepth || context.emptyAttributes() then Some(context)
+    else {
+      val executionSubstitution = newExecuteSubstitution.get
       val attributes = context.getAttributes()
-      val restAttributes = newExecuteSubstitution.compose(attributes.tail)
-      val nextAttribute = newExecuteSubstitution.compose(attributes.head)
-      val newContext = context.newContext(newExecuteSubstitution, nextAttribute, restAttributes)
-      val activeDomain = activeCyclic(programMap, context, nextAttribute)
-      val results = activeDomain.flatMap(value => {
-        val filteredMap = filterData(context.getDataMap(), context.getRelations(), nextAttribute, value)
-        newContext.setDataMap(filteredMap)
-        val partialResults = joinParallel(newContext)
-        val substitutions = partialResults.map(partial => {
-          partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
-        })
-        substitutions
-      }).toArray.toSet
+      val restAttributes = executionSubstitution.compose(attributes.tail)
+      val nextAttribute = executionSubstitution.compose(attributes.head)
+      Some(context.newContext(executionSubstitution, nextAttribute, restAttributes))
+    }
+
+  def joinRoaringParallel(contextMap: Map[Int, Array[ContextRows]], context: ContextRows): Set[Substitution] = {
+    val executedContext = joinExecution(context)
+    if executedContext.isEmpty then Set()
+    else if (context.getDepth() > recursiveDepth || context.emptyAttributes()) then
+      Set(Substitution())
+    else
+      val activeDomain = activeCyclicRoaring(contextMap, executedContext.get)
+
+      val results = activeDomain.par.flatMap(value => {
+          val filteredRowMap = filterRoaring(context.getRowMap(), context.getRelations(), context.getTargetVariable(), value)
+          executedContext.toSet.flatMap(newContext => {
+            val nextAttribute = newContext.getTargetVariable()
+            val newRowContext = newContext.newContext(value)
+              .setRowMap(filteredRowMap)
+            val partialResults = joinRoaringParallel(contextMap, newRowContext)
+            val substitutions = partialResults.map(partial => {
+              partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
+            })
+            substitutions
+          })
+        }).toArray
+        .toSet
 
       results
-
   }
+  /*
+    def joinBottomUp(programMap: Map[Int, Array[Optimized]], context: ContextData): Set[Substitution] = {
 
-  def joinCyclicBitmap(cache: ConcurrentMap[Int, Set[Substitution]], programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
-                       crrQuery: Optimized, bitmapMap: Map[Int, BitSet],
-                       relations: Array[Predicate],
-                       attributes: Array[Variable], crrDepth: Int = 0): Set[Substitution] = {
-
-    if crrDepth > recursiveDepth then
-      Set[Substitution]()
-
-    else if attributes.isEmpty then Set(Substitution())
-    else
-
-      val newExecuteSubstitution = execute(crrQuery, crrSubstitution)
-      val restAttributes = newExecuteSubstitution.compose(attributes.tail)
-      val nextAttribute = newExecuteSubstitution.compose(attributes.head)
-      val cacheId = cacheID(0, crrQuery, newExecuteSubstitution, nextAttribute)
-      if cacheHAS(cache, cacheId) then
-        cacheGET(cache, cacheId)
+      if context.emptyAttributes() then Set(Substitution())
       else
-        val activeDomain = activeCyclicBitmap(cache, programMap, newExecuteSubstitution, crrQuery, bitmapMap, relations, restAttributes, nextAttribute, crrDepth)
-        val results = activeDomain.par.flatMap(value => {
-          val filteredMap = filterBitmap(bitmapMap, relations, nextAttribute, value)
-          val partialResults = joinCyclicBitmap(cache, programMap, newExecuteSubstitution, crrQuery, filteredMap, relations, restAttributes, crrDepth)
-          val results = partialResults.map(partial => {
+        val newExecuteSubstitution = executeConflict(context).get
+        val attributes = context.getAttributes()
+        val restAttributes = newExecuteSubstitution.compose(attributes.tail)
+        val nextAttribute = newExecuteSubstitution.compose(attributes.head)
+        val newContext = context.newContext(newExecuteSubstitution, nextAttribute, restAttributes)
+        val activeDomain = activeCyclic(programMap, context, nextAttribute)
+        val results = activeDomain.flatMap(value => {
+          val filteredMap = filterData(context.getDataMap(), context.getRelations(), nextAttribute, value)
+          newContext.setDataMap(filteredMap)
+          val partialResults = joinParallel(Map(), newContext)
+          val substitutions = partialResults.map(partial => {
             partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
           })
-          results
+          substitutions
         }).toArray.toSet
 
-        cacheADD(cache, cacheId, results)
+        results
 
-  }
+    }*/
+  /*
+    def joinCyclicBitmap(cache: ConcurrentMap[Int, Set[Substitution]], programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
+                         crrQuery: Optimized, bitmapMap: Map[Int, BitSet],
+                         relations: Array[Predicate],
+                         attributes: Array[Variable], crrDepth: Int = 0): Set[Substitution] = {
 
-  def joinCyclicRoaring(cache: ConcurrentMap[Int, Set[Substitution]], programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
-                        crrQuery: Optimized, bitmapMap: Map[Int, RoaringBitmap],
-                        relations: Array[Predicate],
-                        attributes: Array[Variable], crrDepth: Int = 0): Set[Substitution] = {
+      if crrDepth > recursiveDepth then
+        Set[Substitution]()
 
-    if crrDepth > recursiveDepth then
-      Set[Substitution]()
-
-    else if attributes.isEmpty then Set(Substitution())
-    else
-
-      val newExecuteSubstitution = execute(crrQuery, crrSubstitution)
-      val restAttributes = newExecuteSubstitution.compose(attributes.tail)
-      val nextAttribute = newExecuteSubstitution.compose(attributes.head)
-      val cacheId = cacheID(0, crrQuery, newExecuteSubstitution, nextAttribute)
-      if cacheHAS(cache, cacheId) then
-        cacheGET(cache, cacheId)
+      else if attributes.isEmpty then Set(Substitution())
       else
-        val activeDomain = activeCyclicRoaring(cache, programMap, newExecuteSubstitution, crrQuery, bitmapMap, relations, restAttributes, nextAttribute, crrDepth)
-        val results = activeDomain.par.flatMap(value => {
-          val filteredMap = filterRoaring(bitmapMap, relations, nextAttribute, value)
-          val partialResults = joinCyclicRoaring(cache, programMap, newExecuteSubstitution, crrQuery, filteredMap, relations, restAttributes, crrDepth)
-          val results = partialResults.map(partial => {
-            partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
-          })
-          results
-        }).toArray.toSet
 
-        cacheADD(cache, cacheId, results)
+        val newExecuteSubstitution = execute(crrQuery, crrSubstitution)
+        val restAttributes = newExecuteSubstitution.compose(attributes.tail)
+        val nextAttribute = newExecuteSubstitution.compose(attributes.head)
+        val cacheId = cacheID(0, crrQuery, newExecuteSubstitution, nextAttribute)
+        if cacheHAS(cache, cacheId) then
+          cacheGET(cache, cacheId)
+        else
+          val activeDomain = activeCyclicBitmap(cache, programMap, newExecuteSubstitution, crrQuery, bitmapMap, relations, restAttributes, nextAttribute, crrDepth)
+          val results = activeDomain.par.flatMap(value => {
+            val filteredMap = filterBitmap(bitmapMap, relations, nextAttribute, value)
+            val partialResults = joinCyclicBitmap(cache, programMap, newExecuteSubstitution, crrQuery, filteredMap, relations, restAttributes, crrDepth)
+            val results = partialResults.map(partial => {
+              partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
+            })
+            results
+          }).toArray.toSet
 
-  }
+          cacheADD(cache, cacheId, results)
+    }*/
+  /*
+
+    def joinCyclicRoaring(cache: ConcurrentMap[Int, Set[Substitution]], programMap: Map[Int, Array[Optimized]], crrSubstitution: Substitution,
+                          crrQuery: Optimized, bitmapMap: Map[Int, RoaringBitmap],
+                          relations: Array[Predicate],
+                          attributes: Array[Variable], crrDepth: Int = 0): Set[Substitution] = {
+
+      if crrDepth > recursiveDepth then
+        Set[Substitution]()
+
+      else if attributes.isEmpty then Set(Substitution())
+      else
+
+        val newExecuteSubstitution = execute(crrQuery, crrSubstitution)
+        val restAttributes = newExecuteSubstitution.compose(attributes.tail)
+        val nextAttribute = newExecuteSubstitution.compose(attributes.head)
+        val cacheId = cacheID(0, crrQuery, newExecuteSubstitution, nextAttribute)
+        if cacheHAS(cache, cacheId) then
+          cacheGET(cache, cacheId)
+        else
+          val activeDomain = activeCyclicRoaring(cache, programMap, newExecuteSubstitution, crrQuery, bitmapMap, relations, restAttributes, nextAttribute, crrDepth)
+          val results = activeDomain.par.flatMap(value => {
+            val filteredMap = filterRoaring(bitmapMap, relations, nextAttribute, value)
+            val partialResults = joinCyclicRoaring(cache, programMap, newExecuteSubstitution, crrQuery, filteredMap, relations, restAttributes, crrDepth)
+            val results = partialResults.map(partial => {
+              partial.appendNew(nextAttribute.toVariable(), value.setName(nextAttribute.getName()))
+            })
+            results
+          }).toArray.toSet
+
+          cacheADD(cache, cacheId, results)
+
+    }
+  */
 
 
   def joinCyclic(program: Array[Optimized], substitution: Substitution): Set[Substitution] =
@@ -583,37 +697,25 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
     val result = joinCyclic(programMap, substitution, rule, dataMap, relations, attributes)
     result
 
-  /*  def joinAll(program: Array[Optimized], substitution: Substitution): Array[Set[Substitution]] =
+  /*  def joinCyclicRoaring(program: Array[Optimized], substitution: Substitution): Set[Substitution] =
       val programMap = program.groupBy(optimized => optimized.identifier())
-      val rules = program.map(optimized => program.filter(other => other.bodyId() != optimized.bodyId()) :+ optimized)
-        .map(rules => joinCyclic(rules, substitution))
-      rules*/
+      val cache = ConcurrentMap[Int, Set[Substitution]]()
+      val rule = program.last
+      val dataMap = rule.getRoaringMap()
+      val attributes = rule.variables
+      val relations = rule.predicates
+      val result = joinCyclicRoaring(cache, programMap, substitution, rule, dataMap, relations, attributes)
+      result*/
 
-  /*  def joinAllRoaring(program: Array[Optimized], substitution: Substitution): Array[Set[Substitution]] =
+  /*  def joinCyclicBitmap(program: Array[Optimized], substitution: Substitution): Set[Substitution] =
       val programMap = program.groupBy(optimized => optimized.identifier())
-      val rules = program.map(optimized => program.filter(other => other.bodyId() != optimized.bodyId()) :+ optimized)
-        .map(rules => joinCyclicRoaring(rules, substitution))
-      rules*/
-
-  def joinCyclicRoaring(program: Array[Optimized], substitution: Substitution): Set[Substitution] =
-    val programMap = program.groupBy(optimized => optimized.identifier())
-    val cache = ConcurrentMap[Int, Set[Substitution]]()
-    val rule = program.last
-    val dataMap = rule.getRoaringMap()
-    val attributes = rule.variables
-    val relations = rule.predicates
-    val result = joinCyclicRoaring(cache, programMap, substitution, rule, dataMap, relations, attributes)
-    result
-
-  def joinCyclicBitmap(program: Array[Optimized], substitution: Substitution): Set[Substitution] =
-    val programMap = program.groupBy(optimized => optimized.identifier())
-    val cache = ConcurrentMap[Int, Set[Substitution]]()
-    val rule = program.last
-    val dataMap = rule.getBitmapMap()
-    val attributes = rule.variables
-    val relations = rule.predicates
-    val result = joinCyclicBitmap(cache, programMap, substitution, rule, dataMap, relations, attributes)
-    result
+      val cache = ConcurrentMap[Int, Set[Substitution]]()
+      val rule = program.last
+      val dataMap = rule.getBitmapMap()
+      val attributes = rule.variables
+      val relations = rule.predicates
+      val result = joinCyclicBitmap(cache, programMap, substitution, rule, dataMap, relations, attributes)
+      result*/
 
   def execute(originalQuery: Optimized, substitution: Substitution = Substitution()): Substitution = {
 
@@ -633,7 +735,8 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
     main
   }
 
-  def execute(context: Context): Substitution = {
+
+  def execute(context: ContextData): Option[Substitution] = {
     val rule = context.getRule()
     var main = context.getSubstitution()
 
@@ -641,13 +744,74 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
       .foreach(predicate => {
         val newPredicate = predicate.substitution(main)
           .asPredicate()
-        if newPredicate.isExecutable() then {
-          val newSubstitution = newPredicate.execute().get
-          main = main.composition(newSubstitution)
+        if newPredicate.isFunctional() && newPredicate.isDefinite() then {
+          if newPredicate.isExecutable() then {
+            newPredicate.execute().foreach(newSubstitution => {
+              val newComposed = main.composition(newSubstitution)
+              if main.hasConflict(newComposed) then {
+                return None
+              }
+              else {
+                main = newComposed
+              }
+            })
+          }
+          else {
+            return None
+          }
         }
       })
-    main
+
+    Some(main)
   }
+
+  def execute(context: ContextRows): Option[Substitution] = {
+    val rule = context.getRule()
+    var main = context.getSubstitution()
+
+
+    rule.getQuery().getBody()
+      .foreach(predicate => {
+        val newPredicate = predicate.substitution(main)
+          .asPredicate()
+        if newPredicate.isFunctional() && newPredicate.isDefinite() then {
+          if newPredicate.isExecutable() then {
+            newPredicate.execute().foreach(newSubstitution => {
+              val newComposed = main.composition(newSubstitution)
+              if main.hasConflict(newComposed) then {
+                return None
+              }
+              else {
+                main = newComposed
+              }
+            })
+          }
+          else {
+            return None
+          }
+        }
+      })
+
+    Some(main)
+  }
+  /*
+
+    def execute(context: ContextRows): Substitution = {
+      val rule = context.getRule()
+      var main = context.getSubstitution()
+
+      rule.getQuery().getBody()
+        .foreach(predicate => {
+          val newPredicate = predicate.substitution(main)
+            .asPredicate()
+          if newPredicate.isExecutable() then {
+            val newSubstitution = newPredicate.execute().get
+            main = main.composition(newSubstitution)
+          }
+        })
+      main
+    }
+  */
 
   /*
 

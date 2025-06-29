@@ -10,19 +10,20 @@ import scala.collection.concurrent.TrieMap
 object DatabaseTest {
 
   def simpleExecution(): Unit = {
-    val db = Database("executionTest");
+    val db = Database("executionTest")
     val g1 = Parser.parsePredicate("g(4).").get
     val r = Parser.parseRule("f(X,Y) :- Y=X+1, g(Y).").get
     val h = Hypothesis(r.getHead(), r)
-    val substitution = Substitution().add(Variable("X"), Num("X", 3.0))
+    val substitution = Substitution().add(Variable("X"), Num("X", 1.0))
 
     db.add(g1).build()
     val engine = Engine(db)
     val plan = Plan(db)
     val o1 = plan.optimizeExperimental(h)
     val results = engine.joinParallel(o1, substitution)
-    println(results.size)
+    println(results.mkString("[",",","]"))
   }
+
 
   def simpleMixCycling(): Unit = {
     val params = Params("synthesis-length")
@@ -78,11 +79,16 @@ object DatabaseTest {
       "l131(D2,A5) :- g757(M1,D2) & c131(M1,A5).").get
 
     val optimizedList = plan.optimizeExperimental(hypothesis)
-    val results = engine.joinCyclicBottomUp(optimizedList,Substitution())
-    println("Result size: " +results.size)
+    //val resultBottomup = engine.joinCyclicBottomUp(optimizedList,Substitution())
+    val resultParallel = engine.joinParallel(optimizedList,Substitution())
+    val resultRoaring = engine.joinRoaringParallel(optimizedList,Substitution())
+
+    //println("Result bottomup size: " +resultBottomup.size)
+    println("Result parallel size: " +resultParallel.size)
+    println("Result roaring size: " +resultRoaring.size)
   }
 
-  def simpleParallelTrains():Unit= {
+  private def simpleParallelTrains():Unit= {
     val params = Params("trains1")
     val experiment = Experiment(params).load()
     val db = experiment.getDatabase()
@@ -100,36 +106,86 @@ object DatabaseTest {
     println("Check: " + (result1.size == result2.size))
   }
 
-  def roaringCycling(): Unit = {
-    val params = Params("synthesis-length")
+  def simpleFunctional(): Unit = {
+
+    val main = Set(Variable("A"))
+    val other = Set(Num("A", 78).asVariable())
+    val all = Set(other, main)
+    val ii = other.intersect(main)
+
+    val params = Params("robots-functional")
     val experiment = Experiment(params).load()
     val db = experiment.getDatabase()
     val hypothesis = experiment.getHypothesis()
     val positives = experiment.getPositives()
 
-    val engine = Engine(db, recursiveDepth = 8)
+    val engine = Engine(db, recursiveDepth = 5)
     val plan = Plan(db)
 
-    val optimizedList = plan.optimizeMinMin(hypothesis)
+    for(positive <- positives) {
+      val program = plan.optimizeExperimental(hypothesis)
+      val parallelResults = engine.joinParallel(program, positive.toSubstitution(hypothesis.getHead()))
+      val roaringResults = engine.joinRoaringParallel(program, positive.toSubstitution(hypothesis.getHead()))
+      println(s"Predicate: ${positive}, Parallel Has result: "+parallelResults.nonEmpty)
+      println(s"Predicate: ${positive}, Roaring Has result: "+roaringResults.nonEmpty)
+    }
+  }
 
-    positives.foreach(positive => {
-      val substitution = hypothesis.substitution(positive)
-      val cache = TrieMap[Int, Set[Substitution]]()
-      val results = engine.joinCyclicRoaring(optimizedList, substitution)
-      println("Has result: " +results.nonEmpty)
-      println(results)
-    })
+  def simpleFunctionalTime(): Unit = {
 
+    val main = Set(Variable("A"))
+    val other = Set(Num("A", 78).asVariable())
+    val all = Set(other, main)
+    val ii = other.intersect(main)
+
+    val params = Params("robots-linear")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase()
+    val hypothesis = experiment.getHypothesis()
+    val positives = experiment.getPositives()
+
+    val engine = Engine(db, recursiveDepth = 5)
+    val plan = Plan(db)
+    val program = plan.optimizeNone(hypothesis)
+    var tParallel = 0L
+    var tRoaring = 0L
+    val filterSubstitution = Substitution()
+      .add(Variable("A"), Variable("X0"))
+      .add(Variable("B"), Variable("Y0"))
+      .add(Variable("C"), Variable("X1"))
+      .add(Variable("D"), Variable("Y1"))
+
+
+
+    for(positive <- positives) {
+      val newHead = filterSubstitution.filterReplace(positive)
+      val beginParallel = System.nanoTime()
+      //Set input variables
+      program.foreach(optimized => optimized.query.setInputVariables(optimized.query.inputVariables.slice(0, 2)))
+      val parallelResults = engine.joinParallel(program, newHead)
+      tParallel += System.nanoTime() - beginParallel
+      val beginRoaring = System.nanoTime()
+      val roaringResults = engine.joinRoaringParallel(program, newHead)
+      tRoaring += System.nanoTime() - beginRoaring
+      println(s"Predicate: ${positive}, Parallel Has result: "+parallelResults.nonEmpty)
+      println(s"Predicate: ${positive}, Roaring Has result: "+roaringResults.nonEmpty)
+    }
+
+    println("====================================")
+    println("Parallel: " + tParallel.toDouble/10000000)
+    println("Roaring: " + tRoaring.toDouble/10000000)
 
   }
 
-  def simpleCycling(): Unit = {
+  def simpleRecursive(): Unit = {
 
-    val db = Database("recursiveTest");
+    val db = Database("recursiveTest")
     val p1 = Parser.parsePredicate("f(5, 1).").get
     val p2 = Parser.parsePredicate("f(4, 1).").get
     val p3 = Parser.parsePredicate("f(3, 2).").get
     val p4 = Parser.parsePredicate("f(2, 3).").get
+    val p5 = Parser.parsePredicate("f(2, 2).").get
+    val g0 = Parser.parsePredicate("g(2).").get
     val g1 = Parser.parsePredicate("g(3).").get
     val g2 = Parser.parsePredicate("g(4).").get
     val g3 = Parser.parsePredicate("g(5).").get
@@ -138,6 +194,8 @@ object DatabaseTest {
       .add(p2)
       .add(p3)
       .add(p4)
+      .add(p5)
+      .add(g0)
       .add(g1)
       .add(g2)
       .add(g3)
@@ -146,19 +204,25 @@ object DatabaseTest {
     val engine = Engine(db)
     val plan = Plan(db)
 
-    val s1 = Substitution().add(Variable("X"), Num("X", 6))
-      .add(Variable("Y"), Num("Y", 2))
+    val substitution = Substitution().add(Variable("X"), Num("X", 5))
 
-    val r1 = Parser.parseRule("f(X, Y) :- g(X), X=X-1, f(X,Y).").get
-    val query = plan.optimizeRelative(r1)
-    val queries=Array(query)
-    val substitution = Substitution()
-    val substitutions = engine.joinCyclic(queries, substitution)
-    substitutions.foreach(sub=> println(sub))
+
+    val r1 = Parser.parseHypothesis("f(X, Y) :- g(X1), X1=X-1, f(X1,Y).").get
+    val queries = plan.optimizeExperimental(r1)
+
+    val parallelSubstitutions = engine.joinParallel(queries, substitution)
+    println("Parallel result: ")
+    parallelSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+
+    val roaringSubstitutions = engine.joinRoaringParallel(queries, substitution)
+    println("Roaring result: ")
+    roaringSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
   }
 
   def main(args: Array[String]): Unit = {
-    simpleParallelTrains()
+    simpleFunctionalTime()
   }
 
 }

@@ -26,6 +26,11 @@ class Experiment(params: Params):
 
   def getNegatives() = negatives
 
+  def load(): this.type =
+    loadDatabase()
+    loadSamples()
+    loadQueries()
+
   protected def loadSamples(): this.type =
     println("Loading samples")
     val rSamples = "((pos|neg)\\((.*?)\\)\\.)"
@@ -48,7 +53,7 @@ class Experiment(params: Params):
   def loadDatabase(): this.type =
     println("Loading database")
     Source.fromFile(folder + "bk.pl").getLines().map(_.trim)
-      .filter(_.nonEmpty)
+      .filter(line=> line.nonEmpty && !line.startsWith("%%"))
       .foreach(line => {
         val predicate = Parser.parsePredicate(line).get
         database.add(predicate)
@@ -57,7 +62,6 @@ class Experiment(params: Params):
     val bias = Bias().build(folder + "bias.pl")
     database.build().setBias(bias)
     this
-
 
   def loadQueries(): this.type =
     println("Loading queries: " + folder)
@@ -72,9 +76,4 @@ class Experiment(params: Params):
       hypothesis = Hypothesis(rules)
     println("Loading queries finieshed.")
     this
-
-  def load(): this.type =
-    loadDatabase()
-    loadSamples()
-    loadQueries()
 

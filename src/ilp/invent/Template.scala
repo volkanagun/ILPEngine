@@ -47,7 +47,7 @@ abstract class Template(val engine: Engine):
       val crrResults = inventNext(targets)
       val validResults = crrResults.par.map(hypothesis => {
           hypothesis.build().compact()
-        }).filter(hypothesis => hypothesis.getRules().size < maxRules)
+        }).filter(hypothesis => hypothesis.getRules().length < maxRules)
         .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
 
       val scoredResults = validResults.filter(_.validAritry(targetHead))
@@ -176,9 +176,11 @@ abstract class Template(val engine: Engine):
 /*
   def ig(hypothesis: Hypothesis): Hypothesis =
     ig(Set(), hypothesis)*/
+/*
 
   def igRoaring(hypothesis: Hypothesis): Hypothesis =
     igRoaring(Set(), hypothesis)
+*/
 
   def igParallel(hypothesis: Hypothesis): Hypothesis =
     igParallel(Set(), hypothesis)
@@ -199,7 +201,7 @@ abstract class Template(val engine: Engine):
     hypothesis.accuracy()
     hypothesis*/
 
-
+/*
   def igRoaring(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
 
     val optimization = plan.optimizeMinMin(hypothesis)
@@ -211,7 +213,7 @@ abstract class Template(val engine: Engine):
 
     hypothesis.ig(crrFacts, positives, negatives)
     hypothesis.accuracy()
-    hypothesis
+    hypothesis*/
 
   def igParallel(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
     val targetHead = positives.head
@@ -236,7 +238,7 @@ abstract class Template(val engine: Engine):
     val newHypothesis = hypothesis.substitution(substitution)
 
     val optimization = plan.optimizeExperimental(newHypothesis)
-    val crrSubstitutions = engine.joinProgramCache(optimization, Substitution())
+    val crrSubstitutions = engine.joinParallelCache(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
 
     hypothesis.ig(crrFacts, positives, negatives)

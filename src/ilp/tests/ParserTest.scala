@@ -19,8 +19,10 @@ object ParserTest {
 
     //test("head([H|_], H).")
     //test("\\+ is_list(A).")
+
     test("Atom2=[f,A,C].")
     test("empty([]).")
+    test("Y1==Y2.")
 
 
     //testRule("move_right(w(X1,Y),w(X2,Y)) :- X2 = X1 + 1.")

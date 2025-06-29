@@ -19,7 +19,27 @@ class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional("subtr
     val lastNumber = e2.getValue().asNumber().getNumber()
     variables.Num(result.getName(), headNumber - lastNumber)
 
+  def getReverse(substitution: Substitution):Variable =
+    val computedResult = result.substitution(substitution)
+    val computedNumber = computedResult.getValue().asNumber().getNumber()
+    val lastNumber = e2.getValue().asNumber().getNumber()
+    variables.Num(e1.getName(), computedNumber + lastNumber)
+
+
+  override def contains(variable: Variable): Boolean = e1 == variable
+
   override def execute(): Option[Substitution] =
     Some(Substitution().add(result.asVariable(), getValue()))
+
+  override def reverseExecute(substitution: Substitution): Option[Substitution] = {
+    if substitution.contains(result) then {
+      val reverseNumber = getReverse(substitution)
+      val newSubstitution = substitution.appendNew(reverseNumber, reverseNumber)
+      Some(newSubstitution)
+    }
+    else{
+      Some(substitution)
+    }
+  }
 
   override def toString: String = e1.toString + "-" + e2.toString
