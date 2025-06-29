@@ -13,6 +13,8 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 class Engine(val database: Database, val recursiveDepth: Int = 5) {
 
   var globalCache = ConcurrentMap[Int, Set[Substitution]]()
+  val executionCache = ExecutionCache()
+  val programCache = ProgramCache()
 
   def getDatabase() = database
 
@@ -196,6 +198,42 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
     if (domains.isEmpty) Set.empty else domains.reduce(_ intersect _)
   }
 
+  def activeSwitch(contextMap: Map[Int, Array[ContextData]],
+                   programContext: ContextData,
+                   nextContext: ContextData, predicate: Predicate,
+                   attribute: Variable, predicateId: Int, position: Int): Option[Set[Variable]] = {
+
+    val executionId = executionCache.id(nextContext, predicateId)
+    val substitutions = executionCache.get(executionId)
+
+    val items = (/*(if substitutions.isDefined then {
+      substitutions.get
+    }
+    else */if contextMap.contains(predicateId) then {
+      val results = contextMap(predicateId)
+        .flatMap(currentContext => {
+          currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
+        }).map(currentContext => {
+          val substitutions = joinParallel(contextMap, programContext, currentContext)
+          (currentContext, substitutions)
+        }).toSet
+
+      executionCache.update(executionId, results)
+      results
+    }
+    else {
+      Set[(ContextData, Set[Substitution])]()
+    })
+
+    val variables = items.flatMap { case (currentContext, substitutions) => {
+      val newVariable = currentContext.getHead().getVariable(position)
+      substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, attribute.getName())
+        .map(variable => variable))
+    }}
+
+    if variables.nonEmpty then Some(variables) else None
+  }
+
   def activeParallel(contextMap: Map[Int, Array[ContextData]],
                      programContext: ContextData,
                      nextContext: ContextData): Set[Variable] = {
@@ -218,21 +256,21 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) {
 
           if crrResults.isEmpty then
 
-            val results = contextMap(predicateId)
+            /*val results = contextMap(predicateId)
               .flatMap(currentContext => {
                 currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
               }).flatMap(currentContext => {
                 val substitutions = joinParallel(contextMap, programContext, currentContext)
                 val newVariable = currentContext.getHead().getVariable(position)
-                if newVariable.getName() == "X1" then
-                  val debug = 0;
                 val newValues = substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, attribute.getName())
                   .map(variable => variable))
                 newValues
-              }).toSet
+              }).toSet*/
 
-            if results.nonEmpty then Some(results)
-            else None
+            val compared = activeSwitch(contextMap,programContext, nextContext, predicate, attribute, predicateId, position)
+            compared
+/*            if results.nonEmpty then Some(results)
+            else None*/
           else
             Some(crrResults)
         else
