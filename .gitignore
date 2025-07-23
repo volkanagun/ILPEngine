@@ -45,3 +45,5 @@ build/
 
 ### Scala ###
 .bsp/
+/resources/datasets/
+/resources/datasets/dunnhumby/

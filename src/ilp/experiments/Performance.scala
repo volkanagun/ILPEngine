@@ -11,9 +11,9 @@ import scala.io.Source
 
 object Performance {
   val folder = "examples/"
-  val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","yeast", "zendo")
-  //val joinExperiments = Array("dunnhumby1")
-  val not = Array("yeast")
+  val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
+  //val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
+  //val joinExperiments = Array("yeast")
   val functionalExperiments = Array("robots-functional","robots-linear")
   val resultFilename = "resources/experiments/performance.csv"
 
@@ -153,8 +153,7 @@ object Performance {
     val plan = Plan(database)
     val hypothesis = query
     val optimizedNone = plan.optimizeNone(hypothesis)
-    val optimizedRel = plan.optimizeExperimental(hypothesis)
-
+    val optimizedRel = plan.optimizeBellmanFord(hypothesis)
 
     var crrTime = measureMultipleTime({
       engine.joinSerial(optimizedNone, Substitution())
