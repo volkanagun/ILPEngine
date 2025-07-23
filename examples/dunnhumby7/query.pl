@@ -1,0 +1,1 @@
+search(X, Y) :- transaction(TRANS,PRO, STORE), product(PRO, T, A), causal(PRO, STORE, Y).

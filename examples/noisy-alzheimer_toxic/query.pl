@@ -1,0 +1,22 @@
+less_toxic(V0,V1):- r_subst_1(V1,V3),r_subst_1(V0,V3),n_val(V0,V2).
+less_toxic(V0,V1):- n_val(V0,V3),alk_groups(V1,V4),gt(V4,V2).
+less_toxic(V0,V1):- ring_subst_6(V0,V3),alk_groups(V1,V4),gt(V4,V2).
+less_toxic(V0,V1):- x_subst(V0,V3,V5),ring_substitutions(V0,V2),alk_groups(V1,V4),gt(V2,V4).
+less_toxic(V0,V1):- x_subst(V0,V3,V5),ring_substitutions(V0,V2),alk_groups(V1,V2),gt(V2,V4).
+less_toxic(V0,V1):- ring_subst_4(V0,V3),ring_substitutions(V1,V4),polarisable(V3,V5),great_polari(V5,V2).
+less_toxic(V0,V1):- x_subst(V0,V3,V2),x_subst(V1,V4,V2),alk_groups(V1,V5),ring_substitutions(V0,V5).
+less_toxic(V0,V1):- ring_substitutions(V1,V3),alk_groups(V0,V3),x_subst(V0,V2,V4),ring_subst_3(V1,V4).
+less_toxic(V0,V1):- x_subst(V0,V4,V3),ring_substitutions(V0,V5),alk_groups(V1,V5),x_subst(V1,V4,V2).
+less_toxic(V0,V1):- ring_subst_3(V0,V5),ring_substitutions(V1,V2),flex(V5,V3),great_flex(V3,V4).
+less_toxic(V0,V1):- ring_subst_6(V0,V3),alk_groups(V1,V2),alk_groups(V0,V4),gt(V4,V2).
+less_toxic(V0,V1):- r_subst_2(V0,V5),r_subst_2(V1,V5),alk_groups(V0,V2),gt(V2,V3),gt(V3,V4).
+less_toxic(V0,V1):- ring_subst_4(V0,V2),polar(V2,V3),ring_subst_2(V1,V4),polar(V4,V5),great_polar(V5,V3).
+less_toxic(V0,V1):- x_subst(V1,V4,V2),ring_subst_4(V0,V2),alk_groups(V1,V3),ring_substitutions(V0,V5),gt(V5,V3).
+less_toxic(V0,V1):- ring_subst_4(V0,V3),alk_groups(V1,V5),ring_substitutions(V0,V5),polarisable(V3,V2),great_polari(V2,V4).
+less_toxic(V0,V1):- x_subst(V1,V4,V2),ring_subst_3(V0,V2),alk_groups(V0,V3),alk_groups(V1,V5),gt(V3,V5).
+less_toxic(V0,V1):- x_subst(V1,V4,V2),ring_subst_2(V0,V2),alk_groups(V1,V3),ring_substitutions(V0,V5),gt(V5,V3).
+less_toxic(V0,V1):- x_subst(V0,V3,V5),alk_groups(V0,V2),ring_substitutions(V0,V2),alk_groups(V1,V4),gt(V4,V2).
+less_toxic(V0,V1):- ring_substitutions(V1,V3),ring_substitutions(V0,V3),alk_groups(V0,V5),r_subst_3(V1,V4),gt(V2,V3),gt(V5,V2).
+less_toxic(V0,V1):- alk_groups(V0,V5),alk_groups(V1,V2),gt(V5,V2),ring_substitutions(V0,V4),gt(V5,V4),gt(V4,V3).
+less_toxic(V0,V1):- ring_substitutions(V1,V3),alk_groups(V1,V3),alk_groups(V0,V5),gt(V5,V2),gt(V2,V4),gt(V4,V3).
+

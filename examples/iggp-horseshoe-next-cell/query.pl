@@ -1,0 +1,15 @@
+next_cell(V0,V1,V2):- does_move(V0,V3,V4,V1),true_cell(V0,V4,V2).
+next_cell(V0,V1,V2):- does_move(V0,V3,V1,V4),true_cell(V0,V4,V2).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),mypos_b(V4),does_move(V0,V3,V5,V4).
+next_cell(V0,V1,V2):- mypos_b(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_d(V5).
+next_cell(V0,V1,V2):- mypos_e(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_a(V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_d(V4),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_a(V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_e(V3),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- true_cell(V0,V1,V2),does_move(V0,V5,V3,V4),adjacent(V1,V4),adjacent(V1,V3).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),mypos_a(V5),does_move(V0,V3,V5,V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_e(V4),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- true_cell(V0,V1,V2),mypos_e(V1),mypos_a(V5),does_move(V0,V3,V5,V4).
+next_cell(V0,V1,V2):- mypos_b(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_d(V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_d(V3),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_b(V5).

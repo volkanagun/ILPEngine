@@ -1,0 +1,133 @@
+FigureName,IndexType,ExecutionMode,Optimization,Performance
+random1, No Index, Serial, No Optimization,477.107981
+random1, No Index, Serial, Relative Optimization,472.71729
+random1, No Index, Parallel, No Optimization, 75.900817
+random1, No Index, Parallel, Relative Optimization, 66.31882
+random1, Roaring Index, Parallel, No Optimization, 87.299631
+random1, Roaring Index, Parallel, Relative Optimization, 41.560535
+imdb3, No Index, Serial, No Optimization,56.825237
+imdb3, No Index, Serial, Relative Optimization,4.078263
+imdb3, No Index, Parallel, No Optimization, 9.741939
+imdb3, No Index, Parallel, Relative Optimization, 5.281992
+imdb3, Roaring Index, Parallel, No Optimization, 5.464864
+imdb3, Roaring Index, Parallel, Relative Optimization, 1.009498
+noisy-zendo2-10, No Index, Serial, No Optimization,59.046296
+noisy-zendo2-10, No Index, Serial, Relative Optimization,5.01249
+noisy-zendo2-10, No Index, Parallel, No Optimization, 12.946734
+noisy-zendo2-10, No Index, Parallel, Relative Optimization, 0.913108
+noisy-zendo2-10, Roaring Index, Parallel, No Optimization, 1.948555
+noisy-zendo2-10, Roaring Index, Parallel, Relative Optimization, 0.870457
+yeast, No Index, Serial, No Optimization,124.814135
+yeast, No Index, Serial, Relative Optimization,315.661947
+yeast, No Index, Parallel, No Optimization, 87.129883
+yeast, No Index, Parallel, Relative Optimization, 205.911213
+yeast, Roaring Index, Parallel, No Optimization, 70.823953
+yeast, Roaring Index, Parallel, Relative Optimization, 116.713223
+noisy-alzheimer_amine, No Index, Serial, No Optimization,0.219342
+noisy-alzheimer_amine, No Index, Serial, Relative Optimization,0.148671
+noisy-alzheimer_amine, No Index, Parallel, No Optimization, 0.386983
+noisy-alzheimer_amine, No Index, Parallel, Relative Optimization, 0.315623
+noisy-alzheimer_amine, Roaring Index, Parallel, No Optimization, 0.332663
+noisy-alzheimer_amine, Roaring Index, Parallel, Relative Optimization, 0.331153
+uwcs, No Index, Serial, No Optimization,2.521351
+uwcs, No Index, Serial, Relative Optimization,1.438461
+uwcs, No Index, Parallel, No Optimization, 0.642765
+uwcs, No Index, Parallel, Relative Optimization, 0.428683
+uwcs, Roaring Index, Parallel, No Optimization, 3.469328
+uwcs, Roaring Index, Parallel, Relative Optimization, 0.448193
+kinship-ancestor, No Index, Serial, No Optimization,0.125981
+kinship-ancestor, No Index, Serial, Relative Optimization,0.121631
+kinship-ancestor, No Index, Parallel, No Optimization, 0.251342
+kinship-ancestor, No Index, Parallel, Relative Optimization, 0.293172
+kinship-ancestor, Roaring Index, Parallel, No Optimization, 0.355273
+kinship-ancestor, Roaring Index, Parallel, Relative Optimization, 0.383043
+noisy-alzheimer_toxic, No Index, Serial, No Optimization,0.743986
+noisy-alzheimer_toxic, No Index, Serial, Relative Optimization,0.415723
+noisy-alzheimer_toxic, No Index, Parallel, No Optimization, 0.865787
+noisy-alzheimer_toxic, No Index, Parallel, Relative Optimization, 0.553384
+noisy-alzheimer_toxic, Roaring Index, Parallel, No Optimization, 0.580625
+noisy-alzheimer_toxic, Roaring Index, Parallel, Relative Optimization, 0.567594
+kinship-pi, No Index, Serial, No Optimization,2.303039
+kinship-pi, No Index, Serial, Relative Optimization,1.25489
+kinship-pi, No Index, Parallel, No Optimization, 1.103199
+kinship-pi, No Index, Parallel, Relative Optimization, 1.021758
+kinship-pi, Roaring Index, Parallel, No Optimization, 1.073989
+kinship-pi, Roaring Index, Parallel, Relative Optimization, 0.936368
+robots-functional, No Index, Serial, No Optimization,0.00739
+robots-functional, No Index, Serial, Relative Optimization,0.00701
+robots-functional, No Index, Parallel, No Optimization, 0.04906
+robots-functional, No Index, Parallel, Relative Optimization, 0.058501
+robots-functional, Roaring Index, Parallel, No Optimization, 0.052431
+robots-functional, Roaring Index, Parallel, Relative Optimization, 0.04822
+webkb, No Index, Serial, No Optimization,4.840929
+webkb, No Index, Serial, Relative Optimization,14.476437
+webkb, No Index, Parallel, No Optimization, 0.688185
+webkb, No Index, Parallel, Relative Optimization, 5.03586
+webkb, Roaring Index, Parallel, No Optimization, 0.579425
+webkb, Roaring Index, Parallel, Relative Optimization, 4.199694
+noisy-alzheimer_mem, No Index, Serial, No Optimization,0.350963
+noisy-alzheimer_mem, No Index, Serial, Relative Optimization,0.304862
+noisy-alzheimer_mem, No Index, Parallel, No Optimization, 0.486114
+noisy-alzheimer_mem, No Index, Parallel, Relative Optimization, 0.459573
+noisy-alzheimer_mem, Roaring Index, Parallel, No Optimization, 0.433833
+noisy-alzheimer_mem, Roaring Index, Parallel, Relative Optimization, 0.441503
+zendo2, No Index, Serial, No Optimization,25.878819
+zendo2, No Index, Serial, Relative Optimization,26.212762
+zendo2, No Index, Parallel, No Optimization, 7.495681
+zendo2, No Index, Parallel, Relative Optimization, 12.602062
+zendo2, Roaring Index, Parallel, No Optimization, 5.852168
+zendo2, Roaring Index, Parallel, Relative Optimization, 5.178702
+random0, No Index, Serial, No Optimization,56.719669
+random0, No Index, Serial, Relative Optimization,2.539691
+random0, No Index, Parallel, No Optimization, 8.114706
+random0, No Index, Parallel, Relative Optimization, 0.399603
+random0, Roaring Index, Parallel, No Optimization, 7.622562
+random0, Roaring Index, Parallel, Relative Optimization, 0.462154
+zendo3, No Index, Serial, No Optimization,11.719494
+zendo3, No Index, Serial, Relative Optimization,7.575542
+zendo3, No Index, Parallel, No Optimization, 5.542605
+zendo3, No Index, Parallel, Relative Optimization, 2.45814
+zendo3, Roaring Index, Parallel, No Optimization, 6.059099
+zendo3, Roaring Index, Parallel, Relative Optimization, 5.074221
+robots-linear, No Index, Serial, No Optimization,0.00588
+robots-linear, No Index, Serial, Relative Optimization,0.00527
+robots-linear, No Index, Parallel, No Optimization, 0.04677
+robots-linear, No Index, Parallel, Relative Optimization, 0.04547
+robots-linear, Roaring Index, Parallel, No Optimization, 0.04652
+robots-linear, Roaring Index, Parallel, Relative Optimization, 0.04216
+zendo1, No Index, Serial, No Optimization,2.124457
+zendo1, No Index, Serial, Relative Optimization,0.646435
+zendo1, No Index, Parallel, No Optimization, 0.949087
+zendo1, No Index, Parallel, Relative Optimization, 0.319512
+zendo1, Roaring Index, Parallel, No Optimization, 0.734846
+zendo1, Roaring Index, Parallel, Relative Optimization, 0.387103
+dunnhumby1, No Index, Serial, No Optimization,399.021078
+dunnhumby1, No Index, Serial, Relative Optimization,0.267422
+dunnhumby1, No Index, Parallel, No Optimization, 54.494532
+dunnhumby1, No Index, Parallel, Relative Optimization, 0.138721
+dunnhumby1, Roaring Index, Parallel, No Optimization, 49.232239
+dunnhumby1, Roaring Index, Parallel, Relative Optimization, 0.133401
+protein, No Index, Serial, No Optimization,70.096649
+protein, No Index, Serial, Relative Optimization,72.391319
+protein, No Index, Parallel, No Optimization, 36.362235
+protein, No Index, Parallel, Relative Optimization, 38.393392
+protein, Roaring Index, Parallel, No Optimization, 7.310039
+protein, Roaring Index, Parallel, Relative Optimization, 14.73916
+suranim, No Index, Serial, No Optimization,57.880781
+suranim, No Index, Serial, Relative Optimization,14.054804
+suranim, No Index, Parallel, No Optimization, 5.342243
+suranim, No Index, Parallel, Relative Optimization, 2.49993
+suranim, Roaring Index, Parallel, No Optimization, 1.705534
+suranim, Roaring Index, Parallel, Relative Optimization, 1.901016
+robots-recursion, No Index, Serial, No Optimization,0.00174
+robots-recursion, No Index, Serial, Relative Optimization,0.00172
+robots-recursion, No Index, Parallel, No Optimization, 0.03878
+robots-recursion, No Index, Parallel, Relative Optimization, 0.03925
+robots-recursion, Roaring Index, Parallel, No Optimization, 0.03906
+robots-recursion, Roaring Index, Parallel, Relative Optimization, 0.03913
+acetyl, No Index, Serial, No Optimization,0.148891
+acetyl, No Index, Serial, Relative Optimization,0.228812
+acetyl, No Index, Parallel, No Optimization, 0.290003
+acetyl, No Index, Parallel, Relative Optimization, 0.282982
+acetyl, Roaring Index, Parallel, No Optimization, 0.322563
+acetyl, Roaring Index, Parallel, Relative Optimization, 0.283303

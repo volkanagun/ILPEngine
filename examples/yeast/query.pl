@@ -1,0 +1,9 @@
+proteins(V0):- path(V0,V2),location(V0,V1).
+proteins(V0):- enzyme(V0,V1),renzyme(V0,V1).
+proteins(V0):- path(V2,V3),interaction(V3,V0,V1).
+proteins(V0):- protein_class(V0,V1),rprotein_class(V0,V1).
+proteins(V0):- protein_class(V0,V4),interaction(V2,V0,V1),rprotein_class(V3,V4).
+proteins(V0):- phenotype(V0,V3),renzyme(V0,V2),rphenotype(V1,V3).
+proteins(V0):- protein_class(V0,V3),rprotein_class(V2,V3),enzyme(V2,V1).
+proteins(V0):- interaction(V3,V0,V1),protein_class(V3,V2),rprotein_class(V3,V2).
+proteins(V0):- path(V2,V1),interaction(V2,V0,V3),rprotein_class(V0,V4).

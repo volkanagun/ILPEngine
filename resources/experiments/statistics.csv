@@ -1,0 +1,2 @@
+Database,Number of Entries,Number of Predicates,Predicate Density,Variable Predicate Ratio, Max Variable Size, Min Variable Size, Duplicate Ratio,Max Duplicate Ratio, Min Duplicate Ratio
+yeast,47170.0, 13.0,3628.4615384615386, 0.45300332132004806,3.0,1.0,1.0,1.0,1.0

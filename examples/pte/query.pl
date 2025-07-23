@@ -1,0 +1,13 @@
+pte_active(V0):- pte_atm(V0,V1,V2,V4,V3),pte_phenol(V5,V1),pte_ketone(V5,V1).
+pte_active(V0):- pte_atm(V0,V1,V2,V4,V3),pte_nitro(V5,V1),pte_non_ar_hetero_5_ring(V5,V1).
+pte_active(V0):- pte_alkyl_halide(V5,V1),pte_methyl(V5,V1),pte_atm(V0,V1,V2,V4,V3).
+pte_active(V0):- pte_alcohol(V5,V1),pte_ester(V5,V1),pte_atm(V0,V1,V2,V4,V3).
+pte_active(V0):- pte_atm(V0,V1,V2,V4,V3),pte_imine(V5,V1),pte_ames(V5).
+pte_active(V0):- pte_sulfide(V5,V1),pte_alkyl_halide(V5,V1),pte_atm(V0,V1,V2,V4,V3).
+pte_active(V0):- pte_methyl(V1,V3),pte_five_ring(V1,V3),pte_ames(V1),pte_atm(V0,V3,V4,V2,V5).
+pte_active(V0):- pte_sulfo(V1,V3),pte_ames(V1),pte_mutagenic(V1),pte_atm(V0,V3,V4,V2,V5).
+pte_active(V0):- pte_six_ring(V1,V3),pte_ames(V1),pte_ester(V1,V3),pte_atm(V0,V3,V4,V2,V5).
+pte_active(V0):- pte_ether(V1,V3),pte_phenol(V1,V3),pte_ames(V1),pte_atm(V0,V3,V4,V2,V5).
+pte_active(V0):- pte_non_ar_hetero_6_ring(V1,V3),pte_ames(V1),pte_amine(V1,V3),pte_atm(V0,V3,V4,V2,V5).
+pte_active(V0):- pte_ketone(V1,V3),pte_mutagenic(V1),pte_methoxy(V1,V3),pte_atm(V0,V3,V4,V2,V5).
+pte_active(V0):- pte_ames(V1),pte_amine(V1,V3),pte_atm(V0,V3,V4,V2,V5),pte_methyl(V1,V3),pte_mutagenic(V1).

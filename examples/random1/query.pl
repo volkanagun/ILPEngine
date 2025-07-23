@@ -1,0 +1,1 @@
+search(X, Y) :- predicate0(A,X,B,Z), predicate1(B,K,A,T), predicate3(T,K,Y,L), predicate4(L,K,Z,O).

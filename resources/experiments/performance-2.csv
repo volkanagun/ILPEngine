@@ -1,0 +1,176 @@
+FigureName,IndexType,ExecutionMode,Optimization,Performance
+iggp-gt_centipede-goal, No Index, Serial, No Optimization,3.996792
+iggp-gt_centipede-goal, No Index, Serial, Relative Optimization,11.956535
+iggp-gt_centipede-goal, No Index, Parallel, No Optimization, 7.557348
+iggp-gt_centipede-goal, No Index, Parallel, Relative Optimization, 14.582789
+iggp-gt_centipede-goal, Roaring Index, Parallel, No Optimization, 3.592356
+iggp-gt_centipede-goal, Roaring Index, Parallel, Relative Optimization, 8.986466
+
+imdb3, No Index, Serial, No Optimization,101.753759
+imdb3, No Index, Serial, Relative Optimization,110.924458
+imdb3, No Index, Parallel, No Optimization, 21.383837
+imdb3, No Index, Parallel, Relative Optimization, 88.905342
+imdb3, Roaring Index, Parallel, No Optimization, 51.142423
+imdb3, Roaring Index, Parallel, Relative Optimization, 22.705134
+
+iggp-coins-next-cell, No Index, Serial, No Optimization,13.712418
+iggp-coins-next-cell, No Index, Serial, Relative Optimization,7.587099
+iggp-coins-next-cell, No Index, Parallel, No Optimization, 3.85253
+iggp-coins-next-cell, No Index, Parallel, Relative Optimization, 3.222282
+iggp-coins-next-cell, Roaring Index, Parallel, No Optimization, 3.937661
+iggp-coins-next-cell, Roaring Index, Parallel, Relative Optimization, 3.057869
+
+iggp-connect4team-next-control, No Index, Serial, No Optimization,2.696265
+iggp-connect4team-next-control, No Index, Serial, Relative Optimization,17.182893
+iggp-connect4team-next-control, No Index, Parallel, No Optimization, 3.10885
+iggp-connect4team-next-control, No Index, Parallel, Relative Optimization, 27.82278
+iggp-connect4team-next-control, Roaring Index, Parallel, No Optimization, 3.236832
+iggp-connect4team-next-control, Roaring Index, Parallel, Relative Optimization, 27.617068
+
+iggp-sokoban-goal, No Index, Serial, No Optimization,16.17055
+iggp-sokoban-goal, No Index, Serial, Relative Optimization,44.00704
+iggp-sokoban-goal, No Index, Parallel, No Optimization, 13.576856
+iggp-sokoban-goal, No Index, Parallel, Relative Optimization, 36.960359
+iggp-sokoban-goal, Roaring Index, Parallel, No Optimization, 2.563233
+iggp-sokoban-goal, Roaring Index, Parallel, Relative Optimization, 5.995337
+
+iggp-gt_centipede-legal, No Index, Serial, No Optimization,0.223903
+iggp-gt_centipede-legal, No Index, Serial, Relative Optimization,0.252683
+iggp-gt_centipede-legal, No Index, Parallel, No Optimization, 0.673019
+iggp-gt_centipede-legal, No Index, Parallel, Relative Optimization, 0.708909
+iggp-gt_centipede-legal, Roaring Index, Parallel, No Optimization, 0.716529
+iggp-gt_centipede-legal, Roaring Index, Parallel, Relative Optimization, 0.601218
+
+pte, No Index, Serial, No Optimization,390.694713
+pte, No Index, Serial, Relative Optimization,125.970322
+pte, No Index, Parallel, No Optimization, 60.861019
+pte, No Index, Parallel, Relative Optimization, 46.434432
+pte, Roaring Index, Parallel, No Optimization, 58.053183
+pte, Roaring Index, Parallel, Relative Optimization, 46.410751
+
+iggp-minimal-decay-next-value, No Index, Serial, No Optimization,0.159052
+iggp-minimal-decay-next-value, No Index, Serial, Relative Optimization,0.216512
+iggp-minimal-decay-next-value, No Index, Parallel, No Optimization, 0.389285
+iggp-minimal-decay-next-value, No Index, Parallel, Relative Optimization, 0.385445
+iggp-minimal-decay-next-value, Roaring Index, Parallel, No Optimization, 0.370705
+iggp-minimal-decay-next-value, Roaring Index, Parallel, Relative Optimization, 0.406395
+
+iggp-rps-next-score, No Index, Serial, No Optimization,6.437644
+iggp-rps-next-score, No Index, Serial, Relative Optimization,6.263241
+iggp-rps-next-score, No Index, Parallel, No Optimization, 3.07845
+iggp-rps-next-score, No Index, Parallel, Relative Optimization, 3.619057
+iggp-rps-next-score, Roaring Index, Parallel, No Optimization, 2.833987
+iggp-rps-next-score, Roaring Index, Parallel, Relative Optimization, 2.542503
+
+kinship-ancestor, No Index, Serial, No Optimization,0.279883
+kinship-ancestor, No Index, Serial, Relative Optimization,0.425175
+kinship-ancestor, No Index, Parallel, No Optimization, 0.609977
+kinship-ancestor, No Index, Parallel, Relative Optimization, 0.553817
+kinship-ancestor, Roaring Index, Parallel, No Optimization, 0.530247
+kinship-ancestor, Roaring Index, Parallel, Relative Optimization, 0.504406
+
+kinship-pi, No Index, Serial, No Optimization,0.435556
+kinship-pi, No Index, Serial, Relative Optimization,0.158663
+kinship-pi, No Index, Parallel, No Optimization, 0.429885
+kinship-pi, No Index, Parallel, Relative Optimization, 0.402035
+kinship-pi, Roaring Index, Parallel, No Optimization, 0.415825
+kinship-pi, Roaring Index, Parallel, Relative Optimization, 0.344695
+
+iggp-buttons-next, No Index, Serial, No Optimization,4.59313
+iggp-buttons-next, No Index, Serial, Relative Optimization,4.940594
+iggp-buttons-next, No Index, Parallel, No Optimization, 4.470908
+iggp-buttons-next, No Index, Parallel, Relative Optimization, 3.85493
+iggp-buttons-next, Roaring Index, Parallel, No Optimization, 3.186481
+iggp-buttons-next, Roaring Index, Parallel, Relative Optimization, 2.801776
+
+iggp-coins-goal, No Index, Serial, No Optimization,1.545871
+iggp-coins-goal, No Index, Serial, Relative Optimization,3.487925
+iggp-coins-goal, No Index, Parallel, No Optimization, 2.28734
+iggp-coins-goal, No Index, Parallel, Relative Optimization, 1.759912
+iggp-coins-goal, Roaring Index, Parallel, No Optimization, 1.992446
+iggp-coins-goal, Roaring Index, Parallel, Relative Optimization, 1.391838
+
+iggp-attrition-next-score, No Index, Serial, No Optimization,0.620348
+iggp-attrition-next-score, No Index, Serial, Relative Optimization,0.348404
+iggp-attrition-next-score, No Index, Parallel, No Optimization, 0.710359
+iggp-attrition-next-score, No Index, Parallel, Relative Optimization, 0.585307
+iggp-attrition-next-score, Roaring Index, Parallel, No Optimization, 0.673839
+iggp-attrition-next-score, Roaring Index, Parallel, Relative Optimization, 0.538847
+
+iggp-horseshoe-next-cell, No Index, Serial, No Optimization,32.032915
+iggp-horseshoe-next-cell, No Index, Serial, Relative Optimization,38.416638
+iggp-horseshoe-next-cell, No Index, Parallel, No Optimization, 23.811369
+iggp-horseshoe-next-cell, No Index, Parallel, Relative Optimization, 69.368099
+iggp-horseshoe-next-cell, Roaring Index, Parallel, No Optimization, 29.827467
+iggp-horseshoe-next-cell, Roaring Index, Parallel, Relative Optimization, 73.775606
+
+iggp-eight-puzzle-legal-move, No Index, Serial, No Optimization,165.084119
+iggp-eight-puzzle-legal-move, No Index, Serial, Relative Optimization,213.76014
+iggp-eight-puzzle-legal-move, No Index, Parallel, No Optimization, 47.679827
+iggp-eight-puzzle-legal-move, No Index, Parallel, Relative Optimization, 83.803816
+iggp-eight-puzzle-legal-move, Roaring Index, Parallel, No Optimization, 46.087808
+iggp-eight-puzzle-legal-move, Roaring Index, Parallel, Relative Optimization, 25.336089
+
+iggp-sheep-and-wolf-goal, No Index, Serial, No Optimization,1886.26003
+iggp-sheep-and-wolf-goal, No Index, Serial, Relative Optimization,1958.126657
+iggp-sheep-and-wolf-goal, No Index, Parallel, No Optimization, 706.694424
+iggp-sheep-and-wolf-goal, No Index, Parallel, Relative Optimization, 254.005169
+iggp-sheep-and-wolf-goal, Roaring Index, Parallel, No Optimization, 289.361198
+iggp-sheep-and-wolf-goal, Roaring Index, Parallel, Relative Optimization, 826.844512
+
+iggp-gt-chicken-goal, No Index, Serial, No Optimization,13.217641
+iggp-gt-chicken-goal, No Index, Serial, Relative Optimization,12.528212
+iggp-gt-chicken-goal, No Index, Parallel, No Optimization, 14.960044
+iggp-gt-chicken-goal, No Index, Parallel, Relative Optimization, 14.918773
+iggp-gt-chicken-goal, Roaring Index, Parallel, No Optimization, 15.047805
+iggp-gt-chicken-goal, Roaring Index, Parallel, Relative Optimization, 13.978192
+
+dunnhumby1, No Index, Serial, No Optimization,2.364881
+dunnhumby1, No Index, Serial, Relative Optimization,0.036681
+dunnhumby1, No Index, Parallel, No Optimization, 0.674729
+dunnhumby1, No Index, Parallel, Relative Optimization, 0.099161
+dunnhumby1, Roaring Index, Parallel, No Optimization, 0.594338
+dunnhumby1, Roaring Index, Parallel, Relative Optimization, 0.102321
+
+iggp-polgrimage-goal, No Index, Serial, No Optimization,32.951297
+iggp-polgrimage-goal, No Index, Serial, Relative Optimization,35.112724
+iggp-polgrimage-goal, No Index, Parallel, No Optimization, 10.184462
+iggp-polgrimage-goal, No Index, Parallel, Relative Optimization, 37.290293
+iggp-polgrimage-goal, Roaring Index, Parallel, No Optimization, 31.096903
+iggp-polgrimage-goal, Roaring Index, Parallel, Relative Optimization, 30.900771
+
+acetyl, No Index, Serial, No Optimization,19.436412
+acetyl, No Index, Serial, Relative Optimization,170.184474
+acetyl, No Index, Parallel, No Optimization, 17.588257
+acetyl, No Index, Parallel, Relative Optimization, 41.612208
+acetyl, Roaring Index, Parallel, No Optimization, 17.255224
+acetyl, Roaring Index, Parallel, Relative Optimization, 41.802461
+
+iggp-dont-touch-next-control, No Index, Serial, No Optimization,5.011515
+iggp-dont-touch-next-control, No Index, Serial, Relative Optimization,5.934477
+iggp-dont-touch-next-control, No Index, Parallel, No Optimization, 13.9395
+iggp-dont-touch-next-control, No Index, Parallel, Relative Optimization, 3.482245
+iggp-dont-touch-next-control, Roaring Index, Parallel, No Optimization, 13.8774
+iggp-dont-touch-next-control, Roaring Index, Parallel, Relative Optimization, 13.818779
+
+iggp-buttons-goal, No Index, Serial, No Optimization,0.283963
+iggp-buttons-goal, No Index, Serial, Relative Optimization,0.396935
+iggp-buttons-goal, No Index, Parallel, No Optimization, 0.579808
+iggp-buttons-goal, No Index, Parallel, Relative Optimization, 0.516287
+iggp-buttons-goal, Roaring Index, Parallel, No Optimization, 0.575657
+iggp-buttons-goal, Roaring Index, Parallel, Relative Optimization, 0.521767
+
+robots-functional, No Index, Serial, No Optimization,0.05668075
+robots-functional, No Index, Serial, Relative Optimization,0.06666575
+robots-functional, No Index, Parallel, No Optimization, 0.051243
+robots-functional, No Index, Parallel, Relative Optimization, 0.05799325
+robots-functional, Roaring Index, Parallel, No Optimization, 0.0702235
+robots-functional, Roaring Index, Parallel, Relative Optimization, 0.070116
+
+robots-linear, No Index, Serial, No Optimization,0.01364
+robots-linear, No Index, Serial, Relative Optimization,0.015111
+robots-linear, No Index, Parallel, No Optimization, 0.080231
+robots-linear, No Index, Parallel, Relative Optimization, 0.108151
+robots-linear, Roaring Index, Parallel, No Optimization, 0.109601
+robots-linear, Roaring Index, Parallel, Relative Optimization, 0.112151
+

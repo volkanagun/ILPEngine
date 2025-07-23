@@ -1,0 +1,24 @@
+FigureName,IndexType,ExecutionMode,Optimization,Performance
+yeast, No Index, Serial, No Optimization,1159.926482
+yeast, No Index, Serial, Relative Optimization,1250.835323
+yeast, No Index, Parallel, No Optimization, 122.946033
+yeast, No Index, Parallel, Relative Optimization, 115.116593
+yeast, Roaring Index, Serial, No Optimization, 357.150442
+yeast, Roaring Index, Serial, Relative Optimization, 266.930657
+yeast, Roaring Index, Parallel, No Optimization, 70.948278
+yeast, Roaring Index, Parallel, Relative Optimization, 72.689963
+
+robots-functional, No Index, Serial, No Optimization,0.5539995
+robots-functional, No Index, Serial, Relative Optimization,0.493334
+robots-functional, No Index, Parallel, No Optimization, 0.4296905
+robots-functional, No Index, Parallel, Relative Optimization, 0.364893
+robots-functional, Roaring Index, Parallel, No Optimization, 0.357085
+robots-functional, Roaring Index, Parallel, Relative Optimization, 0.42005375
+
+robots-linear, No Index, Serial, No Optimization,0.193431
+robots-linear, No Index, Serial, Relative Optimization,0.222846
+robots-linear, No Index, Parallel, No Optimization, 0.424744
+robots-linear, No Index, Parallel, Relative Optimization, 0.422621
+robots-linear, Roaring Index, Parallel, No Optimization, 0.403642
+robots-linear, Roaring Index, Parallel, Relative Optimization, 0.534778
+

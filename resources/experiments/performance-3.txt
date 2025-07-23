@@ -1,0 +1,18 @@
+random0, No Index, Serial, No Optimization, No Index-Serial-No Optimization,67.875834
+random0, No Index, Serial, Relative Optimization, No Index-Serial-Relative Optimization,2.369739
+random0, No Index, Parallel, No Optimization, No Index-Parallel-No Optimization,19.125329
+random0, No Index, Parallel, Relative Optimization, No Index-Parallel-Relative Optimization,0.661548
+random0, Roaring Index, Parallel, No Optimization, Roaring Index-Parallel-No Optimization,24.96805
+random0, Roaring Index, Parallel, Relative Optimization, Roaring Index-Parallel-Relative Optimization,1.516248
+random0, Bitset Index, Parallel, Relative Optimization, Bitset Index-Parallel-Relative Optimization,3.563193
+
+
+dunnhumby1, No Index, Serial, No Optimization, No Index-Serial-No Optimization,357.673798
+dunnhumby1, No Index, Serial, Relative Optimization, No Index-Serial-Relative Optimization,0.0376
+dunnhumby1, No Index, Parallel, No Optimization, No Index-Parallel-No Optimization,49.369752
+dunnhumby1, No Index, Parallel, Relative Optimization, No Index-Parallel-Relative Optimization,0.097191
+dunnhumby1, Roaring Index, Parallel, No Optimization, Roaring Index-Parallel-No Optimization,47.700512
+dunnhumby1, Roaring Index, Parallel, Relative Optimization, Roaring Index-Parallel-Relative Optimization,0.081961
+dunnhumby1, Bitset Index, Parallel, Relative Optimization, Bitset Index-Parallel-Relative Optimization,0.137812
+
+

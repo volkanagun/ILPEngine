@@ -1,0 +1,351 @@
+*1d_flip
+out(V0,V1,V2):- in(V0,V1,V4),in(V0,V3,V2),lt(V1,V3).
+out(V0,V1,V2):- my_succ(V1,V5),empty(V0,V5),in(V0,V1,V3),in(V0,V6,V2),my_succ(V4,V6),empty(V0,V4).
+
+*1d_pcopy_1c
+out(V0,V1,V2):- c2(V3),in(V0,V4,V2),add(V3,V4,V5),empty(V0,V5),lt(V1,V5),add(V3,V6,V4),empty(V0,V6),lt(V6,V1).
+
+*andersen
+pt(V0,V1):- addr(V0,V1).
+pt(V0,V1):- addr(V2,V1),assgn(V0,V3).
+pt(V0,V1):- addr(V2,V0),addr(V3,V1).
+pt(V0,V1):- load(V0,V3),addr(V2,V1).
+
+*iggp-attrition-next-score
+next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V3),end_game(V3).
+next_score(V0,V1,V2):- lay_claim(V4),does(V0,V1,V4),my_succ(V2,V3),my_true_score(V0,V1,V3).
+next_score(V0,V1,V2):- my_true_score(V0,V1,V2),lay_claim(V4),does(V0,V3,V4),opponent(V1,V3).
+
+*iggp-buttons-goal
+goal(V0,V1,V2):- int_0(V2),role(V1),not_my_true(V0,V3).
+goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_true(V0,V3),prop_q(V5),my_true(V0,V5).
+
+*iggp-buttons-next
+next(V0,V1):- my_succ(V2,V1),my_true(V0,V2).
+next(V0,V1):- my_true(V0,V1),c_r(V1),does(V0,V3,V2),c_b(V2).
+next(V0,V1):- my_true(V0,V1),c_r(V1),c_a(V2),does(V0,V3,V2).
+next(V0,V1):- my_true(V0,V1),c_q(V1),c_a(V2),does(V0,V3,V2).
+next(V0,V1):- my_true(V0,V1),c_p(V1),c_c(V2),does(V0,V3,V2).
+next(V0,V1):- c_p(V1),not_my_true(V0,V1),c_a(V3),does(V0,V2,V3).
+next(V0,V1):- c_p(V1),c_b(V3),does(V0,V2,V3),c_q(V4),my_true(V0,V4).
+next(V0,V1):- c_r(V1),does(V0,V4,V3),c_c(V3),c_q(V2),my_true(V0,V2).
+next(V0,V1):- c_q(V1),c_p(V2),my_true(V0,V2),c_b(V4),does(V0,V3,V4).
+next(V0,V1):- c_q(V1),c_c(V4),does(V0,V3,V4),c_r(V2),my_true(V0,V2).
+
+*iggp-coins-goal
+goal(V0,V1,V2):- score_0(V2),role(V1),c_onecoin(V4),my_true_cell(V0,V3,V4).
+goal(V0,V1,V2):- role(V1),score_100(V2),my_true_step(V0,V3),pos_5(V3).
+
+*iggp-coins-next-cell
+next_cell(V0,V1,V2):- c_zerocoins(V2),does_jump(V0,V3,V1,V4).
+next_cell(V0,V1,V2):- c_twocoins(V2),does_jump(V0,V3,V4,V1).
+next_cell(V0,V1,V2):- my_true_cell(V0,V1,V2),does_jump(V0,V5,V3,V4),different(V1,V3),different(V1,V4).
+
+
+*iggp-connect4team-next-control
+next_control(V0,V1):- agent_cyan(V1),agent_orange(V2),true_control(V0,V2).
+next_control(V0,V1):- agent_blue(V1),agent_red(V2),true_control(V0,V2).
+next_control(V0,V1):- agent_red(V1),agent_cyan(V2),true_control(V0,V2).
+next_control(V0,V1):- agent_orange(V1),agent_blue(V2),true_control(V0,V2).
+
+
+*iggp-dont-touch-next-control
+next_control(V0,V1):- agent_white(V1),true_control(V0,V2),agent_black(V2).
+next_control(V0,V1):- agent_black(V1),true_control(V0,V2),agent_white(V2).
+
+*iggp-eight-puzzle-legal-move
+legal_move(V0,V1,V2,V3):- succ(V5,V2),input_move(V1,V2,V5),true_cell(V0,V5,V3,V4),cell_type_b(V4).
+legal_move(V0,V1,V2,V3):- succ(V2,V5),input_move(V1,V2,V5),true_cell(V0,V5,V3,V4),cell_type_b(V4).
+legal_move(V0,V1,V2,V3):- succ(V3,V4),input_move(V1,V2,V4),true_cell(V0,V2,V4,V5),cell_type_b(V5).
+legal_move(V0,V1,V2,V3):- cell_type_b(V5),true_cell(V0,V2,V4,V5),input_move(V1,V2,V4),succ(V4,V3).
+
+*iggp-farming-next-has-arson
+
+*iggp-fixxbuzz-goal
+
+*iggp-gt-chicken-goal
+goal(V0,V1,V2):- true_whiteScore(V0,V2),agent_white(V1).
+goal(V0,V1,V2):- true_blackScore(V0,V2),agent_black(V1).
+
+*iggp-gt_centipede-goal
+goal(V0,V1,V2):- true_blackPayoff(V0,V2),int_15(V2),agent_black(V1),true_control(V0,V3),agent_white(V3).
+goal(V0,V1,V2):- agent_black(V1),true_control(V0,V1),true_blackPayoff(V0,V2),succ(V2,V3),true_whitePayoff(V0,V3).
+goal(V0,V1,V2):- int_0(V2),true_control(V0,V1),true_blackPayoff(V0,V4),succ(V6,V4),succ(V3,V6),succ(V5,V3).
+goal(V0,V1,V2):- int_0(V2),role(V1),true_control(V0,V3),agent_white(V3),true_whitePayoff(V0,V4),succ(V5,V4).
+goal(V0,V1,V2):- int_0(V2),agent_white(V1),true_blackPayoff(V0,V4),succ(V6,V4),succ(V3,V6),succ(V5,V3).
+goal(V0,V1,V2):- agent_white(V1),true_whitePayoff(V0,V2),succ(V3,V2),true_blackPayoff(V0,V3),agent_black(V4),true_control(V0,V4).
+
+*iggp-gt_centipede-legal
+legal(V0,V1,V2):- true_control(V0,V1),action_continue(V2).
+legal(V0,V1,V2):- true_control(V0,V1),action_finish(V2).
+legal(V0,V1,V2):- agent_black(V1),action_noop(V2),true_control(V0,V3),agent_white(V3).
+legal(V0,V1,V2):- action_noop(V2),agent_white(V1),true_control(V0,V3),agent_black(V3).
+
+*iggp-hexforthree-next-control
+
+*iggp-horseshoe-next-cell
+next_cell(V0,V1,V2):- does_move(V0,V3,V4,V1),true_cell(V0,V4,V2).
+next_cell(V0,V1,V2):- does_move(V0,V3,V1,V4),true_cell(V0,V4,V2).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),mypos_b(V4),does_move(V0,V3,V5,V4).
+next_cell(V0,V1,V2):- mypos_b(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_d(V5).
+next_cell(V0,V1,V2):- mypos_e(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_a(V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_d(V4),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_a(V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_e(V3),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- true_cell(V0,V1,V2),does_move(V0,V5,V3,V4),adjacent(V1,V4),adjacent(V1,V3).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),mypos_a(V5),does_move(V0,V3,V5,V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_e(V4),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- true_cell(V0,V1,V2),mypos_e(V1),mypos_a(V5),does_move(V0,V3,V5,V4).
+next_cell(V0,V1,V2):- mypos_b(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_d(V4).
+next_cell(V0,V1,V2):- mypos_a(V1),true_cell(V0,V1,V2),mypos_d(V3),does_move(V0,V5,V4,V3).
+next_cell(V0,V1,V2):- mypos_d(V1),true_cell(V0,V1,V2),does_move(V0,V3,V5,V4),mypos_b(V5).
+
+*iggp-minimal-decay-next-value
+next_value(V0,V1):- c5(V1),does(V0,V3,V2),press_button(V2).
+next_value(V0,V1):- my_succ(V1,V2),true_value(V0,V2),does(V0,V4,V3),noop(V3).
+
+
+*iggp-polgrimage-goal
+goal(V0,V1,V2):- int_0(V2),true_phase(V0,V1,V3),phase_list_build_terrain(V3).
+goal(V0,V1,V2):- int_0(V2),true_phase(V0,V1,V3),phase_list_place_pilgrim(V3).
+goal(V0,V1,V2):- int_0(V2),height_end(V5),true_pilgrim(V0,V1,V3,V4),true_cell(V0,V3,V4,V5).
+goal(V0,V1,V2):- int_10(V2),true_pilgrim(V0,V1,V4,V3),mypos_4(V3),true_cell(V0,V4,V5,V3).
+
+*iggp-rps-next-score
+next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V5),beats(V3,V5),does(V0,V4,V3).
+next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V3),different(V1,V4),does(V0,V4,V3).
+next_score(V0,V1,V2):- my_true_score(V0,V1,V5),my_succ(V5,V2),does(V0,V1,V6),beats(V6,V3),does(V0,V4,V3).
+
+*iggp-sheep-and-wolf-goal
+goal(V0,V1,V2):- agent_sheep(V1),int_0(V2),true_cell(V0,V3,V4,V5),true_cell(V0,V4,V3,V5).
+goal(V0,V1,V2):- int_100(V2),agent_wolf(V1),true_cell(V0,V3,V4,V5),true_cell(V0,V4,V3,V5).
+
+*iggp-sokoban-goal
+goal(V0,V1,V2):- agent_black(V1),score_100(V2),obj_obj1(V5),obj_obj2(V3),true_target(V0,V6,V4),true_at(V0,V6,V4,V3),true_at(V0,V4,V6,V5).
+
+*iggp-ultimatium-goal
+
+*imdb3
+f(V0,V1):- gender(V0,V3),gender(V1,V3),movie(V2,V0),movie(V2,V1).
+f(V0,V1):- actor(V0),director(V1),movie(V2,V0),movie(V2,V1).
+
+*kinship-ancestor
+ancestor(V0,V1):- father(V2,V1),father(V0,V3).
+ancestor(V0,V1):- mother(V0,V3),father(V1,V2).
+
+*kinship-pi
+inv1(V0,V1):- mother(V0,V1).
+inv1(V0,V1):- father(V0,V1).
+grandparent(V0,V1):- inv1(V0,V2),inv1(V2,V1).
+
+*noisy-alzheimer_acetly
+
+*noisy-alzheimer_amine
+great_ne(V0,V1):- x_subst(V0,V2,V3),ring_subst_6(V1,V3).
+great_ne(V0,V1):- ring_subst_6(V1,V2),r_subst_2(V0,V3).
+great_ne(V0,V1):- x_subst(V1,V2,V4),ring_subst_2(V1,V3),ring_subst_2(V0,V3).
+great_ne(V0,V1):- ring_subst_4(V1,V2),ring_substitutions(V0,V3),x_subst(V0,V4,V2).
+great_ne(V0,V1):- r_subst_1(V0,V3),r_subst_1(V1,V3),r_subst_3(V0,V2).
+great_ne(V0,V1):- x_subst(V1,V2,V4),ring_subst_4(V0,V3),ring_subst_2(V1,V3).
+great_ne(V0,V1):- r_subst_3(V1,V3),ring_subst_2(V0,V5),x_subst(V0,V4,V2).
+great_ne(V0,V1):- ring_substitutions(V0,V3),alk_groups(V1,V2),gt(V3,V2).
+great_ne(V0,V1):- ring_subst_3(V0,V3),x_subst(V1,V5,V3),ring_substitutions(V0,V2),gt(V2,V4).
+great_ne(V0,V1):- ring_subst_2(V0,V3),x_subst(V1,V5,V3),ring_substitutions(V0,V2),gt(V2,V4).
+great_ne(V0,V1):- ring_substitutions(V0,V3),alk_groups(V1,V3),alk_groups(V0,V2),gt(V2,V3).
+great_ne(V0,V1):- ring_subst_4(V1,V2),ring_subst_3(V0,V4),flex(V2,V3),great_flex(V3,V5).
+great_ne(V0,V1):- ring_subst_4(V1,V2),h_acceptor(V2,V3),r_subst_3(V0,V4),great_h_acc(V3,V5).
+great_ne(V0,V1):- ring_subst_4(V1,V2),ring_subst_4(V0,V4),flex(V2,V5),great_flex(V5,V3).
+great_ne(V0,V1):- ring_subst_2(V1,V5),pi_doner(V5,V3),r_subst_3(V0,V4),great_pi_don(V3,V2).
+great_ne(V0,V1):- ring_subst_3(V0,V3),polarisable(V3,V4),ring_subst_3(V1,V2),polarisable(V2,V4),great_polari(V4,V5).
+great_ne(V0,V1):- ring_subst_4(V1,V5),h_acceptor(V5,V3),ring_subst_2(V0,V4),h_acceptor(V4,V2),great_h_acc(V3,V2).
+great_ne(V0,V1):- alk_groups(V0,V3),alk_groups(V1,V2),gt(V2,V3),ring_substitutions(V0,V4),gt(V3,V4).
+great_ne(V0,V1):- ring_subst_2(V1,V3),h_acceptor(V3,V4),ring_subst_2(V0,V2),h_acceptor(V2,V5),great_h_acc(V4,V5).
+great_ne(V0,V1):- ring_subst_2(V1,V2),flex(V2,V3),ring_substitutions(V0,V4),ring_substitutions(V1,V4),great_flex(V3,V5).
+great_ne(V0,V1):- ring_subst_4(V1,V5),ring_subst_3(V0,V3),h_acceptor(V3,V4),h_acceptor(V5,V2),great_h_acc(V2,V4).
+great_ne(V0,V1):- ring_subst_4(V1,V5),pi_doner(V5,V3),ring_subst_2(V0,V4),pi_doner(V4,V2),great_pi_don(V3,V2).
+great_ne(V0,V1):- ring_subst_4(V1,V5),h_acceptor(V5,V4),ring_subst_4(V0,V3),h_acceptor(V3,V2),great_h_acc(V4,V2).
+great_ne(V0,V1):- ring_subst_3(V0,V3),alk_groups(V1,V5),ring_substitutions(V0,V4),gt(V5,V2),gt(V2,V4).
+great_ne(V0,V1):- ring_subst_4(V1,V3),ring_subst_2(V0,V3),ring_substitutions(V0,V4),ring_substitutions(V1,V4),x_subst(V1,V5,V2).
+great_ne(V0,V1):- x_subst(V0,V2,V3),x_subst(V1,V2,V3),ring_substitutions(V0,V4),alk_groups(V0,V5),gt(V5,V4).
+great_ne(V0,V1):- ring_subst_3(V1,V2),h_acceptor(V2,V4),ring_subst_2(V0,V5),h_acceptor(V5,V3),great_h_acc(V4,V3).
+great_ne(V0,V1):- alk_groups(V0,V3),ring_substitutions(V0,V3),ring_subst_3(V0,V4),ring_subst_4(V1,V4),h_acceptor(V4,V2),great_h_acc(V2,V5).
+
+*noisy-alzheimer_mem
+great_rsd(V0,V1):- ring_subst_5(V1,V2),ring_subst_2(V0,V2).
+great_rsd(V0,V1):- ring_subst_2(V0,V3),n_val(V1,V2).
+great_rsd(V0,V1):- alk_groups(V0,V3),ring_substitutions(V1,V3),r_subst_3(V1,V2).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),r_subst_2(V1,V5),ring_subst_2(V0,V4).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),ring_subst_4(V1,V4),ring_subst_3(V0,V4).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),r_subst_2(V1,V5),x_subst(V0,V4,V2).
+great_rsd(V0,V1):- ring_subst_3(V1,V3),ring_subst_2(V0,V3),x_subst(V0,V2,V4).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),ring_subst_2(V1,V4),ring_subst_4(V0,V4).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),ring_subst_3(V0,V2),ring_substitutions(V1,V4).
+great_rsd(V0,V1):- ring_subst_2(V0,V3),flex(V3,V5),ring_subst_3(V1,V4),great_flex(V5,V2).
+great_rsd(V0,V1):- ring_subst_3(V0,V2),ring_subst_5(V1,V3),pi_doner(V2,V4),pi_doner(V3,V4).
+great_rsd(V0,V1):- x_subst(V1,V2,V4),ring_subst_2(V0,V4),polarisable(V4,V3),great_polari(V3,V5).
+great_rsd(V0,V1):- r_subst_3(V1,V4),alk_groups(V1,V3),alk_groups(V0,V2),gt(V2,V3).
+great_rsd(V0,V1):- ring_subst_3(V1,V3),ring_substitutions(V0,V5),pi_doner(V3,V4),great_pi_don(V4,V2).
+great_rsd(V0,V1):- ring_subst_5(V0,V5),alk_groups(V1,V2),gt(V2,V3),gt(V3,V4).
+great_rsd(V0,V1):- ring_subst_2(V0,V5),h_acceptor(V5,V4),r_subst_3(V1,V2),great_h_acc(V4,V3).
+great_rsd(V0,V1):- n_val(V0,V3),ring_subst_3(V1,V4),flex(V4,V5),great_flex(V5,V2).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),alk_groups(V1,V4),ring_substitutions(V1,V4),alk_groups(V0,V5),gt(V5,V4).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),alk_groups(V1,V4),ring_substitutions(V1,V5),gt(V4,V5),alk_groups(V0,V5).
+great_rsd(V0,V1):- ring_subst_4(V0,V2),h_acceptor(V2,V3),ring_subst_4(V1,V5),h_acceptor(V5,V4),great_h_acc(V4,V3).
+great_rsd(V0,V1):- alk_groups(V1,V5),x_subst(V0,V3,V2),ring_subst_4(V1,V2),alk_groups(V0,V4),gt(V5,V4).
+great_rsd(V0,V1):- ring_substitutions(V0,V3),alk_groups(V1,V2),gt(V2,V3),alk_groups(V0,V2),ring_subst_5(V1,V4).
+great_rsd(V0,V1):- alk_groups(V1,V5),x_subst(V0,V3,V2),ring_subst_3(V1,V2),alk_groups(V0,V4),gt(V5,V4).
+great_rsd(V0,V1):- x_subst(V1,V3,V2),alk_groups(V0,V5),ring_substitutions(V0,V4),gt(V5,V4),ring_substitutions(V1,V4).
+great_rsd(V0,V1):- ring_subst_4(V1,V3),h_acceptor(V3,V4),ring_subst_2(V0,V5),h_acceptor(V5,V2),great_h_acc(V2,V4).
+great_rsd(V0,V1):- ring_subst_2(V1,V5),ring_subst_4(V0,V5),ring_substitutions(V1,V4),alk_groups(V0,V4),h_acceptor(V5,V3),great_h_acc(V3,V2).
+great_rsd(V0,V1):- ring_subst_3(V1,V5),polarisable(V5,V3),ring_subst_4(V0,V2),polarisable(V2,V3),ring_substitutions(V0,V4),ring_substitutions(V1,V4)
+
+*noisy-alzheimer_toxic
+less_toxic(V0,V1):- r_subst_1(V1,V3),r_subst_1(V0,V3),n_val(V0,V2).
+less_toxic(V0,V1):- n_val(V0,V3),alk_groups(V1,V4),gt(V4,V2).
+less_toxic(V0,V1):- ring_subst_6(V0,V3),alk_groups(V1,V4),gt(V4,V2).
+less_toxic(V0,V1):- x_subst(V0,V3,V5),ring_substitutions(V0,V2),alk_groups(V1,V4),gt(V2,V4).
+less_toxic(V0,V1):- x_subst(V0,V3,V5),ring_substitutions(V0,V2),alk_groups(V1,V2),gt(V2,V4).
+less_toxic(V0,V1):- ring_subst_4(V0,V3),ring_substitutions(V1,V4),polarisable(V3,V5),great_polari(V5,V2).
+less_toxic(V0,V1):- x_subst(V0,V3,V2),x_subst(V1,V4,V2),alk_groups(V1,V5),ring_substitutions(V0,V5).
+less_toxic(V0,V1):- ring_substitutions(V1,V3),alk_groups(V0,V3),x_subst(V0,V2,V4),ring_subst_3(V1,V4).
+less_toxic(V0,V1):- x_subst(V0,V4,V3),ring_substitutions(V0,V5),alk_groups(V1,V5),x_subst(V1,V4,V2).
+less_toxic(V0,V1):- ring_subst_3(V0,V5),ring_substitutions(V1,V2),flex(V5,V3),great_flex(V3,V4).
+less_toxic(V0,V1):- ring_subst_6(V0,V3),alk_groups(V1,V2),alk_groups(V0,V4),gt(V4,V2).
+less_toxic(V0,V1):- r_subst_2(V0,V5),r_subst_2(V1,V5),alk_groups(V0,V2),gt(V2,V3),gt(V3,V4).
+less_toxic(V0,V1):- ring_subst_4(V0,V2),polar(V2,V3),ring_subst_2(V1,V4),polar(V4,V5),great_polar(V5,V3).
+less_toxic(V0,V1):- x_subst(V1,V4,V2),ring_subst_4(V0,V2),alk_groups(V1,V3),ring_substitutions(V0,V5),gt(V5,V3).
+less_toxic(V0,V1):- ring_subst_4(V0,V3),alk_groups(V1,V5),ring_substitutions(V0,V5),polarisable(V3,V2),great_polari(V2,V4).
+less_toxic(V0,V1):- x_subst(V1,V4,V2),ring_subst_3(V0,V2),alk_groups(V0,V3),alk_groups(V1,V5),gt(V3,V5).
+less_toxic(V0,V1):- x_subst(V1,V4,V2),ring_subst_2(V0,V2),alk_groups(V1,V3),ring_substitutions(V0,V5),gt(V5,V3).
+less_toxic(V0,V1):- x_subst(V0,V3,V5),alk_groups(V0,V2),ring_substitutions(V0,V2),alk_groups(V1,V4),gt(V4,V2).
+less_toxic(V0,V1):- ring_substitutions(V1,V3),ring_substitutions(V0,V3),alk_groups(V0,V5),r_subst_3(V1,V4),gt(V2,V3),gt(V5,V2).
+less_toxic(V0,V1):- alk_groups(V0,V5),alk_groups(V1,V2),gt(V5,V2),ring_substitutions(V0,V4),gt(V5,V4),gt(V4,V3).
+less_toxic(V0,V1):- ring_substitutions(V1,V3),alk_groups(V1,V3),alk_groups(V0,V5),gt(V5,V2),gt(V2,V4),gt(V4,V3).
+
+*noisy-dropk-20
+
+*noisy-drugdrug
+
+*noisy-wn18rr1
+
+*noisy-wn18rr3
+
+*noisy-zendo2-10
+zendo(V0):- medium(V2),piece(V0,V1),coord1(V1,V2),green(V1),coord2(V1,V2).
+zendo(V0):- piece(V0,V1),green(V1),upright(V1),coord1(V1,V2),coord2(V1,V2).
+zendo(V0):- piece(V0,V1),lhs(V1),blue(V1),coord1(V1,V2),size(V1,V2).
+zendo(V0):- medium(V2),piece(V0,V1),coord1(V1,V2),rhs(V1),size(V1,V2).
+zendo(V0):- medium(V2),piece(V0,V1),coord1(V1,V2),lhs(V1),green(V1).
+zendo(V0):- small(V2),piece(V0,V1),size(V1,V2),contact(V1,V3),size(V3,V2).
+zendo(V0):- piece(V0,V3),green(V3),size(V3,V2),coord1(V3,V2),piece(V0,V1),coord2(V1,V2).
+zendo(V0):- medium(V1),piece(V0,V2),size(V2,V1),coord1(V2,V1),red(V2),strange(V2).
+zendo(V0):- small(V2),piece(V0,V1),strange(V1),coord2(V1,V2),size(V1,V2),green(V1).
+zendo(V0):- small(V2),piece(V0,V1),coord1(V1,V2),red(V1),size(V1,V2),upright(V1).
+zendo(V0):- large(V2),piece(V0,V3),coord1(V3,V2),strange(V3),size(V3,V1),coord2(V3,V1).
+zendo(V0):- large(V4),piece(V0,V3),size(V3,V4),piece(V0,V1),green(V1),contact(V1,V2).
+zendo(V0):- small(V1),piece(V0,V3),coord1(V3,V1),lhs(V3),size(V3,V2),coord2(V3,V2).
+zendo(V0):- large(V2),piece(V0,V1),coord1(V1,V2),lhs(V1),coord2(V1,V2),red(V1).
+zendo(V0):- piece(V0,V3),size(V3,V2),coord1(V3,V2),piece(V0,V1),rhs(V1),coord2(V1,V2).
+zendo(V0):- piece(V0,V2),green(V2),lhs(V2),piece(V0,V1),rhs(V1),green(V1).
+zendo(V0):- medium(V1),piece(V0,V2),size(V2,V1),coord2(V2,V1),blue(V2),strange(V2).
+zendo(V0):- piece(V0,V2),green(V2),lhs(V2),piece(V0,V1),green(V1),upright(V1).
+zendo(V0):- piece(V0,V3),green(V3),lhs(V3),coord1(V3,V2),piece(V0,V1),size(V1,V2).
+zendo(V0):- medium(V1),piece(V0,V2),size(V2,V1),coord2(V2,V1),red(V2),upright(V2).
+zendo(V0):- large(V2),piece(V0,V1),coord1(V1,V2),strange(V1),green(V1),size(V1,V2).
+zendo(V0):- piece(V0,V2),red(V2),lhs(V2),piece(V0,V1),lhs(V1),green(V1).
+
+*robots-functional
+f(V0,V1):- move_up(V0,V1).
+f(V0,V1):- move_up(V0,V2),f(V2,V1).
+
+*robots-linear
+f(V0,V1):- right(V0,V2),right(V2,V5),right(V5,V3),right(V3,V4),right(V4,V1).
+
+*robots-recursion
+f(V0,V1):- move_up(V0,V2),move_up(V2,V1).
+f(V0,V1):- move_up(V0,V2),f(V2,V1).
+
+*synthesis-alleven
+f(V0):- empty(V0).
+f(V0):- tail(V0,V1),head(V0,V2),even(V2),f(V1).
+
+
+*synthesis-contains
+f(V0):- head(V0,V1),c_6(V1).
+f(V0):- head(V0,V1),c_9(V1).
+f(V0):- tail(V0,V1),f(V1).
+
+*synthesis-dropk
+f(V0,V1,V2):- one(V1),tail(V0,V2).
+f(V0,V1,V2):- decrement(V1,V3),f(V0,V3,V4),tail(V4,V2).
+
+*synthesis-droplast
+f(V0,V1):- empty(V1),tail(V0,V1).
+f(V0,V1):- tail(V0,V2),head(V0,V4),f(V2,V3),append_(V4,V3,V1).
+
+*synthesis-filter
+
+*synthesis-finddupl
+f(V0,V1):- tail(V0,V2),element(V2,V1),head(V0,V1).
+f(V0,V1):- tail(V0,V2),f(V2,V1).
+
+*synthesis-length
+f(V0,V1):- empty(V0),zero(V1).
+f(V0,V1):- tail(V0,V3),f(V3,V2),succ(V2,V1).
+
+*synthesis-next
+next_list(V0,V1):- tail(V0,V2),head(V2,V1),head(V0,V3),x(V3).
+next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).
+
+*synthesis-reverse
+f(V0,V1):- empty(V0),empty(V1).
+f(V0,V1):- head(V0,V3),tail(V0,V4),f(V4,V2),my_append(V2,V3,V1).
+
+*synthesis-sorted
+f(V0):- tail(V0,V1),tail(V1,V2),empty(V2).
+f(V0):- head(V0,V2),tail(V0,V3),head(V3,V1),geq(V1,V2),f(V3).
+
+*trains1
+f(V0):- has_car(V0,V2),three_wheels(V2),has_car(V0,V1),long(V1),roof_closed(V1).
+
+*trains2
+f(V0):- has_car(V0,V1),roof_open(V1),has_load(V1,V2),triangle(V2).
+f(V0):- has_car(V0,V2),two_wheels(V2),roof_open(V2),has_car(V0,V1),roof_closed(V1).
+
+*trains3
+f(V0):- has_car(V0,V2),roof_open(V2),has_car(V0,V1),roof_closed(V1).
+f(V0):- has_car(V0,V1),roof_open(V1),has_load(V1,V2),three_load(V2).
+f(V0):- has_car(V0,V4),has_load(V4,V2),rectangle(V2),has_car(V0,V1),has_load(V1,V3),triangle(V3).
+
+*trains4
+f(V0):- has_car(V0,V3),has_load(V3,V1),diamond(V1),has_load(V3,V2),rectangle(V2).
+f(V0):- has_car(V0,V1),roof_open(V1),has_load(V1,V2),hexagon(V2),three_load(V2).
+f(V0):- has_car(V0,V1),has_load(V1,V4),hexagon(V4),has_car(V0,V2),has_load(V2,V3),triangle(V3).
+f(V0):- has_car(V0,V1),short(V1),roof_open(V1),has_car(V0,V2),roof_flat(V2),long(V2).
+
+*zendo1
+zendo(V0):- small(V1),piece(V0,V2),size(V2,V1),contact(V2,V3),red(V3).
+
+*zendo2
+zendo(V0):- piece(V0,V1),green(V1),coord1(V1,V3),piece(V0,V2),lhs(V2),coord1(V2,V3).
+zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).
+
+*zendo3
+zendo(V0):- large(V2),piece(V0,V1),size(V1,V2),blue(V1),contact(V1,V3).
+zendo(V0):- large(V2),piece(V0,V1),size(V1,V2),contact(V1,V3),rhs(V3).
+zendo(V0):- piece(V0,V3),blue(V3),coord1(V3,V1),piece(V0,V2),coord1(V2,V1),red(V2).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
