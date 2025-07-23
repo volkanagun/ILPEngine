@@ -3,10 +3,11 @@ package ilp.data
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
-class Query(var head: Predicate, var body: Array[Predicate]):
+class Query(var head: Predicate, var body: Array[Predicate]) extends Serializable:
 
   var recursive = false
-  var inputVariables = head.getVariables()
+  var inputVariables = body.flatMap(predicate=> predicate.getInput())
+
 
   var positions = Map[Position, Set[Position]]()
   var positionsJoin = Array[(String, Array[Position])]()

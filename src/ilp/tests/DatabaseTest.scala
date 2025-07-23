@@ -64,6 +64,46 @@ object DatabaseTest {
     println("Result size: " +results.size)
   }
 
+  def simpleZendeo():Unit= {
+    val params = Params("zendo2")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase()
+
+    val engine = Engine(db, 5)
+    val plan = Plan(db)
+    val line = "func591418883(V0,V1) :- piece(V0,V1) & green(V1).\n"+
+      "func1815986585(V0,V1) :- piece(V0,V1) & red(V1).\n"+
+      "func688690204(V0,V1) :- piece(V0,V1) & blue(V1).\n"+
+      "func1854231869(V0,V1) :- piece(V0,V1) & lhs(V1).\n"+
+      "func1890519296(V1,V2,V3) :- coord1(V1,V3) & coord1(V2,V3).\n"+
+      //"func1086357946(V0) :- func591418883(V0,V1) & func1815986585(V0,V2) & func688690204(V0,V3).\n"+
+      "func1086357946(V0) :- func591418883(V0,V1) & func1854231869(V0,V2) & func1890519296(V1,V2,V3)."
+
+    val l1Norm = "func1086357946(V0) :- piece(V0,V1) & green(V1) & piece(V0,V2) & lhs(V2) & coord1(V1,V3) & coord1(V2,V3)."
+    //val l1Norm = "func1086357946(V1,V2,V3) :- coord1(V1,V3) & coord1(V2,V3)."
+
+    val hypothesis = Parser.parseHypothesis(line).get.build().compact()
+    val hnorm = Parser.parseHypothesis(l1Norm).get
+
+    val optimizedList1 = plan.optimizeExperimental(hypothesis)
+    val optimizedList2 = plan.optimizeExperimental(hypothesis)
+    val optimizedList3 = plan.optimizeExperimental(hnorm)
+
+    val results1 = engine.joinRoaringParallel(optimizedList1, Substitution())
+    val results2 = engine.joinSerial(optimizedList2, Substitution())
+    val results3 = engine.joinParallel(optimizedList2, Substitution())
+    val results4 = engine.joinSerial(optimizedList3, Substitution())
+
+    println(hypothesis)
+    println(hnorm)
+
+    println("Result roaaring size: " +results1.size)
+    println("Result serial size: " +results2.size)
+    println("Result parallel size: " +results3.size)
+    println("Result norm size: " +results4.size)
+    //println("Normalized size: " +results2.size)
+  }
+
   def simpleCyclicIMDB():Unit= {
     val params = Params("imdb1")
     val experiment = Experiment(params).load()
@@ -138,15 +178,15 @@ object DatabaseTest {
     val all = Set(other, main)
     val ii = other.intersect(main)
 
-    val params = Params("robots-linear")
+    val params = Params("robots-functional")
     val experiment = Experiment(params).load()
     val db = experiment.getDatabase()
-    val hypothesis = experiment.getHypothesis()
+    val hypothesis = experiment.getHypothesis().build()
     val positives = experiment.getPositives()
 
     val engine = Engine(db, recursiveDepth = 5)
     val plan = Plan(db)
-    val program = plan.optimizeNone(hypothesis)
+    val program = plan.optimizeExperimental(hypothesis)
     var tParallel = 0L
     var tRoaring = 0L
     val filterSubstitution = Substitution()
@@ -222,7 +262,7 @@ object DatabaseTest {
   }
 
   def main(args: Array[String]): Unit = {
-    simpleFunctionalTime()
+    simpleZendeo()
   }
 
 }

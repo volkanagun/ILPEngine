@@ -2,23 +2,29 @@ package ilp.data.database
 
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
+import org.apache.ignite.binary.Binarylizable
 import org.roaringbitmap.RoaringBitmap
 
+import java.util
 import scala.collection.immutable.BitSet
 
 
-class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: Int = 128) {
+class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: Int = 128) extends Serializable{
 
   var rowMap = predicate.getPositions().map(position => {
-    position.getIndex() -> Map[Variable, Set[Int]]()
+    position.getIndex() -> new util.HashMap[Variable, Set[Int]]()
   }).toMap
 
   var roaringBitmap = predicate.getPositions().map(position => {
-    position.getIndex() -> Map[Variable, RoaringBitmap]()
+    position.getIndex() -> new util.HashMap[Variable, RoaringBitmap]()
   }).toMap
 
-  def addIndex(predicates: Set[Predicate]): this.type = {
-    predicates.toArray.zipWithIndex.foreach{case(predicate, index) => {
+
+
+
+
+  def addIndex(predicates: Array[Predicate]): this.type = {
+    predicates.zipWithIndex.foreach{case(predicate, index) => {
       addData(predicate)
       addIndex (predicate, index)
     }}
@@ -37,12 +43,18 @@ class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: I
       val trie = rowMap(i)
       val roaringmap = roaringBitmap(i)
       val value = predicate.getVariable(position.index)
-      val roadingBitmap = roaringmap.getOrElse(value, RoaringBitmap())
+      val roadingBitmap = if roaringmap.containsKey(value) then roaringmap.get(value)
+      else RoaringBitmap()
 
       roadingBitmap.add(index)
 
-      rowMap = rowMap.updated(i, trie.updated(value, trie.getOrElse(value, Set()) + index))
-      roaringBitmap = roaringBitmap.updated(i, roaringmap.updated(value, roadingBitmap))
+      val set = if trie.containsKey(value) then trie.get(value)+index else Set(index)
+      trie.put(value, set)
+
+      roaringmap.put(value, roadingBitmap)
+
+      rowMap = rowMap.updated(i, trie)
+      roaringBitmap = roaringBitmap.updated(i, roaringmap)
 
     })
     this
@@ -59,13 +71,6 @@ class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: I
     rows.map(index => data(index)).map(predicate => predicate.getVariable(position))
 
 
-/*
-  def getValues(rows: BitSet, position: Int): Set[Variable] =
-    rows.toSet.map(indice => data(indice))
-      .map(predicate => predicate.getVariable(position))
-*/
-
-
   def getValues(rows: RoaringBitmap, position: Int): Set[Variable] =
     rows.toArray.map(indice => data(indice))
       .map(predicate => predicate.getVariable(position))
@@ -74,7 +79,8 @@ class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: I
 
   def getRows(value: Variable, position: Int): Set[Int] =
     val trie = rowMap(position)
-    trie.getOrElse(value, Set())
+    if trie.containsKey(value) then trie.get(value)
+    else Set()
 /*
 
   def getRows(rows: Set[Int], value: Variable, position: Int): Set[Int] =
@@ -85,13 +91,13 @@ class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: I
 
   def getRows(rows: RoaringBitmap, value: Variable, position: Int): RoaringBitmap =
     val trie = roaringBitmap(position)
-    val existingRows = trie(value)
+    val existingRows = trie.get(value)
     RoaringBitmap.and(rows, existingRows)
 
   def getHavingRows(rows: RoaringBitmap, value: Variable, position: Int): RoaringBitmap =
     val trie = roaringBitmap(position)
-    if trie.contains(value) then
-      val existingRows = trie(value)
+    if trie.containsKey(value) then
+      val existingRows = trie.get(value)
       RoaringBitmap.and(rows, existingRows)
     else
       rows

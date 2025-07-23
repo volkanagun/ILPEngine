@@ -7,7 +7,7 @@ import ilp.data.variables.Variable
 import java.io.File
 import scala.io.Source
 
-class Bias {
+class Bias extends Serializable{
 
   case class Function(name: String, variables: Array[Position]) {
     def identifier(): Int =
@@ -98,7 +98,7 @@ class Bias {
 
   def getHypothesis(hypothesis: Hypothesis): Option[Map[Position, Position]] = {
     var crrMap = map
-    hypothesis.getRules().foreach(rule => {
+    hypothesis.getSorted().foreach(rule => {
       val functionOpt = getRule(rule, crrMap)
       if functionOpt.isEmpty then return None
       else{

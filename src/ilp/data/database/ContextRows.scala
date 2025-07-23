@@ -12,7 +12,7 @@ class ContextRows(var rule: Optimized,
                   val targetVariable: Variable,
                   var relations: Array[Predicate],
                   var attributes: Array[Variable],
-                  var depth: Int = 0) {
+                  var depth: Int = 0) extends Serializable{
 
   def get(substitutions: Set[Substitution]): Set[Predicate] = {
     val headVariables = getHead().getVariables()
@@ -59,8 +59,7 @@ class ContextRows(var rule: Optimized,
     val targetMap = relations.zipWithIndex.filter { case (relation, position) => identifier == relation.identifier() }
       .map { case (predicate, position) => {
         predicate.identifier(position) -> array
-      }
-      }.toMap
+      }}.toMap
 
     val roaringMap = targetMap.map { case (id, predicates) => {
       val bitmap = RoaringBitmap()
@@ -95,10 +94,7 @@ class ContextRows(var rule: Optimized,
 
   def getRowMap(): Map[Int, RoaringBitmap] = rowMap
   def getOriginalRowMap(): Map[Int, RoaringBitmap] = originalRowMap
-
-
-
-  def getResetDataMap(): Map[Int, Set[Predicate]] = rule.getDataMap()
+  def getResetDataMap(): Map[Int, Array[Predicate]] = rule.getDataMap()
 
   def getSubstitution(): Substitution = substitution
 

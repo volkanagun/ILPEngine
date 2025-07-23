@@ -14,6 +14,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
   var genfacts = Set[Predicate]()
+  var tested = false
   var score = 0.0
   var acc = 0.0
   var id = idset()
@@ -126,6 +127,12 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this
   }
 
+  def setTested(tested: Boolean): this.type = {
+    this.tested = tested
+    this
+  }
+
+
   def setFacts(facts: Set[Predicate]): this.type = {
     this.genfacts = facts
     this
@@ -208,6 +215,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   def ig(facts: Set[Predicate], posItems: Set[Predicate], negItems: Set[Predicate]): Double =
     val functName = posItems.head.getName()
     val matchFacts = facts.map(predicate => predicate.setName(functName).asPredicate())
+    tested = true
     genfacts = facts
     positives = matches(posItems, matchFacts)
     negatives = matches(negItems, matchFacts)
@@ -216,6 +224,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     negRate = negatives.size.toDouble / math.max(negItems.size, 1.0)
 
     score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
+    //println(s"Score: ${score}")
     score
 
 

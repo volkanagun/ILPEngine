@@ -5,7 +5,7 @@ import ilp.data.database.Engine
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-class HeBinaryFast(engine: Engine) extends HeBinary(engine) {
+class HeBinaryFast(engine: Engine) extends TemplateIG(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => item.emptyScores() || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
@@ -19,12 +19,18 @@ class HeBinaryFast(engine: Engine) extends HeBinary(engine) {
     results
   }
 
-
   override def inventNext(targets: Array[Hypothesis]): Array[Hypothesis] =
     val currentSource = nextSource()
-    val crrHypotheses = targets.par.filter(targetHypothesis => {
-      currentSource.similarity(targetHypothesis, resembleWindow) < resembleThreshold
-    }).toArray
-    val crrResults = metaApplyHeuristic(currentSource, crrHypotheses)
-    crrResults
+    inventNext(currentSource, targets)
+
+  override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] = {
+
+    val crrHypotheses = targets.filter(targetHypothesis => {
+      val resemblence = currentSource.similarity(targetHypothesis, resembleWindow)
+      resemblence <= resembleThreshold
+    })
+    val results = metaApply(currentSource, crrHypotheses)
+    val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
+    fresults
+  }
 }

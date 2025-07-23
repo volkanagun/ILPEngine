@@ -4,7 +4,7 @@ import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.{Hypothesis, Query}
 
-case class Key(predicate: Predicate, index: Int) {
+case class Key(predicate: Predicate, index: Int) extends Serializable{
   override def hashCode(): Int = predicate.identifier() * 7 + index
 
   override def equals(obj: Any): Boolean =
@@ -12,7 +12,7 @@ case class Key(predicate: Predicate, index: Int) {
     other.hashCode() == hashCode()
 }
 
-class Plan(val db: Database) {
+class Plan(val db: Database) extends Serializable{
 
 
   val statistics = db.getStatistics()
@@ -32,9 +32,9 @@ class Plan(val db: Database) {
     if statistics.contains(id) then
       statistics(id).setPredicate(predicate)
     else if maxMap.contains(id) then
-      Statistics(predicate, Set(predicate)).init(maxMap(id))
+      Statistics(predicate, Array(predicate)).init(maxMap(id))
     else
-      Statistics(predicate, Set(predicate))
+      Statistics(predicate, Array(predicate))
   }
 
   def getRowSizes(relations: Array[Predicate]): Map[Int, Int] =
@@ -68,9 +68,28 @@ class Plan(val db: Database) {
     found.minBy(_._2)
 
   def getMinMinRelativeScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
-    val scores = attributes.map(next => (next, statistics.zip(body).map { case (statistic, predicate) => statistic.getRelativeRatio(predicate, current, next) }.min))
+    val scores = attributes.map(next => (next, statistics.zip(body).map {
+      case (statistic, predicate) => statistic.getRelativeRatio(predicate, current, next)
+    }.min))
+
     val found = scores.map(pair => (pair._1, pair._2))
     found.minBy(_._2)
+
+  def getCrossRelativeScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
+    val scores = attributes.map(next => (next, statistics.zip(body).map {
+      case (statistic, predicate) => statistic.getRelativeCrossRatio(predicate, current, next)
+    }.min))
+
+    val found = scores.map(pair => (pair._1, pair._2))
+    found.minBy(_._2)
+
+  def getInverseRelativeScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
+    val scores = attributes.map(next => (next, statistics.zip(body).map {
+      case (statistic, predicate) => statistic.getInverseRatio(predicate, current, next)
+    }.max))
+
+    val found = scores.map(pair => (pair._1, pair._2))
+    found.maxBy(_._2)
 
   def getMinMaxScore(current: Variable, attributes: Array[Variable], body: Array[Predicate], statistics: Array[Statistics]): (Variable, Double) =
     val scores = attributes.map(next => (next, {
@@ -102,7 +121,7 @@ class Plan(val db: Database) {
   def optimizeByExperimental(current: Variable, attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] =
     if attributes.isEmpty then Array()
     else
-      val nextHead = getMinMinRelativeScore(current, attributes, body, tables)
+      val nextHead = getInverseRelativeScore(current, attributes, body, tables)
       val nextVariable = nextHead._1
       val restVariables = attributes.filter(variable => !variable.equalName(nextVariable))
       val newArray = nextHead +: optimizeByExperimental(nextVariable, restVariables, body, tables)
@@ -147,17 +166,89 @@ class Plan(val db: Database) {
     array.head
 
   def optimizeExperimental(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] =
-    val rowCounts = attributes.map(current=> tables.filter(stats => stats.hasVariable(current))
-      .map(stats=> stats.getActiveSize(current)).maxOption.getOrElse(1.0))
+    val rowCounts = attributes.map(current => tables.filter(stats => stats.hasVariable(current))
+      .map(stats => stats.getActiveSize(current)).minOption.getOrElse(1.0))
     val zipAttributes = attributes.zip(rowCounts)
-    val array = zipAttributes.map{case(current, rowCount) => {
+    val array = zipAttributes.map { case (current, rowCount) => {
       (current, rowCount) +: optimizeByExperimental(current, attributes.filter(variable => !variable.equals(current)), body, tables)
-    }}.sortBy(array => array.foldRight(1.0) { case ((attribute, score), main) => {
+    }
+    }.sortBy(array => array.foldRight(1.0) { case ((attribute, score), main) => {
       if attribute.isSymbol() then main
       else score * main
     }
     })
     array.head
+
+  def optimizeBellmanFord(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] = {
+    val bodyZip = body.zip(tables)
+    val matrix = attributes.map(current => {
+      attributes.map(other => {
+        bodyZip.filter { case (predicate, table) => predicate.contains(other) && predicate.contains(current) }
+          .map { case (_, table) => table.getLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
+      })
+    })
+    val (scores, order) = BellmanFordCycle.applyDirect(matrix)
+    val attributeScores = order.map(attributes).zip(scores)
+    attributeScores
+  }
+
+  def optimizeAverage(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] = {
+    val bodyZip = body.zip(tables)
+    val matrix = attributes.map(current => {
+      val scores = attributes.map(other => {
+        bodyZip.filter { case (predicate, table) => predicate.contains(other) && predicate.contains(current) }
+          .map { case (_, table) => table.getLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
+      }).filter(item=> item!=Double.PositiveInfinity)
+
+      current -> scores.sum / scores.length
+    })
+
+    val attributeScores = matrix.sortBy(_._2).reverse
+    attributeScores
+  }
+
+
+  /*
+    def optimizeBellmanFordMax(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]):Array[(Variable, Double)] =
+    {
+      val bodyZip = body.zip(tables)
+      val matrix = attributes.map(current =>{
+        attributes.map(other =>{
+          bodyZip.filter{case(predicate, table) => predicate.contains(other) && predicate.contains(current)}
+            .map{case(_, table) => table.getInverseRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
+        })
+      })
+
+      val activeTable = attributes.map(variable=> tables.map(stat=> stat.getActiveSize(variable)).max)
+      val entropyTable = attributes.map(variable=> tables.map(stat=> stat.getEntropySize(variable)).max)
+
+      val activeSizes = attributes.sortBy(variable=> tables.map(stat=> stat.getActiveSize(variable)).max)
+      val entropySizes = attributes.sortBy(variable=> tables.map(stat=> stat.getEntropySize(variable)).max)
+
+      val (scores, order) = BellmanFordCycle.apply(matrix)
+      val attributeScores = order.map(attributes).zip(scores)
+      //val activeScores = attributes.sortBy(attribute=> tables.map(stat=> stat.getActiveSize(attribute, Double.MaxValue)).min)
+      //activeScores.zip(scores)
+      //attributeScores
+      entropySizes.zip(scores)
+    }
+  */
+  /*
+
+    def optimizeBellmanFordMin(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]):Array[(Variable, Double)] =
+    {
+      val bodyZip = body.zip(tables)
+      val matrix = attributes.map(current =>{
+        attributes.map(other =>{
+          bodyZip.filter{case(predicate, table) => predicate.contains(other) && predicate.contains(current)}
+            .map{case(_, table) => table.getInverseRatio(table.predicate, current, other)}.minOption.getOrElse(1.0)
+        })
+      })
+
+      val (scores, order) = BellmanFordCycle(matrix)
+      order.map(attributes).zip(scores)
+    }
+  */
 
   def optimizeMaxMin(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] =
     val array = attributes.map(current => {
@@ -222,13 +313,52 @@ class Plan(val db: Database) {
     Optimized(query, sorted, relations).setData(dataMap)
       .initRows(rowMap)
 
+  def optimizeInputs(query: Query, sorted: Array[Variable]): Array[Variable] =
+    val headInputs = query.getInputVariables()
+    val inputVariables = query.getBody().flatMap(_.getInput())
+    var outputs = Array[Variable]()
+    var lastCompute = Array[Variable]()
+    var result = Array[Variable]()
+    for variable <- sorted do {
+      if headInputs.contains(variable) then
+        lastCompute :+= variable
+      else if inputVariables.contains(variable) then
+        result :+= variable
+      else
+        outputs :+= variable
+    }
+
+    result ++ outputs ++ lastCompute
+
   def optimizeExperimental(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
     val relations = query.getBody()
     val attributes = query.getAttributes().toArray
     val stats = relations.map(predicate => getStatistics(maxMap, predicate))
     val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
     val sorted = optimizeExperimental(attributes, relations, stats).map(_._1)
+    val sortedInputs = optimizeInputs(query, sorted)
     val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
+    val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
+      val statistics = getStatistics(predicate)
+      if statistics.isDefined then Some(predicate.identifier(index) -> statistics.get.getData())
+      else None
+    }
+    }.toMap
+
+    val rowMap = getRowSizes(sortedRelations)
+    Optimized(query, sortedInputs, sortedRelations).setData(dataMap)
+      .initRows(rowMap)
+
+  def optimizeBellmanFord(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
+
+    val relations = query.getBody()
+    val attributes = query.getAttributes().toArray
+    val stats = relations.map(predicate => getStatistics(maxMap, predicate))
+    val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
+    val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
+    val sorted = optimizeBellmanFord(attributes, sortedRelations, stats).map(_._1)
+    val sortedInputs = sorted // optimizeInputs(query, sorted)
+
     val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
       val statistics = getStatistics(predicate)
       if statistics.isDefined then Some(predicate.identifier(index) -> statistics.get.getData())
@@ -236,8 +366,47 @@ class Plan(val db: Database) {
     }}.toMap
 
     val rowMap = getRowSizes(sortedRelations)
-    Optimized(query, sorted, sortedRelations).setData(dataMap)
+    Optimized(query, sortedInputs, sortedRelations).setData(dataMap)
       .initRows(rowMap)
+
+  def optimizeAverage(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
+
+    val relations = query.getBody()
+    val attributes = query.getAttributes().toArray
+    val stats = relations.map(predicate => getStatistics(maxMap, predicate))
+    val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
+    val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
+    val sorted = optimizeAverage(attributes, sortedRelations, stats).map(_._1)
+    val sortedInputs = sorted // optimizeInputs(query, sorted)
+
+    val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
+      val statistics = getStatistics(predicate)
+      if statistics.isDefined then Some(predicate.identifier(index) -> statistics.get.getData())
+      else None
+    }}.toMap
+
+    val rowMap = getRowSizes(sortedRelations)
+    Optimized(query, sortedInputs, sortedRelations).setData(dataMap)
+      .initRows(rowMap)
+  /*
+    def optimizeBellmanFordMin(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
+      val relations = query.getBody()
+      val attributes = query.getAttributes().toArray
+      val stats = relations.map(predicate => getStatistics(maxMap, predicate))
+      val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
+      val sorted = optimizeBellmanFordMin(attributes, relations, stats).map(_._1)
+      val sortedInputs = sorted// optimizeInputs(query, sorted)
+      val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
+        .reverse
+      val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
+        val statistics = getStatistics(predicate)
+        if statistics.isDefined then Some(predicate.identifier(index) -> statistics.get.getData())
+        else None
+      }}.toMap
+
+      val rowMap = getRowSizes(sortedRelations)
+      Optimized(query, sortedInputs, sortedRelations).setData(dataMap)
+        .initRows(rowMap)*/
 
   def optimizeMaxMin(maxMap: Map[Int, Map[Int, Double]], query: Query): Optimized =
     val relations = query.getBody()
@@ -332,13 +501,62 @@ class Plan(val db: Database) {
           .map(stats => stats.getActiveSize(variable))
         val maxCount = if sizeCounts.nonEmpty then sizeCounts.max else 1
         position -> maxCount
-      }}.toMap
+      }
+      }.toMap
 
       val id = ruleHead.identifier()
       countMap = countMap.updated(id, map)
     })
 
-    presorted.map(rule => optimizeExperimental(countMap, rule)).map(optimized=>{
+    presorted.map(rule => optimizeExperimental(countMap, rule)).map(optimized => {
+      val isTarget = query.getHead() == optimized.getHead()
+      optimized.setTarget(isTarget)
+    })
+
+  def optimizeBellmanFord(query: Hypothesis): Array[Optimized] =
+    val presorted = query.getRanked()
+    var countMap = Map[Int, Map[Int, Double]]()
+    presorted.foreach(rule => {
+      val ruleHead = rule.getHead()
+      val headVariables = ruleHead.getArray()
+      val bodyStatistics = rule.getBody().map(predicate => getStatistics(countMap, predicate))
+      val map = headVariables.zipWithIndex.map { case (variable, position) => {
+        val sizeCounts = bodyStatistics.filter(stats => stats.hasVariable(variable))
+          .map(stats => stats.getActiveSize(variable))
+        val maxCount = if sizeCounts.nonEmpty then sizeCounts.max else 1
+        position -> maxCount
+      }
+      }.toMap
+
+      val id = ruleHead.identifier()
+      countMap = countMap.updated(id, map)
+    })
+
+    presorted.map(rule => optimizeBellmanFord(countMap, rule)).map(optimized => {
+      val isTarget = query.getHead() == optimized.getHead()
+      optimized.setTarget(isTarget)
+    })
+
+  def optimizeAverage(query: Hypothesis): Array[Optimized] =
+    val presorted = query.getRanked()
+    var countMap = Map[Int, Map[Int, Double]]()
+    presorted.foreach(rule => {
+      val ruleHead = rule.getHead()
+      val headVariables = ruleHead.getArray()
+      val bodyStatistics = rule.getBody().map(predicate => getStatistics(countMap, predicate))
+      val map = headVariables.zipWithIndex.map { case (variable, position) => {
+        val sizeCounts = bodyStatistics.filter(stats => stats.hasVariable(variable))
+          .map(stats => stats.getActiveSize(variable))
+        val maxCount = if sizeCounts.nonEmpty then sizeCounts.max else 1
+        position -> maxCount
+      }
+      }.toMap
+
+      val id = ruleHead.identifier()
+      countMap = countMap.updated(id, map)
+    })
+
+    presorted.map(rule => optimizeAverage(countMap, rule)).map(optimized => {
       val isTarget = query.getHead() == optimized.getHead()
       optimized.setTarget(isTarget)
     })

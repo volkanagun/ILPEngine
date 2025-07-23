@@ -3,7 +3,7 @@ package ilp.experiments
 import ilp.data.{Parser, Rule}
 
 
-class Params(var experimentName:String = "zendo2"):
+class Params(var experimentName:String = "zendo2") extends Serializable:
 
   var experiments = Set("kinship-ancestor", "kinship-pi", "imdb3")
 

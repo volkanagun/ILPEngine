@@ -7,7 +7,7 @@ import ilp.data.variables.{Sym, Variable}
 import scala.collection.immutable.HashSet
 
 
-class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) {
+class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) extends Serializable{
 
   def this() = this(Array[Variable](), Array[Variable]())
 
@@ -33,7 +33,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     None
   }
 
-  def contains(variable: Variable) = variables.contains(variable)
+  def contains(variable: Variable) = variables.exists(item => item.getName() == variable.getName())
 
   def containsAll(variables: Array[Variable]) = variables.forall(variable => contains(variable))
 
@@ -175,7 +175,8 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
       Substitution(variables, newsyms)
 
   def hasVariable(variable: Variable): Boolean =
-    this.variables.exists(crrVariable => crrVariable.equalName(variable))
+    this.variables.exists(crrVariable => crrVariable.getName() == variable.getName())
+
 
   def hasValue(variable: Variable): Boolean =
     this.symbols.exists(crrSymbol => crrSymbol.equals(variable))
@@ -183,21 +184,23 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def variableByValue(variable: Variable): Option[Variable] = {
     val find = symbols.zipWithIndex.find(pair => pair._1.equals(variable))
     if find.isDefined then
+      //Some(variables(find.get._2).copy())
       Some(variables(find.get._2))
     else
       None
   }
 
   def valueByVariable(variable: Variable): Option[Variable] = {
-    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.equalName(variable) }
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
     if find.isDefined then
+      //Some(symbols(find.get._2).copy())
       Some(symbols(find.get._2))
     else
       None
   }
 
   def indexVariable(variable: Variable): Option[Int] = {
-    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.equalName(variable) }
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
     if find.isDefined then
       Some(find.get._2)
     else
@@ -205,10 +208,10 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   }
 
   def valueByVariable(variable: Variable, newName: String): Option[Variable] = {
-    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.equalName(variable) }
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
 
     if find.isDefined then
-      Some(symbols(find.get._2).setName(newName))
+      Some(symbols(find.get._2).copy(newName))
     else
       None
   }
@@ -225,7 +228,9 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def compose(attributes: Array[Variable]): Array[Variable] =
     attributes.map(variable => {
-      if hasVariable(variable) then valueByVariable(variable).get.setName(variable.getName())
+      if hasVariable(variable) then {
+        valueByVariable(variable).get.setName(variable.getName())
+      }
       else variable
     })
 

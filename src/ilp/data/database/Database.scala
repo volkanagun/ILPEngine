@@ -5,7 +5,7 @@ import ilp.data.predicates.*
 import ilp.data.variables.*
 import org.roaringbitmap.RoaringBitmap
 
-class Database(name: String):
+class Database(name: String) extends Serializable:
 
   var symbols = Array[Collection]()
   private var sets = Set[Predicate]()
@@ -23,7 +23,7 @@ class Database(name: String):
     println("Building database ...")
 
     index = templates.map{case(index, data)=> index-> Index(data.head, data.toArray).build()}
-    stats = templates.map{case(index, data)=> index-> Statistics(data.head, data)}
+    stats = templates.map{case(index, data)=> index-> Statistics(data.head, data.toArray)}
 
     println("Building finished ...")
     this
@@ -33,18 +33,21 @@ class Database(name: String):
     this
   }
 
+  def containsIndex(id:Int) = index.contains(id)
+
   def getIndex(id: Int):Index =
     index(id)
 
   def getValues(predicateId:Int, position:Int, bitset:RoaringBitmap):Set[Variable] =
     index(predicateId).getValues(bitset, position)
 
-  def index(predicate:Predicate, samples:Set[Predicate]):this.type = {
+  def index(predicate:Predicate, samples:Array[Predicate]):this.type = {
     val id = predicate.identifier()
     index = index.updated(id, index.getOrElse(id, Index(predicate, Array[Predicate]()))
       .addIndex(samples))
     this
   }
+
 
   def getBias():Bias =
     this.bias
@@ -134,9 +137,16 @@ class Database(name: String):
     else
       Set()
 
+  def getPredicates():Set[Predicate] =
+    sets
+
   def getTemplate3(): Set[Predicate] =
     templates.values.map(set => set.head)
       .toSet
+
+
+  def getTemplates(): Map[Int, Set[Predicate]] =
+    templates
 
 /*  def getPositions(items: Set[Position]): Set[Position] =
     val filtered = items.filter(position => attachments.contains(position))

@@ -3,7 +3,7 @@ package ilp.data
 import ilp.data.predicates.Predicate
 
 
-class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()):
+class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()) extends Serializable:
 
   def this(main: Substitution, content: Substitution) = this(main, Set(content))
 

@@ -3,7 +3,7 @@ package ilp.data.variables
 import ilp.data.Substitution
 import ilp.data.predicates.Predicate
 
-class Variable(var name: String):
+class Variable(var name: String) extends Serializable:
 
   override def hashCode(): Int = {
     name.hashCode()
@@ -34,16 +34,21 @@ class Variable(var name: String):
     name.hashCode
 
   def substitution(substitution: Substitution): Variable =
-    if isVariable() && substitution.hasVariable(this) then
-      substitution.valueByVariable(this).get
-    else
-      this
+    if isVariable() && substitution.hasVariable(this) then {
+      val newVariable = substitution.valueByVariable(this)
+      newVariable.get
+    } else {
+      //this
+      copy()
+    }
 
   def symbolSubstitution(substitution: Substitution): Variable =
     if substitution.hasVariable(this) then
       substitution.valueByVariable(this).get
-    else
-      this
+    else {
+      //this
+      copy()
+    }
 
   def toSymbol(value: String): Sym =
     new Sym(name, value)

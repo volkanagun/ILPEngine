@@ -51,9 +51,9 @@ class Experiment(params: Params):
     this
 
   def loadDatabase(): this.type =
-    println("Loading database")
+    println(s"Loading database from ${folder}")
     Source.fromFile(folder + "bk.pl").getLines().map(_.trim)
-      .filter(line=> line.nonEmpty && !line.startsWith("%%"))
+      .filter(line=> line.nonEmpty && !line.startsWith("%") && !line.contains(":-"))
       .foreach(line => {
         val predicate = Parser.parsePredicate(line).get
         database.add(predicate)
@@ -73,7 +73,7 @@ class Experiment(params: Params):
           val rule = Parser.parseRule(line).get
           rule
         }).toArray
-      hypothesis = Hypothesis(rules)
+      hypothesis = Hypothesis(rules).build()
     println("Loading queries finieshed.")
     this
 

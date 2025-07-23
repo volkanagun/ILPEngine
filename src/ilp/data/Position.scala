@@ -3,7 +3,7 @@ package ilp.data
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
-class Position(val predicate:Predicate, val pindex:Int, val index:Int) {
+class Position(val predicate:Predicate, val pindex:Int, val index:Int) extends Serializable{
   override def hashCode(): Int = (predicate.identifier().hashCode() * 7 + pindex) * 7 + index
 
   override def equals(obj: Any): Boolean = {

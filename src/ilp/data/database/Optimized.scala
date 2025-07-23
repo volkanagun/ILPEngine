@@ -7,13 +7,11 @@ import org.roaringbitmap.RoaringBitmap
 
 import scala.collection.immutable.BitSet
 
-class Optimized(val query: Query, var variables: Array[Variable] = Array(), var predicates: Array[Predicate] = Array()) {
+class Optimized(val query: Query, var variables: Array[Variable] = Array(), var predicates: Array[Predicate] = Array()) extends Serializable{
 
   var rows: Map[Int, Set[Int]] = Map()
-  var rowsBitmap: Map[Int, BitSet] = Map()
   var roaringBitmap: Map[Int, RoaringBitmap] = Map()
-  var cudaBitmap: Map[Int, Array[Int]] = Map()
-  var dataMap: Map[Int, Set[Predicate]] = Map()
+  var dataMap: Map[Int, Array[Predicate]] = Map()
   val queryId = query.hashCode()
   val headId = query.getHead().identifier()
   var isTarget:Boolean = false
@@ -32,7 +30,7 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
 
   def getTarget():Boolean = isTarget
 
-  def newData(map: Map[Int, Set[Predicate]]): Optimized = {
+  def newData(map: Map[Int, Array[Predicate]]): Optimized = {
     Optimized(query, variables, predicates)
       .setData(map)
   }
@@ -46,20 +44,20 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
   def getHead(): Predicate =
     query.getHead()
 
+  def getHeadCopy(): Predicate =
+    query.getHead().copy().asPredicate()
+
   def getVariables(): Array[Variable] =
     variables.filter(variable=> !variable.isSymbol())
 
   def getRelations(): Array[Predicate] =
     predicates
 
-  def getDataMap(): Map[Int, Set[Predicate]] =
+  def getDataMap(): Map[Int, Array[Predicate]] =
     dataMap
 
   def getDataArrayMap(): Map[Int, Array[Predicate]] =
-    dataMap.map{case(id, values)=> id -> values.toArray}
-
-  def getBitmapMap(): Map[Int, BitSet] =
-    rowsBitmap
+    dataMap
 
   def getRoaringMap(): Map[Int, RoaringBitmap] =
     roaringBitmap
@@ -69,70 +67,16 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
 
   def getQueryId(): Int =
     queryId
-/*
-
-  def filter(ids: Array[(Predicate, Int)]): Optimized =
-    val replaces = ids.zipWithIndex.map { case ((predicate, oldId), indice) => oldId -> predicate.identifier(indice) }
-      .toMap
-    val rels = ids.map(_._1)
-    val newDataMap = replaces.map { case (oldId, newId) => newId -> dataMap(oldId) }
-    val newRows = replaces.map { case (oldId, newId) => newId -> rows(oldId) }
-    val newBitmap = replaces.map { case (oldId, newId) => newId -> rowsBitmap(oldId) }
-    val newCudaBitmap = replaces.map { case (oldId, newId) => newId -> cudaBitmap(oldId) }
-    val newRoaringBitmap = replaces.map { case (oldId, newId) => newId -> roaringBitmap(oldId) }
-    val vars = rels.flatMap(_.getArray()).toSet
-    val newVars = variables.filter(variable => vars.contains(variable))
-
-    Optimized(query, newVars, rels, bitSize)
-      .setData(newDataMap)
-      .setRows(newRows)
-      .setBitset(newBitmap)
-      .setCudaBitmap(newCudaBitmap)
-      .setRoaring(newRoaringBitmap)
-
-*/
-
-  /*
-  def exclude(id: Int): Optimized =
-    val ids = predicates.zipWithIndex.map { case (predicate, index) => {
-      (predicate, predicate.identifier(index))
-    }
-    }.filter { case (predicate, _) => predicate.identifier() != id }
-    filter(ids)*/
-
-/*  def include(id: Int): Optimized =
-    val ids = predicates.zipWithIndex.map { case (predicate, index) => {
-      (predicate, predicate.identifier(index))
-    }
-    }.filter { case (predicate, _) => predicate.identifier() == id }
-    filter(ids)*/
-
-/*  def getRecursive(): Optimized = {
-    val crrId = query.getHead().identifier()
-    include(crrId)
-  }*/
-
-/*  def getNonRecursive(): Optimized =
-    val crrId = query.getHead().identifier()
-    exclude(crrId)*/
 
   def setRows(map: Map[Int, Set[Int]]): this.type =
     rows = map
-    this
-
-  def setBitset(map: Map[Int, BitSet]): this.type =
-    rowsBitmap = map
     this
 
   def setRoaring(map: Map[Int, RoaringBitmap]): this.type =
     roaringBitmap = map
     this
 
-  def setCudaBitmap(map: Map[Int, Array[Int]]): Optimized =
-    cudaBitmap = map
-    this
-
-  def setData(map: Map[Int, Set[Predicate]]): Optimized = {
+  def setData(map: Map[Int, Array[Predicate]]): Optimized = {
     this.dataMap = map
     this
   }
@@ -165,18 +109,6 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
     this.predicates = tables
     this
   }
-/*
-  def convert(indices: Array[Int]): Array[Int] = {
-    val bitmap = Array.fill(bitSize)(0)
-    val length = bitSize * 32
-    for (idx <- indices if idx >= 0 && idx < length) {
-      val wordIndex = idx / 32
-      val bitIndex = idx % 32
-      bitmap(wordIndex) |= (1 << bitIndex) // LSB first (little-endian)
-    }
-    bitmap
-  }*/
-
 
   def initRows(map: Map[Int, Int]): this.type = {
     map.foreach { case (id, row) => initRows(id, row) }
@@ -190,9 +122,6 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
 
   private def filterRows(id: Int, rowSet: Set[Int]): this.type = {
     rows = rows.updated(id, rows(id).intersect(rowSet))
-    rowsBitmap = rowsBitmap.updated(id, rowsBitmap(id).intersect(rowSet))
-    cudaBitmap = cudaBitmap.updated(id, cudaBitmap(id).intersect(rowSet.toArray))
-
     val roaring = RoaringBitmap()
     roaring.add(rowSet.toArray: _*)
     roaringBitmap = roaringBitmap.updated(id, roaring)
@@ -201,9 +130,6 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
 
   private def initRows(id: Int, max: Int): this.type = {
     rows = rows.updated(id, Range(0, max).toSet)
-    //rowsBitmap = rowsBitmap.updated(id, BitSet(Range(0, max): _*))
-    //cudaBitmap = cudaBitmap.updated(id, convert(Range(0, max).toArray))
-
     val roaring = RoaringBitmap()
     roaring.add(Range(0, max): _*)
     roaringBitmap = roaringBitmap.updated(id, roaring)

@@ -4,7 +4,7 @@ import java.io.PrintWriter
 import scala.io.Source
 import scala.util.Random
 
-class Dataset:
+class Dataset extends Serializable:
 
   private val dunnhumby = "resources/datasets/dunnhumby/"
   private def readCSV(filename:String):Array[Array[String]] =

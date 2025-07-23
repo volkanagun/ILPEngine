@@ -3,7 +3,7 @@ package ilp.data.database
 import ilp.data.Substitution
 
 import scala.collection.concurrent.TrieMap as ConcurrentMap
-class ProgramCache {
+class ProgramCache extends Serializable {
   var cache = ConcurrentMap[Int, Set[Substitution]]()
 
   def contains(id:Int):Boolean =

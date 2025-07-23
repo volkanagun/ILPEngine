@@ -31,14 +31,14 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def print(): this.type = {
     println("====Hypothesis====")
     println(toString)
-    println(s"POS Score:${posRate}, NEG Score ${negRate}, ACC ${acc}")
+    println(s"POS Score:${posRate}, NEG Score ${negRate}, SCORE ${score}")
     println("========================")
     this
   }
 
   def build(): this.type = {
     sorted = getRanked()
-    this
+    buildInputs()
   }
 
   def normalize(): Hypothesis = {
@@ -82,7 +82,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     this
   }
 
-  def emptyScores() = positives.isEmpty && negatives.isEmpty
+  def emptyScores() = !tested /*positives.isEmpty && negatives.isEmpty && genfacts.isEmpty*/
 
   def compact(): Hypothesis = {
     val subs = Substitution()
@@ -149,6 +149,9 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def getLast(): Rule =
     rules.last
 
+  def getSecondLast(): Rule =
+    rules.reverse.tail.head
+
   def getHeads(): Array[Rule] = {
     val crrHead = rules.last.getHead()
     rules.filter(rule => rule.getHead() == crrHead)
@@ -157,6 +160,24 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def getNonHeads(): Array[Rule] =
     val crrHead = rules.last.getHead()
     rules.filter(rule => rule.getHead() != crrHead)
+
+
+  def buildInputs():this.type = {
+
+    sorted.foreach(rule=> {
+      val head = rule.getHead()
+      val input = rule.getBody().flatMap(predicate => predicate.getInput()
+        .filter(inputVariable=> head.contains(inputVariable)))
+      head.setInput(input)
+      val inputIndices = head.getInputIndices()
+      rule.setInputVariables(head.getInput())
+      sorted.foreach(other=> {
+        val callPredicates = other.getBody().filter(element=> element.equalByIdentifier(head))
+        callPredicates.foreach(element=> element.setInputBy(inputIndices))
+      })
+    })
+    this
+  }
 
   def getRanked(): Array[Rule] = {
     val damping = 0.85
@@ -212,13 +233,22 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def contains(rule:Rule) =
     rules.contains(rule)
 
+  def containsAll(rule:Hypothesis) =
+    rule.getRules().forall(r => contains(r))
+
+  def containsLast(rule:Hypothesis) =
+    rule.getRules().exists(r => containsName(r.getHead().getName()))
+
+  def containsName(predicate:String) =
+    rules.exists(rule=> rule.getBody().exists(p=> p.getName() == predicate))
+
   def similarity(targetHypothesis: Hypothesis, window: Int): Double =
     val currentRules = rules.map(_.getHead().getName())
     val otherRules = targetHypothesis.getRules().map(rule => rule.getHead().getName()).sliding(window, 1).toSet
-    val otherSize = math.max(otherRules.size, currentRules.length.toDouble / window)
+    val otherSize = math.max(otherRules.size, currentRules.length)
     val resembleSize = otherRules.count(array => array.forall(name => currentRules.contains(name)))
-    val score = resembleSize.toDouble / otherSize
-    score
+    val matchScore = resembleSize.toDouble / otherSize
+    matchScore
 
   override def toString: String =
     sorted.map(_.toString).mkString("\n")

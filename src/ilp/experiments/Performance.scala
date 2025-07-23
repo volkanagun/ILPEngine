@@ -1,4 +1,4 @@
-package ilp.tests
+package ilp.experiments
 
 import ilp.data.database.{Database, Engine, Plan}
 import ilp.data.predicates.Predicate
@@ -6,14 +6,15 @@ import ilp.data.{Hypothesis, Parser, Substitution}
 
 import java.io.{File, PrintWriter}
 import java.util.regex.Pattern
-import scala.collection.concurrent.TrieMap
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.io.Source
 
-object PerformanceTest {
+object Performance {
   val folder = "examples/"
-  val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb","kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs", "webkb","yeast", "zendo")
-  val functionalExperiments = Array(/*"robots-functional",*/"robots-linear")
+  val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","yeast", "zendo")
+  //val joinExperiments = Array("dunnhumby1")
+  val not = Array("yeast")
+  val functionalExperiments = Array("robots-functional","robots-linear")
   val resultFilename = "resources/experiments/performance.csv"
 
   def measureMultipleTime[T](block: => T, count: Int = 5): Double = {
@@ -96,12 +97,14 @@ object PerformanceTest {
   }
 
   def loadFunctional(): Array[(Database, Hypothesis, Set[Predicate], String)] = {
+
     val files = File(folder).listFiles().filter(file => file.isDirectory)
       .filter(file => functionalExperiments.exists(starting => file.getName.startsWith(starting)))
       .filter(file => {
         val subList = file.list()
         subList.contains("query.pl")
       })
+
     val names = files.map(_.getName)
     val databases = files.map(file => loadDatabase(file.getPath))
     val queries = files.map(file => loadQueries(file.getPath))
@@ -152,14 +155,15 @@ object PerformanceTest {
     val optimizedNone = plan.optimizeNone(hypothesis)
     val optimizedRel = plan.optimizeExperimental(hypothesis)
 
+
     var crrTime = measureMultipleTime({
-      engine.joinCyclic(optimizedNone, Substitution())
+      engine.joinSerial(optimizedNone, Substitution())
     })
 
     text = text + s"${name}, No Index, Serial, No Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
-      engine.joinCyclic(optimizedRel, Substitution())
+      engine.joinSerial(optimizedRel, Substitution())
     })
 
     text = text + s"${name}, No Index, Serial, Relative Optimization," + crrTime.toString + "\n"
@@ -177,6 +181,20 @@ object PerformanceTest {
     text = text + s"${name}, No Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
+      engine.joinRoaringSerial(optimizedNone, Substitution())
+    })
+
+    text = text + s"${name}, Roaring Index, Serial, No Optimization, " + crrTime.toString + "\n"
+
+
+    crrTime = measureMultipleTime({
+      engine.joinRoaringSerial(optimizedRel, Substitution())
+    })
+
+    text = text + s"${name}, Roaring Index, Serial, Relative Optimization, " + crrTime.toString + "\n"
+
+
+    crrTime = measureMultipleTime({
       engine.joinRoaringParallel(optimizedNone, Substitution())
     })
 
@@ -187,6 +205,7 @@ object PerformanceTest {
     })
 
     text = text + s"${name}, Roaring Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
+    println(text)
     text
 
   def experimentFunctional(database: Database, query: Hypothesis, predicates:Set[Predicate], name: String): String =
@@ -197,7 +216,7 @@ object PerformanceTest {
     val hypothesis = query
 
     val optimizedNone = plan.optimizeNone(hypothesis)
-    val optimizedRel = plan.optimizeExperimental(hypothesis)
+    val optimizedRel = plan.optimizeBellmanFord(hypothesis)
     val hypothesisHead = optimizedNone.last.getHead()
 
     var crrTime = measureMultipleTime({
@@ -257,16 +276,16 @@ object PerformanceTest {
 
 
   def experiment(): Unit = {
-    //val exp = loadJoin()
+    val exp = loadJoin()
     val expFunc = loadFunctional()
     val pw = PrintWriter(resultFilename)
     pw.println("FigureName,IndexType,ExecutionMode,Optimization,Performance")
-    /*exp.foreach { case (db, query, positives, name) => {
+    exp.foreach { case (db, query, positives, name) => {
       println("Experimenting started: "+name)
       pw.println(experiment(db, query, name))
       println("Experimenting finished for "+name)
     }}
-  */
+
     expFunc.foreach { case (db, query, positives, name) => {
       println("Experimenting started: "+name)
       pw.println(experimentFunctional(db, query, positives, name))

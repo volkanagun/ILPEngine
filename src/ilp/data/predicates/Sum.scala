@@ -28,6 +28,15 @@ class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("p
     Num(result.getName(), total)
   }
 
+  override def getInput(): Array[Variable] = Array(var1, var2)
+
+  override def hasInput(variable: Variable): Boolean = {
+    val name = variable.getName()
+    name == var1.getName() || name == var2.getName()
+  }
+
+  override def hasInput(position: Int): Boolean = position == 0 || position==1
+
   override def substitution(substitution: Substitution): Variable = {
     val var1new = var1.substitution(substitution)
     val var2new = var2.substitution(substitution)
@@ -41,6 +50,7 @@ class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("p
 
 class Assign(var1: Variable, var2:Variable) extends Functional("assign", Array(var1, var2)):
 
+
   override def isExecutable(): Boolean = var2.isNumber() || var1 == var2
   override def isDefinite(): Boolean = var2.isNumber()
 
@@ -48,6 +58,12 @@ class Assign(var1: Variable, var2:Variable) extends Functional("assign", Array(v
     val value = var2.asNumber().getNumber()
     Num(var1.getName(), value)
   }
+
+  override def getInput(): Array[Variable] = Array(var2)
+
+  override def hasInput(variable: Variable): Boolean = var2.getName() == variable.getName()
+
+  override def hasInput(position: Int): Boolean = position == 1
 
   override def substitution(substitution: Substitution): Variable = {
     val var1new = var1.substitution(substitution)

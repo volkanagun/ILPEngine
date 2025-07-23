@@ -7,18 +7,19 @@ import ilp.data.{Hypothesis, Query, Rule, Substitution}
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-abstract class Template(val engine: Engine):
+abstract class Template(val engine: Engine) extends Serializable:
 
   var fitnessThreshold = 0.5
   var resembleThreshold = 0.8
   var resembleWindow = 3
+  var filterSize = 1000
   var maxRules = 30
   var negThreshold = 0.2
   var posThreshold = 0.8
   var scoreThreshold = 0.8
+  var shingleSize = 3
 
 
-  var cache = Map[Int, Set[Predicate]]()
 
   val database = engine.getDatabase()
   val plan = Plan(database)
@@ -35,6 +36,7 @@ abstract class Template(val engine: Engine):
   var sourceIterator = sources.iterator
 
 
+
   def invent(): Set[Hypothesis] =
 
     var doStop = false
@@ -44,6 +46,7 @@ abstract class Template(val engine: Engine):
     val targets = target()
 
     while hasSource() && !doStop do
+
       val crrResults = inventNext(targets)
       val validResults = crrResults.par.map(hypothesis => {
           hypothesis.build().compact()
@@ -63,7 +66,6 @@ abstract class Template(val engine: Engine):
 
     if doStop then newResults
     else {
-      val normalized = finalResults.map(_.normalize()).toArray.sortBy(_.score).reverse
       finalResults
     }
 
@@ -71,6 +73,12 @@ abstract class Template(val engine: Engine):
     this.maxRules = maxRules
     this
   }
+
+  def setFilterSize(filterSize: Int): this.type = {
+    this.filterSize = filterSize
+    this
+  }
+
 
   def reset(): this.type = {
     sourceIterator = source().iterator
@@ -171,6 +179,7 @@ abstract class Template(val engine: Engine):
   def target(): Array[Hypothesis]
 
   def inventNext(targets: Array[Hypothesis]): Array[Hypothesis]
+  def inventNext(source:Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis]
 
 
 /*
@@ -182,8 +191,8 @@ abstract class Template(val engine: Engine):
     igRoaring(Set(), hypothesis)
 */
 
-  def igParallel(hypothesis: Hypothesis): Hypothesis =
-    igParallel(Set(), hypothesis)
+/*  def igParallel(hypothesis: Hypothesis): Hypothesis =
+    igParallel(Set(), hypothesis)*/
 
   def igIncremental(hypothesis: Hypothesis):Hypothesis=
     igCache(hypothesis)
@@ -279,12 +288,12 @@ abstract class Template(val engine: Engine):
     })
 
   def metaApply(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
-    metaRules.flatMap(metaRule => {
+    metaRules.par.flatMap(metaRule => {
       Invention.metaWith(source, candidates, metaRule)
-    })
+    }).toArray
 
   def metaApplyHeuristic(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
-    metaRules.flatMap(metaRule => {
-      Invention.metaWithHeuristic(source, candidates, metaRule)
-    })
+    metaRules.par.flatMap(metaRule => {
+      Invention.metaWith(source, candidates, metaRule)
+    }).toArray
 

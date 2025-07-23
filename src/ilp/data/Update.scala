@@ -3,7 +3,7 @@ package ilp.data
 import ilp.data.predicates.Predicate
 
 
-class Update(var head: Array[Predicate], var body: Array[Predicate]):
+class Update(var head: Array[Predicate], var body: Array[Predicate]) extends Serializable:
 
   def queryHash(): Int =
     head.foldRight(0) { case (a, m) => a.hashCode() + 7 * m }

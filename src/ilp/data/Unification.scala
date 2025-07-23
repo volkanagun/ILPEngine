@@ -5,7 +5,7 @@ import ilp.data.variables.{Num, NumList, Variable, VariableList}
 
 import scala.util.control.Breaks
 
-class Unification:
+class Unification extends Serializable:
 
   def of(x: Variable, y: Variable): Option[Substitution] = {
     val substitution = Substitution()

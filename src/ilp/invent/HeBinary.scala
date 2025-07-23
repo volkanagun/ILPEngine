@@ -9,11 +9,14 @@ import scala.util.control.Breaks
 class HeBinary(engine: Engine) extends HeI(engine):
 
   override def source(): Array[Hypothesis] =
-    val selectedSet = sources.sortBy(_.posRate).reverse
+    val selectedSet = sources.sortBy(_.posRate)
+      .reverse.distinct
     selectedSet
 
   override def target(): Array[Hypothesis] =
-    val selectedSet = candidates.sortBy(_.posRate).reverse
+    val selectedSet = candidates.sortBy(_.posRate)
+      .reverse
+      .distinct
     selectedSet
 
   override def stopCondition(array: Array[Hypothesis]): Boolean = {
@@ -35,14 +38,17 @@ class HeBinary(engine: Engine) extends HeI(engine):
 
   override def inventNext(targets: Array[Hypothesis]): Array[Hypothesis] =
     val currentSource = nextSource()
+    inventNext(currentSource, targets)
+
+  override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] =
+
     val currentTargets = targets.par.filter(targetHypothesis => {
       currentSource.similarity(targetHypothesis, resembleWindow) < resembleThreshold
     }).toArray
 
     val results = metaApply(currentSource, currentTargets)
-    results
-
-
+    val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
+    fresults
 
 
 /*

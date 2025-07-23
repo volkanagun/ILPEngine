@@ -6,6 +6,8 @@ import ilp.data.variables.Variable
 
 class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(crr_name):
 
+  var inputVariables : Array[Variable] = array
+
   def this(name: String, item1: Variable) = this(name, Array(item1))
 
   def this(name: String, item1: Variable, item2: Variable) = this(name, Array(item1, item2))
@@ -66,11 +68,22 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     val index = getPosition(variable)
     Position(this, position, index)
 
+
   def getPositions(): Array[Position] =
     (0 until length()).map(index => Position(this, 0, index))
       .toArray
 
-  def getInput():Array[Variable] = getVariables()
+  def getInput():Array[Variable] = inputVariables
+  def getInputIndices():Array[Int] = inputVariables.map(variable=> array.indexOf(variable))
+
+  def setInput(inputVariables:Array[Variable]): this.type = {
+    this.inputVariables = inputVariables
+    this
+  }
+  def setInputBy(inputIndices:Array[Int]): this.type = {
+    this.inputVariables = inputIndices.map(array)
+    this
+  }
 
   override def substitution(substitution: Substitution): Variable =
     val crrName = Variable(name)
@@ -148,8 +161,13 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def length() = array.length
 
   override def contains(variable: Variable): Boolean =
-    array.exists(item => item.getName() == variable.getName())
+    array.exists(item => item.getName().equals(variable.getName()))
 
+  def hasInput(variable: Variable):Boolean =
+    inputVariables.exists(item=> item.getName() == variable.getName())
+
+  def hasInput(position: Int):Boolean =
+    hasInput(array(position))
 
   def contains(variables: Array[Variable]): Boolean =
     variables.forall(variable => contains(variable))

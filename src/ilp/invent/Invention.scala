@@ -127,7 +127,12 @@ object Invention:
     val substitution = Substitution(substitutionPairs)
     val newRules = mergeRules.map(rule=> rule.substitution(substitution))
     val rules = (source.getNonHeads() ++ target.getNonHeads() ++ newRules)
+
+    val newPositives = source.getPositives() ++ target.getPositives()
+    val newNegatives = source.getNegatives() ++ target.getNegatives()
     Hypothesis(rules.distinct)
+      .setPositives(newPositives)
+      .setNegatives(newNegatives)
   }
 
 
@@ -161,13 +166,11 @@ object Invention:
     val sourceHead = source.getHead()
     val metaBody = metaRule.getNonRecursive().getBody()
     val n = metaBody.length - 1
-    val combinations = candidates.combinations(n).flatMap(array => array.permutations)
-    val results =  combinations.flatMap(candidateCombination => {
-
+    val combinations = candidates.combinations(n).flatMap(array => array.permutations).toArray
+    val results =  combinations.par.flatMap(candidateCombination => {
       val combinedCombinations = source +: candidateCombination
       val pairs = metaBody.zip(combinedCombinations.map(hypothesis=> hypothesis.getHead()))
         .filter{case(meta, candidate)=> meta.equalByArity(candidate)}
-
       if pairs.length == combinedCombinations.length then
          val substitution = Substitution.create(pairs)
          val newRule = canonicalize(metaRule.substitution(substitution))

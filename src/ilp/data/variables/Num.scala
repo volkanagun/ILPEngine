@@ -1,6 +1,6 @@
 package ilp.data.variables
 
-class Num(name: String, var item: Double) extends Sym(name, item.toString):
+class Num(vname: String, var item: Double) extends Sym(vname, item.toString):
   override def isNumber(): Boolean = true
 
   override def isSymbol(): Boolean = true

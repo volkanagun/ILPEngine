@@ -17,14 +17,22 @@ class HeI(engine: Engine) extends Template(engine):
     val selectedSet = candidates.filter(h => h.posRate == 0.0 && h.negRate == 0.0)
     selectedSet
 
+
+
   override def inventNext(targets:Array[Hypothesis]): Array[Hypothesis] = {
     val currentSource = nextSource()
+    inventNext(currentSource, targets)
+  }
+
+  override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] =
+
     val lastRule = currentSource.getLast()
     val targetPredicates = targets.flatMap(hypothesis => hypothesis.getLast().body)
     val candidatePredicates = targetPredicates.filter(p => !lastRule.containsByIdentifier(p))
     val replaces = metaApply(lastRule, candidatePredicates)
     replaces.map(q => currentSource.replaceLast(q.asRule()))
-  }
+
+
 /*
   override def invent(): Set[Hypothesis] = {
     var doStop = false
