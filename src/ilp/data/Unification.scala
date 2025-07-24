@@ -159,15 +159,25 @@ object Unification {
   }
 
   def test4(): Unit = {
-    val f = Predicate("f", Array(Variable("X"), Variable("Y")))
-    val g = Predicate("g", Array(Variable("Z"), Variable("Z")))
-    val fwz = Predicate("f", Array(Variable("W"), Variable("Z")))
-    val ffv = Predicate("f", Array(fwz, Variable("V")))
-    val p1 = Predicate("p", Array[Variable](f, g))
-    val p2 = Predicate("p", Array(ffv, Variable("W")))
+
+    val f = Parser.parsePredicate("f(X,Y).").get
+    val g = Parser.parsePredicate("f(Z,Z).").get
+    val fwz = Parser.parsePredicate("f(W,Z).").get
+    val ffv = Parser.parsePredicate("f(f(W,Z),V).").get
+    val p1 = Parser.parsePredicate("p(f(X,Y),f(Z,Z)).").get
+    val p2 = Parser.parsePredicate("p(f(f(W,Z),V), W).").get
 
     val result = Unification().of(p1, p2)
+    println("p1 : " + p1)
+    println("p2 : " + p2)
     println("Result : " + result.get)
+
+    val substitution = result.get
+    val gg = Parser.parsePredicate("g(W, X, V).").get
+
+    println(gg)
+    println(gg.substitution(substitution))
+
   }
 
   def test5(): Unit = {
@@ -193,6 +203,6 @@ object Unification {
   }
 
   def main(args: Array[String]): Unit = {
-    test7()
+    test4()
   }
 }
