@@ -3,10 +3,6 @@
 Unification is one of the main components of inductive logic programming. Although it is not required directly in query execution, substitution based variable aligning for query content and query results are practically use the code block of unification. On the other hand, unification is used in answer set programming and modifying the database dynamically by using queries.
 
 ```scala
-val f = Parser.parsePredicate("f(X,Y).").get  
-val g = Parser.parsePredicate("f(Z,Z).").get  
-val fwz = Parser.parsePredicate("f(W,Z).").get  
-val ffv = Parser.parsePredicate("f(f(W,Z),V).").get  
 val p1 = Parser.parsePredicate("p(f(X,Y),f(Z,Z)).").get  
 val p2 = Parser.parsePredicate("p(f(f(W,Z),V), W).").get  
   
@@ -39,7 +35,7 @@ The bash output of this code snippet is given below. So W, X, and V variables ar
 g(W,X,V)
 g(f(Z,Z),f(W,Z),Y)
 ```
-Another important building blog of inductive logic programming is functional predicates. These predicates are actual functions that requires a symbol input to be processes. An example functional predicate is Plus (X1=X1+1) predicate. This predicate sums two predicates and assigns the value to the result.  Plus predicate is given below.
+Another important building blog of inductive logic programming is functional predicates. These predicates are actual functions that requires a symbol input to be processes. An example functional predicate is Plus (X1=X1+1) predicate. This predicate sums two numbers and assigns the value to the result.  Plus predicate is given below.
 
 ```scala
 class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("plus", Array(var1, var2, result)):  
