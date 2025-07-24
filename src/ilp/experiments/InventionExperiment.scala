@@ -829,7 +829,7 @@ object InventionExperiment:
     val metaTransition3 = Parser.parseRule("r(V0, V1, V2) :- r1(V0, V1, V2), a(V1).").get
     val metaTransition4 = Parser.parseRule("r(V0) :- r1(V0, V1, V2), r2(V2, V3).").get
 
-    val q = Parser.parseHypothesis("zendo(V0):- small(V1),piece(V0,V2),size(V2,V1),contact(V2,V3),red(V3).").get
+    //val q = Parser.parseHypothesis("zendo(V0):- small(V1),piece(V0,V2),size(V2,V1),contact(V2,V3),red(V3).").get
 
 
     val scoreThreshold = 0.997
@@ -865,9 +865,6 @@ object InventionExperiment:
       .addTemplate(heUnion)
       .addTemplate(heBinary)
       .compile()
-
-    heBinary.igCache(q).print()
-
 
     val results = execution.induction()
 
