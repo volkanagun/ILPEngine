@@ -153,7 +153,9 @@ object Performance {
     val plan = Plan(database)
     val hypothesis = query
     val optimizedNone = plan.optimizeNone(hypothesis)
-    val optimizedRel = plan.optimizeBellmanFord(hypothesis)
+    val optimizedBellman = plan.optimizeBellmanFord(hypothesis)
+    val optimizedExperimental = plan.optimizeExperimental(hypothesis)
+
 
     var crrTime = measureMultipleTime({
       engine.joinSerial(optimizedNone, Substitution())
@@ -162,10 +164,16 @@ object Performance {
     text = text + s"${name}, No Index, Serial, No Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
-      engine.joinSerial(optimizedRel, Substitution())
+      engine.joinSerial(optimizedBellman, Substitution())
     })
 
-    text = text + s"${name}, No Index, Serial, Relative Optimization," + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Serial, Bellmanford Optimization," + crrTime.toString + "\n"
+
+    crrTime = measureMultipleTime({
+      engine.joinSerial(optimizedExperimental, Substitution())
+    })
+
+    text = text + s"${name}, No Index, Serial, Iterative Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       engine.joinParallel(optimizedNone, Substitution())
@@ -174,10 +182,16 @@ object Performance {
     text = text + s"${name}, No Index, Parallel, No Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
-      engine.joinParallel(optimizedRel, Substitution())
+      engine.joinParallel(optimizedBellman, Substitution())
     })
 
-    text = text + s"${name}, No Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Parallel, BellmanFord Optimization, " + crrTime.toString + "\n"
+
+    crrTime = measureMultipleTime({
+      engine.joinParallel(optimizedExperimental, Substitution())
+    })
+
+    text = text + s"${name}, No Index, Parallel, Iterative Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       engine.joinRoaringSerial(optimizedNone, Substitution())
@@ -187,10 +201,17 @@ object Performance {
 
 
     crrTime = measureMultipleTime({
-      engine.joinRoaringSerial(optimizedRel, Substitution())
+      engine.joinRoaringSerial(optimizedBellman, Substitution())
     })
 
-    text = text + s"${name}, Roaring Index, Serial, Relative Optimization, " + crrTime.toString + "\n"
+    text = text + s"${name}, Roaring Index, Serial, BellmanFord Optimization, " + crrTime.toString + "\n"
+
+
+    crrTime = measureMultipleTime({
+      engine.joinRoaringSerial(optimizedExperimental, Substitution())
+    })
+
+    text = text + s"${name}, Roaring Index, Serial, Iterative Optimization, " + crrTime.toString + "\n"
 
 
     crrTime = measureMultipleTime({
@@ -200,10 +221,16 @@ object Performance {
     text = text + s"${name}, Roaring Index, Parallel, No Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
-      engine.joinRoaringParallel(optimizedRel, Substitution())
+      engine.joinRoaringParallel(optimizedBellman, Substitution())
     })
 
-    text = text + s"${name}, Roaring Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
+    text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime.toString + "\n"
+
+    crrTime = measureMultipleTime({
+      engine.joinRoaringParallel(optimizedExperimental, Substitution())
+    })
+
+    text = text + s"${name}, Roaring Index, Parallel, Iterative Optimization, " + crrTime.toString + "\n"
     println(text)
     text
 
@@ -216,6 +243,7 @@ object Performance {
 
     val optimizedNone = plan.optimizeNone(hypothesis)
     val optimizedRel = plan.optimizeBellmanFord(hypothesis)
+    val optimizedExperimental = plan.optimizeExperimental(hypothesis)
     val hypothesisHead = optimizedNone.last.getHead()
 
     var crrTime = measureMultipleTime({
@@ -234,7 +262,16 @@ object Performance {
     })
 
     crrTime = crrTime / predicates.size
-    text = text + s"${name}, No Index, Serial, Relative Optimization," + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Serial, BellmanFord Optimization," + crrTime.toString + "\n"
+
+    crrTime = measureMultipleTime({
+      predicates.foreach(predicate => {
+        engine.joinSerial(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+      })
+    })
+
+    crrTime = crrTime / predicates.size
+    text = text + s"${name}, No Index, Serial, Iterative Optimization," + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       predicates.par.foreach(predicate=>{
@@ -252,7 +289,16 @@ object Performance {
     })
 
     crrTime = crrTime / predicates.size
-    text = text + s"${name}, No Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
+    text = text + s"${name}, No Index, Parallel, BellmanFord Optimization, " + crrTime.toString + "\n"
+
+    crrTime = measureMultipleTime({
+      predicates.par.foreach(predicate=> {
+        engine.joinParallel(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+      })
+    })
+
+    crrTime = crrTime / predicates.size
+    text = text + s"${name}, No Index, Parallel, Iterative Optimization, " + crrTime.toString + "\n"
 
     crrTime = measureMultipleTime({
       predicates.par.foreach(predicate=>{
@@ -270,7 +316,16 @@ object Performance {
     })
 
     crrTime = crrTime / predicates.size
-    text = text + s"${name}, Roaring Index, Parallel, Relative Optimization, " + crrTime.toString + "\n"
+    text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime.toString + "\n"
+
+    crrTime = measureMultipleTime({
+      predicates.par.foreach(predicate=> {
+        engine.joinRoaringParallel(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+      })
+    })
+
+    crrTime = crrTime / predicates.size
+    text = text + s"${name}, Roaring Index, Parallel, Iterative Optimization, " + crrTime.toString + "\n"
     text
 
 

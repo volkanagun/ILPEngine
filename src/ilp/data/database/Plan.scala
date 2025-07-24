@@ -499,7 +499,8 @@ class Plan(val db: Database) extends Serializable{
       val map = headVariables.zipWithIndex.map { case (variable, position) => {
         val sizeCounts = bodyStatistics.filter(stats => stats.hasVariable(variable))
           .map(stats => stats.getActiveSize(variable))
-        val maxCount = if sizeCounts.nonEmpty then sizeCounts.max else 1
+        //val maxCount = if sizeCounts.nonEmpty then sizeCounts.max else 1
+        val maxCount = sizeCounts.minOption.getOrElse(1.0)
         position -> maxCount
       }
       }.toMap
@@ -523,7 +524,8 @@ class Plan(val db: Database) extends Serializable{
       val map = headVariables.zipWithIndex.map { case (variable, position) => {
         val sizeCounts = bodyStatistics.filter(stats => stats.hasVariable(variable))
           .map(stats => stats.getActiveSize(variable))
-        val maxCount = if sizeCounts.nonEmpty then sizeCounts.max else 1
+        //val maxCount = sizeCounts.maxOption.getOrElse(1) //if sizeCounts.nonEmpty then sizeCounts.max else 1
+        val maxCount = sizeCounts.minOption.getOrElse(1.0) //if sizeCounts.nonEmpty then sizeCounts.max else 1
         position -> maxCount
       }
       }.toMap
