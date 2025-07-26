@@ -1,7 +1,14 @@
 # Scala Inductive Logic Programming (SiLP)
 
-**SiLP** is an inductive logic programming written entirely in *Scala* language with functional and object oriented paradigms. The basic functionality of **SiLP** include query optimization, query processing, unification, and predicate invention. **SiLP** uses the *Prolog* syntax and fully compatible with basic *Prolog*. Aggregate functions such as counting, distinct and other functions over list can be defined with-in the framework, but they are not tested thoroughly.  **SiLP** supports recursive queries, meta rule based predicate invention, early stopping  and pruning for predicate invention and parallel processing. Current version do not support probability but next versions is planed to include probability over the predicate space. SiLP is simmilar to *Popper* but not advanced than *Popper* framework because the functionality is restricted to only pure *Scala* code not any Prolog program. SiLP's advantage is being user friendly open source library and has not requirement a separate platform for query processing.
+SiLP is an inductive logic programming (ILP) framework written entirely in Scala, combining functional and object-oriented programming paradigms. Its core functionalities include query optimization, query processing, unification, and predicate invention.
 
+SiLP uses Prolog-like syntax and is fully compatible with basic Prolog. It supports aggregate functions such as counting, computing distinct elements, and performing operations over lists. While these features are available within the framework, they have not been extensively tested.
+
+The system also supports recursive queries, meta-rule-based predicate invention, early stopping, pruning strategies during predicate search, and parallel processing.
+
+Although the current version does not support probabilistic reasoning, future versions are planned to include probabilistic extensions over the predicate space.
+
+SiLP is conceptually similar to Popper, though not as advanced, as its functionality is limited to pure Scala code and does not integrate external Prolog programs. Its main advantage lies in being a user-friendly, open-source library that does not require a separate platform for query processing.
 # Files
 
 The directory structures contains documentation, source code, experiments directory, and examples for Prolog databases without macros and function definitions.

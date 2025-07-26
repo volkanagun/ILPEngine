@@ -1,2 +1,0 @@
-zendo(B) :- piece(A,B) coord2(A,B).
-
