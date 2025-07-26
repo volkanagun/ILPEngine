@@ -1,7 +1,23 @@
 # Predicate Invention
-Predicate invention is done through determining the meta rules, and how the variables interact with each other. In meta rules only the variables are constant, the name equality of the predicates are also preserved but which predicate names will be which fact in the database is determined by combinatorics. Recursion is also supported.
+## Overview
 
-Predicate invention can be explained in two steps. The first step is determining the meta rules, and the second step is determining the parameters. The parameters control the search size during induction. If meta rules do not conflict with the facts in the database as given below in the example, then the search space will have polynomial increase. Otherwise the search space will use the new generated rules, and also these rules might re-use existing rule sets which eventually create an exponential increase.
+The process of predicate invention can be broken down into two main steps:
+
+1. **Defining meta-rules**
+2. **Determining parameters**
+
+### 1. Meta-Rules
+
+Meta-rules define the structure and logic of potential rules. They are templates that describe how variables and predicates may relate. While the variable placeholders remain fixed, the actual predicate names are selected during the search process.
+
+### 2. Parameters
+
+Parameters guide the rule generation process by limiting the search space. They determine which combinations of predicates and variable bindings are explored.
+
+## Search Space Behavior
+
+- If the meta-rules align with the facts in the database, the search space typically grows **polynomially**.
+- If the meta-rules generate new combinations or introduce recursion, the search space can grow **exponentially**, especially when generated rules reuse other rules.
 
 ```scala
 //facts of having arity of one
@@ -10,8 +26,11 @@ val facts = Array("actor(john)","actor(mark)")
 val meta = "p(X) :- m(X,Y), d(Y)"
 
 ```  
-In the example above the rules set contains the facts having the same arity of the rule. Also the rule utilize d(Y) also having an airty of one. Sometimes it is impossible to avoid defining these kind of examples. There is not any constraint on the number of meta rules, any rule set may solves a part of the problem, and other meta rules may combine previously generated meta rules to finally achieve the goal. This approach is defined as templates, and there are two templates in the SiLP. These are HeBinary and HeUnion. Now lets see what kind of parameters are used to control the search.
+In the example above, the rule set contains facts that share the same arity as the rule itself. Additionally, the rule utilizes **d(Y)**, which also has an arity of one. Sometimes, it is unavoidable to define examples of this kind.
 
+There is no constraint on the number of meta-rules. Any rule set may solve a part of the problem, and other meta-rules can combine previously generated rule sets to ultimately achieve the goal. This approach is referred to as template-based predicate invention, and there are two templates used in **SiLP**: *HeBinary* and *HeUnion*.
+
+Now, let’s look at the parameters used to control the search.
 ```scala
 def testZendo1(): Unit = {  
   

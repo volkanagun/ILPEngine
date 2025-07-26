@@ -1,11 +1,28 @@
 # Overview
 
-**SiLP** is a general framework for inductive logic programming. The main steps for a ILP program can be classified into reading the database file, indexing, query processing which includes query optimization, and predicate invention. For each of these categories several classes are defined. The main building block of these classes uses a query or a program and generates a result based on the query.
+## SiLP Framework Overview
+
+**SiLP** is a general framework for **Inductive Logic Programming (ILP)**.
+
+The main steps of an ILP program in SiLP can be categorized as follows:
+
+- **Reading the database file**  
+  Parsing and loading the initial facts and background knowledge into memory.
+
+- **Indexing**  
+  Structuring the data for efficient access and retrieval during query processing.
+
+- **Query processing**  
+  Involves executing logic queries and includes:
+    - **Query optimization**: Improving query execution performance.
+    - **Predicate invention**: Generating new predicates by combining existing ones, using meta-rules.
+
+For each of these categories, several classes are defined in SiLP. The core building block of these classes takes a **query** or a **program** as input and produces a **result** based on the logical evaluation of the query.
 
 ## Query
-So there are two classes **Query** and **Substitution** for query and results. Query can be in any type, a single line query is defined by **Query** class, if the query include matches from a given dataset then it is program. A single line program is defined by **Rule** class. The **Hypothesis** class is derived from Rule and contains multiple rules. It is a program.
+There are two main classes: **Query** and **Substitution**, which represent the query and its results, respectively. A query can take various forms. A single-line query is represented by the **Query** class. If the query includes matches from a given dataset, it is considered a program. A single-line program is defined by the **Rule** class. The **Hypothesis** class is derived from **Rule** and contains multiple rules—together, they form a program.
 
-The main input to the query is a *Prolog* string. A parser parses the string and generates a query or a rule or a hypothesis. Here is an example where the gold and value is assumed to be defined by the facts in the database:
+The main input to a query is a *Prolog* string. A parser processes this string and generates a **Query**, **Rule**, or **Hypothesis** object. Below is an example where `gold` and `value` are assumed to be defined by facts in the database:
 
 ```scala
 val rule = Parser.parseRule("hello(X) :- gold(X, Y), value(Y).")
@@ -14,22 +31,32 @@ val hypothesis = Parser.parseHypothesis(
 "func1(X,Y) :- gold(X,Y).\n"+ 
 "func2(Y) :- value(Y).")
 ``` 
-In the example above two equivalent queries are given. Hypothesis query is not ordered. So to order the hypothesis we must order the rules based on the call graph. This is done by build() and compact() functions. Until then a hypothesis can be normalized and written as an inline form by calling normalize function. Normalization creates a renaming over the variables. An example is given as follows.
+In the example above, two equivalent queries are given. A hypothesis query is not ordered by default. To order the hypothesis, the rules must be arranged based on the call graph. This ordering is performed by the `build()` and `compact()` functions.
+
+Until then, a hypothesis can be normalized and written in inline form by calling the `normalize()` function. Normalization creates a renaming of the variables.
+
+An example is given below.
 ```scala
 //Hypothesis can be ordered. The result is the same reference of the hypothesis.
 hypothesis.build().compact()
 //Normalization returns a new instance of the hypothesis. 
 val newHypothesis = hypothesis.normalize()
 ```
+As in Prolog syntax, values are defined in lowercase, while variables start with uppercase letters. A default constant value can be written in lowercase within the predicate definition.
 
-Here as in Prolog syntax values are defined in lowercase and variables are starts with uppercase letters. A default constant value can be written in lowercase inside the predicate definition. Here is the predicate contains a variable ACTORS along with constant values of *nextflix*, and *extinction*.
+Below is an example of a predicate that contains a variable `ACTORS` along with the constant values `nextflix` and `extinction`.
+
 ```scala
 val predicate = Parser.parsePredicate("access(nextflix, extinction, ACTORS)")
 ``` 
 
 ## Database
 
-Database contains the predicates, and it groups them based on the arity, and names, and also it creates index and statistics based on the variables. Database is the storage of the facts. It is created by Experiment class. Experiment loads the database and triggers the indexing. Below there is an example for loading Zendeo2 inside the */examples/zendeo2/* directory.
+The database contains predicates grouped by their arity and names. It also creates indexes and statistics based on the variables. The database serves as the storage for facts.
+
+The database is created by the **Experiment** class, which loads the data and triggers the indexing process.
+
+Below is an example of loading the Zendeo2 dataset located in the `*/examples/zendeo2/*` directory.
 
 ```scala
 val params = Params("zendo2")  
@@ -37,7 +64,9 @@ val experiment = Experiment(params).loadDatabase()
 //Database that contains the facts and bias file.
 val db = experiment.getDatabase()
 ```
-The loading through experiment requires a bias.bk file inside the specified directory. This file represents the semantic relations between variables of the predicates, and optionally the directionality of the predicate variables. If anyone what to load the database without loading the bias file, there is a code for reading the database line by line below.
+Loading through the **Experiment** requires a `bias.bk` file inside the specified directory. This file represents the semantic relations between variables of the predicates, and optionally, the directionality of the predicate variables.
+
+If you want to load the database without using the bias file, example code for reading the database line by line is provided below.
 
 ```scala
 Source.fromFile(folder + "bk.pl").getLines().map(_.trim)  
@@ -48,10 +77,18 @@ Source.fromFile(folder + "bk.pl").getLines().map(_.trim)
   })
 ``` 
 
-Here the code read a bk file from the database directory, and it skips rule definitions (-:), and comments (%%) which parses only the facts and add them to the database. So database is only a fact table without rules. If the rules are required they must be added to the Hypothesis.
+The code below reads a `.bk` file from the database directory. It skips rule definitions (`-:`) and comments (`%%`), parsing only the facts and adding them to the database. Thus, the database contains only a fact table without rules.
+
+If rules are required, they must be added to the **Hypothesis**.
 
 ## Query Processing
-Query processing requires two steps, and Engine instance which uses the database, a query plan represented by Plan instance. Engine optimizes and traverses the query through LeapFrogJoin algorithm. If the query contains an executable function such as incrementing variables, it first computes the function with given values and continues to join operation. The query result will return a Substitution array. Substitution contains variable and value pairs which states the variable and its value. There is an example for a query processing below.
+Query processing involves two main components: an **Engine** instance, which uses the database, and a query plan represented by a **Plan** instance.
+
+The Engine optimizes and executes the query using the LeapFrogJoin algorithm. If the query contains executable functions, such as incrementing variables, the Engine first computes these functions with the given values before continuing with the join operations.
+
+The query result is returned as an array of **Substitution** objects. Each substitution contains variable-value pairs representing the variable and its corresponding value.
+
+An example of query processing is provided below.
 
 ```scala
 //Build the database from facts. 
@@ -82,10 +119,18 @@ val results = engine.joinParallel(queries, substitution)
 //Get the result as Substitutions
 results.foreach(sub=> println(sub))  
 ```
-Query processing is the main building blog for SiLP. It is also used during predicate invention for scoring the hypothesis. Note that predicate definitions inside the rule body shouldn't be recursive structures such as f(g(X), Y). Although recursive structures can be used to represent predicates, they are not compatible for querying through join. This is restricted because it takes time for querying such structures and the operations are complex. Instead of defining such structures, one can use g_5 for g(5) and represent them as variable values rather than complex predicates.
+Query processing is the main building block of SiLP. It is also used during predicate invention for scoring hypotheses.
+
+Note that predicate definitions inside a rule body should not contain recursive structures such as `f(g(X), Y)`. Although recursive structures can represent predicates, they are not compatible with join-based querying. This restriction exists because querying such structures is time-consuming and involves complex operations.
+
+Instead of defining recursive structures, one can use a notation like `g_5` for `g(5)` and represent them as variable values rather than as complex predicates.
 
 ## Predicate Invention
-Predicate invention is totally experimental. It is used to create new programs which when queries retrieves all the positive samples, and none of the negative samples. In order to use predicate invention bias.pl file and exs.pl files must be exists inside the example database directory. The exs file contains positive and negative predicates for the target program. An example invention is given below.
+Predicate invention is entirely experimental. It is used to create new programs that, when queried, retrieve all positive samples and exclude all negative samples.
+
+To use predicate invention, the `bias.pl` and `exs.pl` files must exist inside the example database directory. The `exs.pl` file contains positive and negative predicates for the target program.
+
+An example of predicate invention is provided below.
 
 ```scala
 val experiment = new Experiment(Params("kinship-ancestor"))  

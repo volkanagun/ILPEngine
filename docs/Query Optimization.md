@@ -1,6 +1,11 @@
 # Query Optimization
 
-**SiLP** uses two algorithms for query optimization. The first is an iterative search algorithm that selects the next best variable for the join order through optimizing the selection heuristics and the second is a graph algorithm that selects the best candidate through scoring a weight heuristic to other variables. This algorithm uses a BellmanFord Shortest Path to score the variable.  As seen here, query optimization is done only ordering variables and predicates when a query is given.
+**SiLP** uses two algorithms for query optimization:
+
+1. An iterative search algorithm that selects the next best variable for the join order by optimizing selection heuristics.
+2. A graph algorithm that selects the best candidate by scoring a weight heuristic relative to other variables. This algorithm uses the Bellman-Ford shortest path to score variables.
+
+As shown here, query optimization is performed by ordering variables and predicates when a query is given.
 
 ```scala
 val engine = Engine(database)  
@@ -13,7 +18,11 @@ val optimizedBellmanFord = plan.optimizeBellmanFord(hypothesis)
 val optimizedExperimental = plan.optimizeExperimental(hypothesis)
 ```
 
-Query optimization is done through Plan class. It uses Statistics placed in the database for search the number of distinct elements for a variable. For simplicity the number of distinct elements is retrieved from pairwise counts for each predicate. Since a pair of variables can occur in two predicates, either the minimum or the maximum pairwise ratio is selected as an heuristic. Here an example code from the Plan class is given below.
+Query optimization is performed by the **Plan** class. It uses statistics stored in the database to estimate the number of distinct elements for each variable.
+
+For simplicity, the number of distinct elements is retrieved from pairwise counts for each predicate. Since a pair of variables can occur in two predicates, either the minimum or maximum pairwise ratio is selected as a heuristic.
+
+An example code snippet from the **Plan** class is provided below.
 
 ```scala
 def optimizeAverage(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] = {  
@@ -33,7 +42,11 @@ def optimizeAverage(attributes: Array[Variable], body: Array[Predicate], tables:
 
 ```
 
-The required class uses default variables or attributes, and the body contains the predicates as content of the rule, and tables contains the predicate statistics derived from the database.  The role of predicate statistics is to compute the relative distinct counts of the variables occur in the predicate.  This score is a ratio for comparing the variables that if the number is high then the current variable is relatively have high counts so high iteration size compared to other variables.  An example is given computing this ratio below.
+The required class uses default variables or attributes, and its body contains the predicates that form the content of the rule. The `tables` contain predicate statistics derived from the database.
+
+The role of predicate statistics is to compute the relative distinct counts of the variables occurring in the predicates. This score is expressed as a ratio: if the number is high, it indicates that the current variable has relatively high counts and thus a larger iteration size compared to other variables.
+
+An example of computing this ratio is given below.
 
 ```scala
 private def computeRelative(): Map[(Int, Int), Double] = {  
@@ -50,9 +63,11 @@ private def computeRelative(): Map[(Int, Int), Double] = {
 }
 ```        
 
-In this code snippet the size1 and size2 represents the number of distinct elements for current and next variables. The ratio is computed by division for the current and next variables.
+In this code snippet, `size1` and `size2` represent the number of distinct elements for the current and next variables, respectively. The ratio is computed by dividing the count of the current variable by that of the next variable.
 
-In order to be able to run this query statistics must be constructed for the rules in the hypothesis. This can be iteratively calculated through know statistics. An example code is given for calculating statistics for unseen predicates in the database is given below.
+To run this query, statistics must first be constructed for the rules in the hypothesis. This can be iteratively calculated using known statistics.
+
+An example code snippet for calculating statistics for unseen predicates in the database is provided below.
 
 ```scala
 //Dependency sorted rules from the hypothesis

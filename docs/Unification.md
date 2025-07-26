@@ -1,7 +1,9 @@
 
 # Unification
 
-Unification is one of the main components of inductive logic programming. Although it is not required directly in query execution, substitution based variable aligning for query content and query results are practically use the code block of unification. On the other hand, unification is used in answer set programming and modifying the database dynamically by using queries.
+Unification is one of the main components of inductive logic programming. Although it is not directly required for query execution, substitution-based variable alignment for query content and results practically uses unification code.
+
+Additionally, unification is used in answer set programming and for dynamically modifying the database using queries.
 
 ```scala  
 val p1 = Parser.parsePredicate("p(f(X,Y),f(Z,Z)).").get 
@@ -11,7 +13,7 @@ println("p2 : " + p2)
 println("Result : " + result.get)  
 ```  
 
-A code block is given for recursive unification of p1, and p2. Both predicates and the unification assignment are given below.
+The code block below demonstrates recursive unification of `p1` and `p2`. Both predicates and the resulting unification assignment are shown.
 
 ```bash  
 p1 : p(f(X,Y),f(Z,Z))  
@@ -19,7 +21,11 @@ p2 : p(f(f(W,Z),V),W)
 Result : {W <- f, V <- Y, X <- f}  
 ```  
 
-Here the result is represented by Substitution class and it contains one to one mapping of variables and their values. It can be seen that there are only distinct variables in the final result. So no repetitions are allowed. The unification result unifies the variable with predicate f, the variable of V with Y and finally the X variable in p1 will be f. When substitution is found, it can be applied to any predicate. An example is given as follows.
+The result is represented by the **Substitution** class, which contains a one-to-one mapping of variables and their values. In the final result, all variables are distinct—no repetitions are allowed.
+
+The unification result unifies the variable `V` with `Y` and the variable `X` in `p1` with the predicate `f`. Once a substitution is found, it can be applied to any predicate.
+
+An example is given below.
 
 ```scala  
 //Substitution: {W <- f, V <- Y, X <- f}  
@@ -36,7 +42,11 @@ g(f(Z,Z),f(W,Z),Y)
 
 # Functional Predicates
 
-Another important building blog of inductive logic programming is functional predicates. These predicates are actual functions that requires a symbol input to be processes. An example functional predicate is Plus (X1=X1+1) predicate. This predicate sums two numbers and assigns the value to the result.  Plus predicate is given below.
+Another important building block of inductive logic programming is **functional predicates**. These predicates are actual functions that require symbolic inputs to be processed.
+
+An example of a functional predicate is `Plus(X1 = X1 + 1)`. This predicate adds two numbers and assigns the result to a variable.
+
+The `Plus` predicate is shown below.
 
 ```scala  
 class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("plus", Array(var1, var2, result)):    
@@ -75,7 +85,9 @@ class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("p
 
 # Variables
 
-First of all in **SiLP**, predicates, symbols, lists, and numbers are all variable types. The numbers are represented by Num, symbols are represented by Sym, and lists are presented by NumList. Elements of the NumList are double numbers.  The class diagram of all the variable types are given as below.
+First of all, in **SiLP**, predicates, symbols, lists, and numbers are all considered variable types. Numbers are represented by the `Num` class, symbols by the `Sym` class, and lists by the `NumList` class. Elements of a `NumList` are double-precision numbers.
+
+The class diagram of all variable types is shown below.
 ```mermaid
 classDiagram
     class SymList
@@ -99,7 +111,7 @@ classDiagram
     Functional <|-- Assign
 ```
 
-The content of a NumList class  is given below.
+The content of a NumList class is given below.
 
 ```scala
  //NumList is derived from Sym class. 
