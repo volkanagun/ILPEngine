@@ -80,7 +80,7 @@ object DatabaseTest {
       "func1086357946(V0) :- func591418883(V0,V1) & func1854231869(V0,V2) & func1890519296(V1,V2,V3)."
 
     val l1Norm = "func1086357946(V0) :- piece(V0,V1) & green(V1) & piece(V0,V2) & lhs(V2) & coord1(V1,V3) & coord1(V2,V3)."
-    //val l1Norm = "func1086357946(V1,V2,V3) :- coord1(V1,V3) & coord1(V2,V3)."
+
 
     val hypothesis = Parser.parseHypothesis(line).get.build().compact()
     val hnorm = Parser.parseHypothesis(l1Norm).get

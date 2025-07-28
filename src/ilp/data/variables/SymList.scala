@@ -12,7 +12,7 @@ class SymList(name:String, var items:Array[String]) extends Sym(name, items.mkSt
   override def getSize():Int = items.size
   override def isEmpty(): Boolean = items.isEmpty
   override def copy(): Variable = SymList(name, items)
-
+  override def copy(name:String): Variable = new SymList(name, value)
 
   def nonEmpty() : Boolean = items.nonEmpty
   def getHead(): Sym = Sym("X", items.head)

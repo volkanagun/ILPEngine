@@ -27,6 +27,7 @@ class Num(vname: String, var item: Double) extends Sym(vname, item.toString):
   override def id(): Int = name.hashCode * 7 + item.hashCode()
 
   override def copy(): Variable = Num(name, item)
+  override def copy(name:String): Variable = new Num(name, item)
 
   def greater(other: Variable): Boolean =
     item > other.asNumber().item

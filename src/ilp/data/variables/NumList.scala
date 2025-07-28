@@ -14,6 +14,7 @@ class NumList(n:String, var items:Array[Double]) extends Sym(n, items.mkString("
   override def getSize():Int = items.size
   override def isEmpty(): Boolean = items.isEmpty
   override def copy(): Variable = NumList(name, items)
+  override def copy(name:String): Variable = new NumList(name, items)
 
   override def substitution(substitution: Substitution): Variable = {
     val targetValue = substitution.valueByVariable(this)

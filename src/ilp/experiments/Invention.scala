@@ -5,7 +5,7 @@ import ilp.data.variables.Variable
 import ilp.data.{Hypothesis, Parser, Substitution}
 import ilp.invent.*
 
-object InventionExperiment:
+object Invention:
 
 
   def experiment(): Unit = {
@@ -881,7 +881,7 @@ object InventionExperiment:
     val engine = Engine(db)
     val pos = experiment.positives
     val neg = experiment.negatives
-    val windowSize = 2
+    val windowSize = 3
 
     val metaTransition1 = Parser.parseRule("re(V0, V1) :- pi(V0, V1), s(V1).").get
     val metaTransition4 = Parser.parseRule("re(V1, V2, V3) :- c(V1, V3), c(V2, V3).").get
@@ -889,36 +889,12 @@ object InventionExperiment:
     val metaTransition5 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V1, V2, V3).").get
 
 
-    /*val q1 = Parser.parseHypothesis("zendo(K157) :- piece(K157,V1) & blue(V1) & piece(K157,V2) & red(V2) & piece(K157,V3) & green(V3).\n" +
-      "zendo(V0) :- piece(V0,V2) & lhs(V2) & piece(V0,V1) & green(V1) & coord1(V2,V3) & coord1(V1,V3).").get
-*/
-    val q1 = Parser.parseHypothesis("func98619139(A) :- green(A).\n"+
-      "func112785(A) :- red(A).\n"+
-      "func106662638(A,B) :- piece(A,B).\n"+
-      "func3027034(A) :- blue(A).\n"+
-      "func107127(A) :- lhs(A).\n"+
-      "func1354751012(A,B) :- coord1(A,B).\n"+
-      "func591418883(V0,V1) :- func106662638(V0,V1) & func98619139(V1).\n"+
-      "func1815986585(V0,V1) :- func106662638(V0,V1) & func112785(V1).\n"+
-      "func688690204(V0,V1) :- func106662638(V0,V1) & func3027034(V1).\n"+
-      "func1854231869(V0,V1) :- func106662638(V0,V1) & func107127(V1).\n"+
-      "func1890519296(V1,V2, V3) :- func1354751012(V1,V3) & func1354751012(V2,V3).\n"+
-      "func1086357946(V0) :- func591418883(V0,V1) & func1815986585(V0,V2) & func688690204(V0,V3).\n"+
-      "func1086357946(V0) :- func591418883(V0,V1) & func1854231869(V0,V2) & func1890519296(V1,V2).").get.build().compact()
-
-    val q2 = q1.normalize()
-    val h1Variable = q2.getLast().getAllVariables().head
-    val h2Variable = q2.getSecondLast().getAllVariables().head
-    val subs = Substitution()
-      .add(h1Variable, Variable("V0"))
-      .add(h2Variable, Variable("V0"))
-
-    val qnorm = q2.substitution(subs)
-
     val q = Parser.parseHypothesis("zendo(V0) :- piece(V0,V1),green(V1),coord1(V1,V3),piece(V0,V2),lhs(V2),coord1(V2,V3).\n" +
       "zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).").get
+      .build()
+      .compact()
 
-    val scoreThreshold = 0.97
+    val scoreThreshold = 0.94
     val resembleThreshold = 1.0
     val filterSize = 200
 
@@ -927,7 +903,7 @@ object InventionExperiment:
       .addMetaRule(metaTransition2)
       .addMetaRule(metaTransition4)
       .addMetaRule(metaTransition5)
-      .setPositiveThreshold(1.0)
+      .setPositiveThreshold(0.0)
       .setNegativeThreshold(1.0)
       .setScoreThreshold(scoreThreshold)
       .setFilterSize(filterSize)
@@ -936,7 +912,7 @@ object InventionExperiment:
 
     val heUnion = new HeUnionFast(engine)
       .setNegativeThreshold(0.0)
-      .setPositiveThreshold(0.01)
+      .setPositiveThreshold(0.05)
       .setScoreThreshold(scoreThreshold)
       .setFilterSize(filterSize)
       .setResembleThreshold(resembleThreshold)
@@ -954,10 +930,7 @@ object InventionExperiment:
       .addTemplate(heBinary)
       .compile()
 
-    //heBinary.igCache(q).print()
-    heBinary.igCache(q1).print()
-    heBinary.igCache(qnorm).print()
-
+    heBinary.igCache(q).print()
 
     val results = execution.induction()
 

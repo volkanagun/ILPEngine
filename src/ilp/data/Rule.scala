@@ -195,9 +195,8 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     if test.isEmpty then
       Set()
     else
-      val testName = test.head.getName()
-      val testFacts = facts.map(_.toPredicate(testName))
-      val result = testFacts & test
+
+      val result = test.filter(predicate=> facts.exists(other=> predicate.equalByContentValue(other)))
       result
 
 

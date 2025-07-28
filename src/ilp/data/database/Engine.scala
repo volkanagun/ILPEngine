@@ -471,10 +471,11 @@ class Engine(val database: Database, val recursiveDepth: Int = 5) extends Serial
         programCache.get(ruleId)
       }
       else {
-        val substitutions = joinParallel(contextMap, context, context)
+        val newSubstitutions = joinParallel(contextMap, context, context)
           .map(substitution => substitution.get(headPredicate.getVariables())) ++
+          //Check for simplicity can be removed
           atomSubstitutions(headPredicate, substitution)
-        programCache.update(ruleId, substitutions)
+        programCache.update(ruleId, newSubstitutions)
       }
       val crrPredicates = context.get(crrSubstitutions)
       substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
