@@ -31,7 +31,6 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     Substitution(variables, symbols)
 
   def execute(): Option[Substitution] = None
-
   def reverseExecute(substitution: Substitution): Option[Substitution] = None
 
   def getVariable(index: Int): Variable =

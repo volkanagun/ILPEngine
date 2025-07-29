@@ -121,7 +121,7 @@ class Execution(var engine: Engine):
   def induction(): Set[Hypothesis] =
 
     val positive = positives.head
-    var sourceHypothesis = templates.par
+    var sourceHypothesis = templates
       .flatMap(template => {
         template.reset().invent()
       }).toArray.toSet

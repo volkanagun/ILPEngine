@@ -1,7 +1,8 @@
 package ilp.tests
 
-import ilp.data.database.{Database, Engine, Plan}
-import ilp.data.variables.{Num, Variable}
+import ilp.data.database.{Database, Engine}
+import ilp.data.optimization.Plan
+import ilp.data.variables.{Num, Sym, Variable, VariableList}
 import ilp.data.{Hypothesis, Parser, Substitution}
 import ilp.experiments.{Experiment, Params}
 
@@ -290,8 +291,16 @@ object DatabaseTest {
 
     val engine = Engine(db)
     val plan = Plan(db)
-    val substitution = Substitution()
-    val r1 = Parser.parseHypothesis("next_list(V0,V1):- tail(V0,V2),head(V1,V2),head(V3,V0),x(V3).").get
+    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "a", Array("x", "h")))
+      .add(Variable("V1"), Sym("V1","h"))
+
+    val pr1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2),head(V3,V0),x(V3).").get
+    val pr2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
+      .setRecursive(true)
+
+    val r1 = Hypothesis(pr1.getHead(), Array(pr1, pr2))
+      .build()
+
     val queries = plan.optimizeExperimental(r1)
 
     val parallelSubstitutions = engine.joinParallel(queries, substitution)

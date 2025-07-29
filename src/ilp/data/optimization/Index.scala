@@ -1,12 +1,10 @@
-package ilp.data.database
+package ilp.data.optimization
 
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import org.apache.ignite.binary.Binarylizable
 import org.roaringbitmap.RoaringBitmap
 
 import java.util
-import scala.collection.immutable.BitSet
 
 
 class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: Int = 128) extends Serializable{

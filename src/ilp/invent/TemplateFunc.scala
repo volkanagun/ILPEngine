@@ -40,7 +40,7 @@ abstract class TemplateFunc(engine: Engine) extends Template(engine) {
     var newResults = Set[Hypothesis]()
     val targets = target()
 
-    val tasks = sources.par.map(source=> compute(source, targets, targetHead.copy().asPredicate()))
+    val tasks = sources.map(source=> compute(source, targets, targetHead.copy().asPredicate()))
       .toArray
       .iterator
 

@@ -1,6 +1,7 @@
 package ilp.data.database
 
 import ilp.data.*
+import ilp.data.optimization.{Index, Statistics}
 import ilp.data.predicates.*
 import ilp.data.variables.*
 import org.roaringbitmap.RoaringBitmap

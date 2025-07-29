@@ -1,5 +1,6 @@
-package ilp.data.database
+package ilp.data.optimization
 
+import ilp.data.database.Database
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.{Hypothesis, Query}

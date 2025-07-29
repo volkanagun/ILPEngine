@@ -1,5 +1,6 @@
-package ilp.data.database
+package ilp.data.optimization
 
+import ilp.data.database.Database
 import ilp.experiments.{Experiment, Params}
 
 import java.io.{File, PrintWriter}

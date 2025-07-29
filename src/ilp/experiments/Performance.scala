@@ -1,6 +1,7 @@
 package ilp.experiments
 
-import ilp.data.database.{Database, Engine, Plan}
+import ilp.data.database.{Database, Engine}
+import ilp.data.optimization.Plan
 import ilp.data.predicates.Predicate
 import ilp.data.{Hypothesis, Parser, Substitution}
 

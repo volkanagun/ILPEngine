@@ -35,8 +35,9 @@ class Variable(var name: String) extends Serializable:
 
   def substitution(substitution: Substitution): Variable =
     if isVariable() && substitution.hasVariable(this) then {
-      val newVariable = substitution.valueByVariable(this)
-      newVariable.get.copy(name)
+      val newVariable = substitution.valueByVariable(this).get
+      if newVariable.isSymbol() then newVariable.copy(name)
+      else newVariable
     } else {
       copy()
     }

@@ -1,4 +1,4 @@
-package ilp.data.database
+package ilp.data.optimization
 
 case class Edge(from: Int, to: Int, weight: Double)
 

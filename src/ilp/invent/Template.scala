@@ -1,6 +1,7 @@
 package ilp.invent
 
-import ilp.data.database.{Database, Engine, Plan}
+import ilp.data.database.{Database, Engine}
+import ilp.data.optimization.Plan
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.{Hypothesis, Query, Rule, Substitution}
@@ -300,18 +301,21 @@ abstract class Template(val engine: Engine) extends Serializable:
     val crr = metaRecursives.map(r => r.substitution(Substitution(r.getHead().asVariable(), lastRule.getHead().asVariable())))
     replaces ++ crr
 
-  def metaApply(left: Predicate, right: Predicate): Array[Query] =
+/*  def metaApply(left: Predicate, right: Predicate): Array[Query] =
     metaRules.flatMap(metaRule => {
       InventionMeta.metaWith(database, Array(left), Array(right), metaRule)
-    })
+    })*/
 
   def metaApply(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
     metaRules.flatMap(metaRule => {
-      InventionMeta.metaWith(source, candidates, metaRule)
+      if metaRule.isRecursive() && metaRule.getSize() == 2 then
+        InventionMeta.metaWithRecursive(source, metaRule)
+      else
+        InventionMeta.metaWith(source, candidates, metaRule)
     }).toArray
 
-  def metaApplyHeuristic(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
+/*  def metaApplyHeuristic(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
     metaRules.par.flatMap(metaRule => {
       InventionMeta.metaWith(source, candidates, metaRule)
-    }).toArray
+    }).toArray*/
 

@@ -1,5 +1,6 @@
 package ilp.data.database
 
+import ilp.data.optimization.Optimized
 import ilp.data.{Query, Substitution}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.{Num, Variable}

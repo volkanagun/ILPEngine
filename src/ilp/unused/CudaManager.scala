@@ -1,5 +1,3 @@
-package ilp.data.database
-
 import com.aparapi.Kernel
 import com.aparapi.device.Device
 import com.aparapi.internal.kernel.KernelManager

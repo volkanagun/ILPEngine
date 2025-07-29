@@ -1,5 +1,6 @@
 package ilp.data.database
 
+import ilp.data.optimization.Optimized
 import ilp.data.{Hypothesis, Substitution}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
@@ -243,6 +244,8 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
           if !dataMap.contains(id) && crrResults.isEmpty then
             serialSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
+          else if nextContext.isRecursive() && crrResults.isEmpty then
+            serialSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
           else
             Some(crrResults)
         else
@@ -310,6 +313,8 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
           if !rowMap.contains(pid) && crrRows.isEmpty then
             roaringSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
+          else if nextContext.isRecursive() && crrRows.isEmpty then
+            roaringSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
           else
             val data = dataMap(pid)
             val rowArray = crrRows.toArray
@@ -345,6 +350,8 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
           if !rowMap.contains(pid) && crrRows.isEmpty then
             roaringSerialSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
+          else if nextContext.isRecursive() && crrRows.isEmpty then
+            roaringSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
           else
             val data = dataMap(pid)
             val rowArray = crrRows.toArray
