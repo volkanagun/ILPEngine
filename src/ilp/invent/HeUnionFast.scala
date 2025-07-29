@@ -38,8 +38,8 @@ class HeUnionFast(engine: Engine) extends TemplateIG(engine) {
 
     currentTargets.foreach(target => {
       if unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && unionHypothesis.getHead() != target.getHead() &&
-        Invention.metaUnionAccept(unionHypothesis, target) then {
-        unionHypothesis = Invention.metaUnion(unionHypothesis, target)
+        InventionMeta.metaUnionAccept(unionHypothesis, target) then {
+        unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target)
         isFound = true
       }
     })

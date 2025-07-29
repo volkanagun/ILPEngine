@@ -177,11 +177,10 @@ object Unification {
 
     println(gg)
     println(gg.substitution(substitution))
-
   }
 
   def test5(): Unit = {
-    val nums = NumList("X", Array[Double](1, 2, 3, 4, 5))
+    val nums = VariableList("X", 1, Array[Double](2, 3, 4, 5))
     val sum = Sum(nums, nums.toVariable())
     val target = Predicate("f", Variable("Z"))
     val result = Unification().of(sum, target).get

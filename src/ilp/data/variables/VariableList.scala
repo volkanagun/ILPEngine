@@ -7,21 +7,39 @@ class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm)
 
   def this(name: String) = this(name, Array[Variable]())
   def this(name: String, var1: Variable) = this(name, Array(var1))
-
   def this(name: String, var1: Variable, var2: Variable) = this(name, Array(var1, var2))
-
   def this(name: String, var1: Variable, var2: Variable, var3: Variable) = this(name, Array(var1, var2, var3))
+
+  def this(name: String, head:Double, items: Array[Double]) = this(name, (head +: items).zipWithIndex.map(pair => Num("item" + pair._2, pair._1).asVariable()))
+  def this(name: String, head:String, items: Array[String]) = this(name, (head +: items).zipWithIndex.map(pair => Sym("item" + pair._2, pair._1).asVariable()))
 
   override def isVariable(): Boolean = true
   override def isVariableList(): Boolean = true
   override def isList(): Boolean = true
   override def isSymbol(): Boolean = true
+  override def isNumberList(): Boolean =
+    nonEmpty() && values.head.isNumber()
+  override def isSymbolList(): Boolean =
+    nonEmpty() && values.head.isSymbol()
+
   override def getSize(): Int = values.size
 
-   /* value.isEmpty || value.forall(_.isSymbol())*/
+  def sum(resultName:String):Variable =
+    if isSymbolList() then
+      val result = values.foldRight[String](""){case(item, main)=>{
+        main + item.asSymbol().value
+      }}
+      Sym(resultName, result)
+    else if isNumberList() then
+      val result = values.foldRight[Double](0.0) { case (item, main) => {
+        main + item.asNumber().getNumber()
+      }}
+      Num(resultName, result)
+    else
+      Variable(resultName)
+
 
   override def isEmpty(): Boolean = values.isEmpty
-
   override def substitution(substitution: Substitution): Variable =
 
     if substitution.hasVariable(this) then {

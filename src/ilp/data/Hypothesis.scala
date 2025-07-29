@@ -115,6 +115,8 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     val newRules = rules.map(rule => rule.substitution(substitution)).flatMap(_.getRules()).distinct
     val newHead = newRules.last.getHead()
     Hypothesis(newHead, newRules)
+      .setRecursive(recursive)
+      .setInputVariables(inputVariables)
   }
 
   def callHead(substitution: Substitution): Predicate =
@@ -168,6 +170,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
       val head = rule.getHead()
       val input = rule.getBody().flatMap(predicate => predicate.getInput()
         .filter(inputVariable=> head.contains(inputVariable)))
+        .distinct
       head.setInput(input)
       val inputIndices = head.getInputIndices()
       rule.setInputVariables(head.getInput())

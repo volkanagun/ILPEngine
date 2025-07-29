@@ -27,7 +27,9 @@ object Parser extends JavaTokenParsers {
   /** Parser for an identifier (predicate or function name) */
   def identifier: Parser[String] = "[a-z0-9\\_]+([A-Z][a-z0-9\\_]+)*".r
 
-  def double: Parser[String] = "([+-]?(\\d+(\\.\\d+)?)([eE][+-]?\\d+)?)".r
+  def doublestr: Parser[String] = "([+-]?(\\d+(\\.\\d+)?)([eE][+-]?\\d+)?)".r
+
+  def itemstr = doublestr | symstr
 
   def clause: Parser[String] = "max\\_[clauses,body, vars]".r
 
@@ -35,7 +37,7 @@ object Parser extends JavaTokenParsers {
 
   def islist: Parser[String] = "((\\[\\_\\|\\_\\])|(\\[\\]))".r
 
-  def numVar: Parser[String] = "([+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?|[A-Z]+)".r
+  def numVar: Parser[String] = doublestr | symstr
 
   def negative: Parser[String] = "\\~[a-z0-9\\_]+".r
 
@@ -72,7 +74,7 @@ object Parser extends JavaTokenParsers {
     variable | symbol
 
   def number: Parser[variables.Num] =
-    double ^^ {
+    doublestr ^^ {
       case num => new variables.Num(getRandomName(), num.toDouble)
     }
 
@@ -85,29 +87,15 @@ object Parser extends JavaTokenParsers {
     "[" ~ repsep(numVar, ",") ~ "]" ^^ {
       case "[" ~ args ~ "]" => {
         var items = Array[Variable]()
-        args.foreach(item => {
+        args.zipWithIndex.foreach{case(item, index) => {
           if (item.matches("\\d+(\\.\\d+?)")) then
-            items = items :+ variables.Num("X", item.toDouble)
-          else if (item.matches("[A-Z]"))
-            items = items :+ Variable(item)
+            items = items :+ variables.Num("item"+index, item.toDouble)
+          else if (item.matches("[a-z0-9\\_]+"))
+            items = items :+ new variables.Sym("item"+index, item)
           else
-            items = items :+ new variables.Sym("X", item)
-        })
+            items = items :+ Variable(item)
+        }}
         VariableList("X", items)
-      }
-    }
-
-  def numberList: Parser[NumList] =
-    "[" ~ repsep(double, ",") ~ "]" ^^ {
-      case "[" ~ args ~ "]" => {
-        new NumList(getRandomName(), args.toArray.map(_.toDouble))
-      }
-    }
-
-  def symbolList: Parser[SymList] =
-    "[" ~ repsep(symstr, ",") ~ "]" ^^ {
-      case "[" ~ args ~ "]" => {
-        new SymList(getRandomName(), args.toArray)
       }
     }
 
@@ -200,7 +188,7 @@ object Parser extends JavaTokenParsers {
 
 
   def sumCall: Parser[Variable] =
-    "sum(" ~ numberList ~ ")" ^^ {
+    "sum(" ~ variableList ~ ")" ^^ {
       case "sum(" ~ array ~ ")" => {
         Sum(array, Variable(array.getName()))
       }
@@ -237,8 +225,7 @@ object Parser extends JavaTokenParsers {
       tailArgument2 |
       tailNameArgument |
       headTailArgument |
-      numberList |
-      symbolList |
+      variableList |
       modCall |
       modModCall |
       negativeCall |
@@ -258,7 +245,7 @@ object Parser extends JavaTokenParsers {
     headArgument1 |
       tailNameArgument |
       tailArgument1 |
-      numberList |
+      variableList |
       modCall |
       modModCall |
       negativeCall |
@@ -364,7 +351,7 @@ object Parser extends JavaTokenParsers {
     }
 
   def single_count: Parser[Predicate] =
-    "count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ~ "." ^^ {
+    "count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ doublestr ~ ")" ~ "." ^^ {
       case "count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" ~ "." => Count(name, argumentNames(args.toArray), num.toInt)
     }
 
@@ -407,7 +394,7 @@ object Parser extends JavaTokenParsers {
     }
 
   def countArgument: Parser[Count] =
-    "count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ double ~ ")" ^^ {
+    "count(" ~ identifier ~ "(" ~ repsep(argument, ",") ~ ")," ~ doublestr ~ ")" ^^ {
       case "count(" ~ name ~ "(" ~ args ~ ")," ~ num ~ ")" => Count(name, argumentNames(args.toArray), num.toInt)
     }
 

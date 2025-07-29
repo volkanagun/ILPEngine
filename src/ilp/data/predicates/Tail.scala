@@ -8,16 +8,12 @@ class Tail(val nm: String, val list: VariableList, val tail: VariableList) exten
 
   def this(tail: VariableList, list: VariableList) = this("tail", tail, list)
 
+  override def isExecutable(): Boolean = list.nonEmpty()
 
-
-  override def isExecutable(): Boolean = {
-    list.nonEmpty()
-  }
-
-  override def isDefinite(): Boolean = list.nonEmpty()
+  override def isDefinite(): Boolean = list.isSymbol()
 
   override def getValue(): Variable = {
-    list.getTail().setName(tail.getName())
+    list.getTail().copy(tail.getName())
   }
 
   override def copy(): Variable =

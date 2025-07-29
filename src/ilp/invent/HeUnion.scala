@@ -35,8 +35,8 @@ class HeUnion(engine: Engine) extends HeBinary(engine) {
     var unionHypothesis = currentSource
 
     currentTargets.foreach(target=>{
-      if unionHypothesis.getHead() != target.getHead() && !unionHypothesis.contains(target) && unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && Invention.metaUnionAccept(unionHypothesis, target) then
-         unionHypothesis = Invention.metaUnion(unionHypothesis, target)
+      if unionHypothesis.getHead() != target.getHead() && !unionHypothesis.contains(target) && unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && InventionMeta.metaUnionAccept(unionHypothesis, target) then
+         unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target)
     })
 
     Array(unionHypothesis)

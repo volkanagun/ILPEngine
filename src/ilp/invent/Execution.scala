@@ -90,8 +90,8 @@ class Execution(var engine: Engine):
     val head = positives.head
     candidates = db.getTemplate3().flatMap(predicate => {
       val generic = predicate.toGeneric()
-      val newName = Invention.canonicalize(generic)
-      val newHeads = Invention.combinations(head, generic.array)
+      val newName = InventionMeta.canonicalize(generic)
+      val newHeads = InventionMeta.combinations(head, generic.array)
       newHeads.map(newHead => {
         Hypothesis(newHead.rename(newName), generic)
       })

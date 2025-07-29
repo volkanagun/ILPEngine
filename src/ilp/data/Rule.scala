@@ -3,7 +3,7 @@ package ilp.data
 import ilp.data.database.Bias
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import ilp.invent.Invention
+import ilp.invent.InventionMeta
 
 
 class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
@@ -68,7 +68,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     val variables = getAllVariables().toSet
     val subs = Substitution()
     variables.foreach(variable=> {
-      val symbol = Invention.genericVariable()
+      val symbol = InventionMeta.genericVariable()
       subs.add(variable, symbol)
     })
     substitution(subs)
@@ -180,13 +180,13 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
     val newHead = head.substitution(substitution).asPredicate()
     val newBody = body.map(_.substitution(substitution).asPredicate())
-    val recursiveRule = Rule(newHead, newBody)
+    val recursiveRule = Rule(newHead, newBody).setInputVariables(inputVariables)
     if doRecursion && isRecursive() then
       val atoms = body.zip(newBody).filter { case (original, named) => {
         original.identifier() == head.identifier()
-      }
-      }.map { case (original, named) => Rule(named, original) }
+      }}.map { case (original, named) => Rule(named, original) }
       Hypothesis(newHead, atoms :+ recursiveRule.setRecursion(isRecursive()))
+
     else
       Hypothesis(newHead, recursiveRule.setRecursion(isRecursive()))
 

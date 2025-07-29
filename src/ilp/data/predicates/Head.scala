@@ -8,12 +8,11 @@ class Head(val nm:String, val head: Variable, val list: VariableList) extends Fu
 
   def this(head:Variable, list:VariableList) = this("head", head, list)
 
-  override def isDefinite(): Boolean =  list.nonEmpty()
-  override def isExecutable(): Boolean = isDefinite()
+  override def isDefinite(): Boolean =  list.isSymbol()
+  override def isExecutable(): Boolean = list.nonEmpty()
 
-  //override def isList(): Boolean = list.nonEmpty()
   override def getValue(): Variable = {
-    list.getHead()
+    list.getHead().copy(head.getName())
   }
   override def copy(): Variable =
     Head(nm, head.copy(), list.copy().asVariableList())

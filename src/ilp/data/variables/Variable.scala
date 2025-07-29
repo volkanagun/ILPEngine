@@ -36,17 +36,8 @@ class Variable(var name: String) extends Serializable:
   def substitution(substitution: Substitution): Variable =
     if isVariable() && substitution.hasVariable(this) then {
       val newVariable = substitution.valueByVariable(this)
-      newVariable.get
+      newVariable.get.copy(name)
     } else {
-      //this
-      copy()
-    }
-
-  def symbolSubstitution(substitution: Substitution): Variable =
-    if substitution.hasVariable(this) then
-      substitution.valueByVariable(this).get
-    else {
-      //this
       copy()
     }
 
@@ -106,6 +97,7 @@ class Variable(var name: String) extends Serializable:
 
   def isNumberList() = false
   def isVariableList() = false
+  def isSymbolList() = false
 
   def isEmpty() = true
 

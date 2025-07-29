@@ -9,7 +9,7 @@ import javax.print.attribute.standard.Destination
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
 
-object Invention:
+object InventionMeta:
 
   val rnd = new Random(17)
   var uppercases = Array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L")
@@ -167,7 +167,7 @@ object Invention:
     val metaBody = metaRule.getNonRecursive().getBody()
     val n = metaBody.length - 1
     val combinations = candidates.combinations(n).flatMap(array => array.permutations).toArray
-    val results =  combinations.par.flatMap(candidateCombination => {
+    val results =  combinations.flatMap(candidateCombination => {
       val combinedCombinations = source +: candidateCombination
       val pairs = metaBody.zip(combinedCombinations.map(hypothesis=> hypothesis.getHead()))
         .filter{case(meta, candidate)=> meta.equalByArity(candidate)}

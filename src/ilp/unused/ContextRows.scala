@@ -1,5 +1,3 @@
-package ilp.data.database
-
 import ilp.data.{Query, Substitution}
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
@@ -36,8 +34,8 @@ class ContextRows(var rule: Optimized,
   def newContext(variable: Variable): ContextRows =
     new ContextRows(rule, rowMap, originalRowMap, substitution.composition(variable), targetVariable, relations, attributes, depth)
 
-  def calledFrom(other: ContextRows): Boolean =
-    getQuery().calledFrom(other.getQuery())
+/*  def calledFrom(other: ContextRows): Boolean =
+    getQuery().calledFrom(other.getQuery())*/
 
   def setRowMap(rowsMap: Map[Int, RoaringBitmap]): ContextRows = {
     this.rowMap = rowsMap
@@ -107,11 +105,3 @@ class ContextRows(var rule: Optimized,
   def isTarget(): Boolean = rule.getTarget()
 }
 
-object ContextRows {
-
-  def apply(mainRule: Optimized, substitution: Substitution): ContextRows =
-    val rowMap = mainRule.getRoaringMap()
-    val relations = mainRule.getRelations()
-    val attributes = mainRule.getVariables()
-    new ContextRows(mainRule, rowMap, rowMap, substitution, attributes.head, relations, attributes, 0)
-}

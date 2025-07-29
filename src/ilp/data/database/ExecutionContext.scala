@@ -31,6 +31,9 @@ class ExecutionContext(var rule: Optimized,
     new ExecutionContext(nrule, ndataMap, noriginalMap, nrowMap, noriginalRowMap, nsubstitution, ntarget, nrelations, nattributes, ndepth)
 
 
+  def isRecursive():Boolean =
+    rule.isRecursive()
+
   def get(substitutions: Set[Substitution]): Set[Predicate] = {
     val headVariables = getHead().getVariables()
     substitutions
@@ -44,8 +47,10 @@ class ExecutionContext(var rule: Optimized,
       .map(symbol => symbol.hashCode()) :+ predicate.hashCode())
       .foldRight[Int](1) { case (code, main) => main * 7 + code }
 
-  def canSwitchContext(substitution: Substitution): Boolean =
-    getQuery().getInputVariables().forall(variable => substitution.hasVariable(variable))
+  def canSwitchContext(substitution: Substitution): Boolean = {
+    val hasInputVariables = getQuery().getInputVariables().forall(variable => substitution.hasVariable(variable))
+    hasInputVariables
+  }
 
   def conflictContext(newContext: ExecutionContext): Boolean = {
     val result = depth == newContext.getDepth() && substitution.conflicts(newContext.getSubstitution())
@@ -57,7 +62,7 @@ class ExecutionContext(var rule: Optimized,
 
   def switchContext(newSubstitution: Substitution, calledFrom: Predicate, position: Int, newDepth: Int): Option[ExecutionContext] = {
     val currentHead = getHead()
-    val switchedSubstitution = calledFrom.call(currentHead, newSubstitution)
+    val switchedSubstitution = calledFrom.callSubstitution(currentHead, newSubstitution)
     if canSwitchContext(switchedSubstitution) then
       Some(new ExecutionContext(rule, originalMap, originalMap, originalRowMap, originalRowMap, switchedSubstitution, targetVariable, relations, attributes, newDepth))
     else
@@ -156,7 +161,7 @@ class ExecutionContext(var rule: Optimized,
 
   def emptyAttributes() = attributes.isEmpty
 
-  def getRuleId(): Int = rule.getQueryId()
+  def getRuleId(substitution: Substitution): Int = rule.getQueryId()*7 + substitution.id()
 
   def getQuery(): Query = rule.getQuery()
 

@@ -91,13 +91,23 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     val newArray = array.map(variable => variable.substitution(substitution))
     Predicate(newName, newArray)
 
-  override def symbolSubstitution(substitution: Substitution): Variable =
+/*  override def symbolSubstitution(substitution: Substitution): Variable =
     val crrName = Variable(name)
     val newName = crrName.substitution(substitution).getName()
     val newArray = array.map(variable => variable.symbolSubstitution(substitution))
-    Predicate(newName, newArray)
+    Predicate(newName, newArray)*/
 
   def call(other: Predicate, substitution: Substitution): Substitution =
+    val pairs = array.zipWithIndex.filter { case (variable, _) => substitution.hasVariable(variable) }
+      .map { case (source, index) => {
+        val variable = other.getVariable(index)
+        val attribute = substitution.valueByVariable(source).get
+        (variable, attribute.copy().setName(variable.getName()))
+      }}
+
+    Substitution(pairs)
+
+  def callSubstitution(other: Predicate, substitution: Substitution): Substitution =
     val pairs = array.zipWithIndex.filter { case (variable, _) => substitution.hasVariable(variable) }
       .map { case (source, index) => {
         val variable = other.getVariable(index)
@@ -114,7 +124,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def toSubstitution(callPredicate: Predicate): Substitution =
     val variables = callPredicate.getVariables()
-    val symbols = array
+    val symbols = array.zip(variables).map{case(symbol, variable) => symbol.copy(variable.getName())}
     Substitution(variables, symbols)
 
   def toPredicate(newName: String): Predicate =

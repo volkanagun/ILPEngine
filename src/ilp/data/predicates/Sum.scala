@@ -1,16 +1,16 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{Num, NumList, Variable}
+import ilp.data.variables.{Num, NumList, Variable, VariableList}
 
 
-class Sum(array: NumList, result:Variable) extends Functional("sum", array, result):
+class Sum(array: VariableList, result:Variable) extends Functional("sum", array, result):
 
   override def isExecutable(): Boolean = true
   override def isDefinite(): Boolean = true
 
   override def getValue(): Variable =
-    array.sum()
+    array.sum(result.getName())
 
   override def execute(): Option[Substitution] =
     Some(Substitution(result, getValue()))

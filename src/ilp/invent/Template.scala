@@ -256,7 +256,7 @@ abstract class Template(val engine: Engine) extends Serializable:
 
   def igFunctional(hypothesis: Hypothesis): Hypothesis =
 
-    val items = positives// ++ negatives
+    val items = positives ++ negatives
     val crrFacts = items.flatMap(targetHead=>{
       val ruleHead = hypothesis.getLastHead()
       val substitution = targetHead.toSubstitution(ruleHead)
@@ -290,8 +290,8 @@ abstract class Template(val engine: Engine) extends Serializable:
 
   def metaApply(lastRule: Rule, candidatePredicates: Array[Predicate]): Array[Query] =
     val replaces = lastRule.getBody().zipWithIndex.flatMap { case (source, index) => {
-      metaRules.map(rule => Invention.genericRename(rule)).flatMap(metaRule => {
-        Invention.metaWith(database, Array(source), candidatePredicates, metaRule)
+      metaRules.map(rule => InventionMeta.genericRename(rule)).flatMap(metaRule => {
+        InventionMeta.metaWith(database, Array(source), candidatePredicates, metaRule)
           .map(r => (r, index))
       }).map { case (r, index) => lastRule.replace(index, r) }
     }
@@ -302,16 +302,16 @@ abstract class Template(val engine: Engine) extends Serializable:
 
   def metaApply(left: Predicate, right: Predicate): Array[Query] =
     metaRules.flatMap(metaRule => {
-      Invention.metaWith(database, Array(left), Array(right), metaRule)
+      InventionMeta.metaWith(database, Array(left), Array(right), metaRule)
     })
 
   def metaApply(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
-    metaRules.par.flatMap(metaRule => {
-      Invention.metaWith(source, candidates, metaRule)
+    metaRules.flatMap(metaRule => {
+      InventionMeta.metaWith(source, candidates, metaRule)
     }).toArray
 
   def metaApplyHeuristic(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
     metaRules.par.flatMap(metaRule => {
-      Invention.metaWith(source, candidates, metaRule)
+      InventionMeta.metaWith(source, candidates, metaRule)
     }).toArray
 

@@ -963,14 +963,17 @@ object Invention:
     val windowSize = 3
 
     val metaRecursion = Parser.parseRule("re(V0, V1) :- pi(V0, V2), re(V2,V1).").get
+      .setRecursion(true)
     val metaRest = Parser.parseRule("re(V0, V1, V2) :- t(V1, V2), c(V2, V1).").get
     val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V0, V3), alpha(V3).").get
     val metaRest3 = Parser.parseRule("re(V0, V2) :- rest(V0, V1, V2), r2(V0, V3), alpha(V2).").get
 
+    val p1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2), head(V3,V0),x(V3).").get
+    val p2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
+      .setRecursion(true)
 
-    val q = Parser.parseHypothesis(
-        "next_list(V0,V1):- tail(V0,V2),head(V2,V1), head(V3,V0),x(V3).\n" +
-        "next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
+    val q = Hypothesis(p2.getHead(), Array(p1,p2))
+      .setRecursion(true)
       .build()
       .compact()
 
@@ -980,9 +983,9 @@ object Invention:
 
     val heBinary = new HeBinaryFunctional(engine)
       .addMetaRule(metaRecursion)
-      .addMetaRule(metaRest)
-      .addMetaRule(metaRest2)
-      .addMetaRule(metaRest3)
+      //.addMetaRule(metaRest)
+      //.addMetaRule(metaRest2)
+      //.addMetaRule(metaRest3)
       .setPositiveThreshold(0.0)
       .setNegativeThreshold(1.0)
       .setScoreThreshold(scoreThreshold)

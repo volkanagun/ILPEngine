@@ -229,7 +229,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def compose(attributes: Array[Variable]): Array[Variable] =
     attributes.map(variable => {
       if hasVariable(variable) then {
-        valueByVariable(variable).get.setName(variable.getName())
+        valueByVariable(variable).get.copy(variable.getName())
       }
       else variable
     })
@@ -239,7 +239,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     composition(substitution)
 
   def composition(variable: Variable, attribute: Variable): Substitution =
-    val substitution = Substitution(variable, attribute.copy().setName(variable.getName()))
+    val substitution = Substitution(variable, attribute.copy(variable.getName()))
     composition(substitution)
 
   def composition(substitution: Substitution): Substitution =
