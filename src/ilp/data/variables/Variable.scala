@@ -105,6 +105,7 @@ class Variable(var name: String) extends Serializable:
   def isNumber() = false
 
   def isNumberList() = false
+  def isVariableList() = false
 
   def isEmpty() = true
 

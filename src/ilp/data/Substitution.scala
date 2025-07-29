@@ -98,7 +98,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
   def hasConflict(substitution: Substitution): Boolean = {
     for (index <- 0 until substitution.length()) {
       val variable = substitution.getVariable(index)
-      if contains(variable) && getSymbol(variable).exists(variable => variable != substitution.getSymbol(index)) then
+      if contains(variable) && getSymbol(variable).exists(variable => !variable.equals(substitution.getSymbol(index))) then
         return true;
     }
     false
@@ -291,7 +291,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     if (pattern.isList() && instance.isList() && pattern.getSize() == instance.getSize()) {
       val variables = pattern.asArray()
       val symbols = instance.asArray()
-      val valid = variables.value.zip(symbols.value).map { case (p_item, i_item) => {
+      val valid = variables.values.zip(symbols.values).map { case (p_item, i_item) => {
         of(p_item, i_item)
       }
       }.forall(_.isDefined)

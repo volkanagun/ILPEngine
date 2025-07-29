@@ -223,8 +223,9 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     negRate = negatives.size.toDouble / math.max(negItems.size, 1.0)
 
     score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
-    //println(s"Score: ${score}")
     score
+
+
 
 
 

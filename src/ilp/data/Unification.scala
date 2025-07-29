@@ -64,7 +64,7 @@ class Unification extends Serializable:
       var substitutions = Array[Substitution]()
       var isNone = false
       Breaks.breakable {
-        x.value.zip(y.value).foreach { case (xItem, yItem) => {
+        x.values.zip(y.values).foreach { case (xItem, yItem) => {
           val option = Unification().of(substitution, xItem, yItem)
           if option.isDefined then
             substitutions :+= option.get

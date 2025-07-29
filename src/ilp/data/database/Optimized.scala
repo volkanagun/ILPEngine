@@ -46,9 +46,14 @@ class Optimized(val query: Query, var variables: Array[Variable] = Array(), var 
 
   def getHeadCopy(): Predicate =
     query.getHead().copy().asPredicate()
+/*
 
   def getVariables(): Array[Variable] =
     variables.filter(variable=> !variable.isSymbol())
+*/
+
+  def getVariables(): Array[Variable] =
+    variables.filter(variable=> variable.isVariable())
 
   def getRelations(): Array[Predicate] =
     predicates

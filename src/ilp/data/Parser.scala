@@ -111,10 +111,13 @@ object Parser extends JavaTokenParsers {
       }
     }
 
+  def tailArgument:Parser[Tail] =
+    tailArgument1 | tailArgument2 | tailNameArgument
+
   def tailNameArgument: Parser[Tail] =
     identifier ~ "([" ~ anystr ~ "|" ~ variable ~ "]," ~ variable ~ ")" ^^ {
       case name ~ "([" ~ item ~ "|" ~ tail ~ "]," ~ myvar ~ ")" => {
-        Tail(name, NumList(myvar.getName()), NumList(tail.getName()))
+        Tail(name, VariableList(myvar.getName()), VariableList(tail.getName()))
       }
     }
 
@@ -122,14 +125,14 @@ object Parser extends JavaTokenParsers {
   def tailArgument1: Parser[Tail] =
     "[" ~ anystr ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ item ~ "|" ~ tail ~ "]" => {
-        Tail("tail", NumList("LIST"), NumList(tail.getName()))
+        Tail("tail", VariableList("LIST"), VariableList(tail.getName()))
       }
     }
 
   def tailArgument2: Parser[Tail] =
     "tail(" ~ variable ~ "," ~ variable ~ ")" ^^ {
       case "tail(" ~ var1 ~ "," ~ var2 ~ ")" => {
-        Tail("tail", NumList(var1.getName()), NumList(var2.getName()))
+        Tail("tail", VariableList(var1.getName()), VariableList(var2.getName()))
       }
     }
 
@@ -137,35 +140,38 @@ object Parser extends JavaTokenParsers {
   def headTailArgument: Parser[HeadTail] =
     "[" ~ variable ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ head ~ "|" ~ tail ~ "]" => {
-        HeadTail("headTail", head, NumList(tail.getName()), NumList("LIST"))
+        HeadTail("headTail", head, VariableList(tail.getName()), VariableList("LIST"))
       }
     }
 
   def headNameArgument: Parser[Head] =
     identifier ~ "([" ~ variable ~ "|" ~ anystr ~ "]," ~ variable ~ ")" ^^ {
       case name ~ "([" ~ h ~ "|" ~ lst_var ~ "]," ~ myvar ~ ")" => {
-        Head(name, myvar, NumList("LIST"))
+        Head(name, myvar, VariableList("LIST"))
       }
     }
+
+  def headArgument: Parser[Head]=
+    headArgument3 | headArgument2 | headArgument1 | headNameArgument
 
   def headArgument1: Parser[Head] =
     "[" ~ variable ~ "|" ~ anystr ~ "]" ^^ {
       case "[" ~ h ~ "|" ~ lst_var ~ "]" => {
-        Head("head", h, NumList(lst_var))
+        Head("head", h, VariableList(lst_var))
       }
     }
 
   def headArgument2: Parser[Head] =
     identifier ~ "([" ~ variable ~ "|" ~ anystr ~ "])" ^^ {
       case name ~ "([" ~ h ~ "|" ~ lst_var ~ "])" => {
-        Head(name, h, NumList(lst_var))
+        Head(name, h, VariableList(lst_var))
       }
     }
 
   def headArgument3: Parser[Head] =
     "head(" ~ variable ~ "," ~ variable ~ ")" ^^ {
       case "head(" ~ var1 ~ "," ~ var2 ~ ")" => {
-        Head("head", var1, NumList(var2.getName()))
+        Head("head", var1, VariableList(var2.getName()))
       }
     }
 
@@ -428,7 +434,7 @@ object Parser extends JavaTokenParsers {
   def predicate_input: Parser[Predicate] = {
     notEqualArgument | expansionArgument |
       minusArgument | minusEqualArgument | plusArgument | plusEqualArgument | greaterArgument | greaterEqualArgument | lowerArgument | lowerEqualArgument | equalArgument | assignArgument |
-      negativeCall | negativePlusCall | appendArgument | headNameArgument | tailNameArgument | modArgument | countArgument |
+      negativeCall | negativePlusCall | appendArgument | headArgument | tailArgument | modArgument | countArgument |
       predicate_argument
   }
 

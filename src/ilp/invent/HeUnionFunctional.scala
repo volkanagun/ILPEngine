@@ -3,9 +3,7 @@ package ilp.invent
 import ilp.data.Hypothesis
 import ilp.data.database.Engine
 
-import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
-
-class HeUnionFast(engine: Engine) extends TemplateIG(engine) {
+class HeUnionFunctional(engine: Engine) extends TemplateFunc(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))

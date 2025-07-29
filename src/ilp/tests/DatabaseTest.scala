@@ -260,9 +260,53 @@ object DatabaseTest {
     roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
   }
+  def simpleList(): Unit = {
+
+    val db = Database("listTest")
+    val p1 = Parser.parsePredicate("x(x).").get
+    val p2 = Parser.parsePredicate("a(a).").get
+    val p3 = Parser.parsePredicate("b(b).").get
+    val p4 = Parser.parsePredicate("c(c).").get
+    val p5 = Parser.parsePredicate("d(d).").get
+    val p6 = Parser.parsePredicate("e(e).").get
+    val p7 = Parser.parsePredicate("f(f).").get
+    val g0 = Parser.parsePredicate("g(g).").get
+    val g1 = Parser.parsePredicate("h(h).").get
+    val g2 = Parser.parsePredicate("i(i).").get
+    val g3 = Parser.parsePredicate("j(j).").get
+
+    db.add(p1)
+      .add(p2)
+      .add(p3)
+      .add(p4)
+      .add(p5)
+      .add(p6)
+      .add(p7)
+      .add(g0)
+      .add(g1)
+      .add(g2)
+      .add(g3)
+      .build()
+
+    val engine = Engine(db)
+    val plan = Plan(db)
+    val substitution = Substitution()
+    val r1 = Parser.parseHypothesis("next_list(V0,V1):- tail(V0,V2),head(V1,V2),head(V3,V0),x(V3).").get
+    val queries = plan.optimizeExperimental(r1)
+
+    val parallelSubstitutions = engine.joinParallel(queries, substitution)
+    println("Parallel result: ")
+    parallelSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+
+    val roaringSubstitutions = engine.joinRoaringParallel(queries, substitution)
+    println("Roaring result: ")
+    roaringSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+  }
 
   def main(args: Array[String]): Unit = {
-    simpleZendeo()
+    simpleList()
   }
 
 }

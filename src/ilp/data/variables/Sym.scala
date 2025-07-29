@@ -11,13 +11,16 @@ class Sym(n: String, var value: String) extends Variable(n):
   override def isVariable() = false
 
   override def copy(): Variable = new Sym(name, value)
-  override def copy(name:String): Variable = new Sym(name, value)
+
+  override def copy(name: String): Variable = new Sym(name, value)
 
   override def hashCode(): Int = value.hashCode
 
   override def id(): Int = name.hashCode * 7 + value.hashCode
 
-  override def equalValue(variable: Variable): Boolean = variable.isSymbol() && variable.asSymbol().value == value
+  override def equalValue(variable: Variable): Boolean = {
+    variable.isSymbol() && variable.asSymbol().value == value
+  }
 
   override def equals(obj: Any): Boolean =
     obj match {
@@ -27,5 +30,4 @@ class Sym(n: String, var value: String) extends Variable(n):
     }
 
 
-
-  override def toString: String = name +"=" + value.toLowerCase()
+  override def toString: String = name + "=" + value.toLowerCase()

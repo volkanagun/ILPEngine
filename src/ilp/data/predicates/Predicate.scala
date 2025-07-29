@@ -175,8 +175,6 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def equalByContentValue(other:Predicate):Boolean=
     val otherVariables = other.getVariables()
     val result = array.zip(otherVariables).forall{case(crr, oth)=> crr.equalValue(oth)}
-    if result then
-      val de = 0
     result
 
   def identifier(): Int =

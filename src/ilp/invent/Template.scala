@@ -254,6 +254,24 @@ abstract class Template(val engine: Engine) extends Serializable:
     hypothesis.accuracy()
     hypothesis
 
+  def igFunctional(hypothesis: Hypothesis): Hypothesis =
+
+    val items = positives// ++ negatives
+    val crrFacts = items.flatMap(targetHead=>{
+      val ruleHead = hypothesis.getLastHead()
+      val substitution = targetHead.toSubstitution(ruleHead)
+      val newHypothesis = hypothesis.substitution(substitution)
+      val optimization = plan.optimizeExperimental(newHypothesis)
+      val crrSubstitutions = engine.joinParallelCache(optimization, substitution)
+      crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
+    })
+
+    //val crrFacts = substitutions.map(crrSubstition => hypothesis.callHead(crrSubstition))
+
+    hypothesis.ig(crrFacts, positives, negatives)
+    hypothesis.accuracy()
+    hypothesis
+
   /*
   def igParallel(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
 

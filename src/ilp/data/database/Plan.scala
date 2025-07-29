@@ -510,7 +510,7 @@ class Plan(val db: Database) extends Serializable{
     })
 
     presorted.map(rule => optimizeExperimental(countMap, rule)).map(optimized => {
-      val isTarget = query.getHead() == optimized.getHead()
+      val isTarget = query.getHead().equalByIdentifier(optimized.getHead())
       optimized.setTarget(isTarget)
     })
 
@@ -535,7 +535,7 @@ class Plan(val db: Database) extends Serializable{
     })
 
     presorted.map(rule => optimizeBellmanFord(countMap, rule)).map(optimized => {
-      val isTarget = query.getHead() == optimized.getHead()
+      val isTarget = query.getHead().equalByIdentifier(optimized.getHead())
       optimized.setTarget(isTarget)
     })
 
@@ -620,7 +620,7 @@ class Plan(val db: Database) extends Serializable{
   def optimizeNone(query: Hypothesis): Array[Optimized] =
     val presorted = query.getRanked()
     presorted.map(rule => optimizeNone(rule)).map(optimized => {
-      val isTarget = query.getHead() == optimized.getHead()
+      val isTarget = query.getHead().equalByIdentifier(optimized.getHead())
       optimized.setTarget(isTarget)
     })
 

@@ -51,6 +51,12 @@ object Invention:
     println("================================================")
     println("webkb")
     testWebkb()
+    println("================================================")
+    println("zendo1")
+    testZendo1()
+    println("================================================")
+    println("zendo2")
+    testZendo2()
 
   }
 
@@ -81,6 +87,7 @@ object Invention:
 
     results.foreach(h => h.print())
   }
+
   def testIMDB3(): Unit = {
     val experiment = new Experiment(Params("imdb1"))
     experiment.load()
@@ -120,6 +127,7 @@ object Invention:
 
     results.foreach(h => h.print())
   }
+
   def testTrains1(): Unit = {
     val experiment = new Experiment(Params("trains1-toy"))
     experiment.load()
@@ -170,6 +178,7 @@ object Invention:
 
     results.foreach(h => h.print())
   }
+
   def testTrains2(): Unit = {
     val experiment = new Experiment(Params("trains2"))
     experiment.load()
@@ -209,6 +218,7 @@ object Invention:
 
     results.foreach(h => h.print())
   }
+
   def testTrains3(): Unit = {
     val experiment = new Experiment(Params("trains3-toy"))
     experiment.load()
@@ -275,6 +285,7 @@ object Invention:
 
     results.foreach(h => h.normalize().print())
   }
+
   def testIGGPAttritionNextScore(): Unit = {
     val experiment = new Experiment(Params("iggp-attrition-next-score"))
     experiment.load()
@@ -290,8 +301,8 @@ object Invention:
     val metaTransition3 = Parser.parseRule("r3(V0, V1, V2) :- w(V2, V3), k(V0, V1, V3).").get
     val metaTransition4 = Parser.parseRule("r4(V0, V1, V2) :- r(V0, V1), n(V0, V1, V2).").get
 
-    val q = Parser.parseHypothesis("next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V5),beats(V3,V5),does(V0,V4,V3).\n"+
-      "next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V3),different(V1,V4),does(V0,V4,V3).\n"+
+    val q = Parser.parseHypothesis("next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V5),beats(V3,V5),does(V0,V4,V3).\n" +
+      "next_score(V0,V1,V2):- my_true_score(V0,V1,V2),does(V0,V1,V3),different(V1,V4),does(V0,V4,V3).\n" +
       "next_score(V0,V1,V2):- my_true_score(V0,V1,V5),my_succ(V5,V2),does(V0,V1,V6),beats(V6,V3),does(V0,V4,V3).").get
 
     val scoreThreshold = 0.90
@@ -332,6 +343,7 @@ object Invention:
 
     results.foreach(h => h.normalize().print())
   }
+
   def testIGGPMinimalDecayScore(): Unit = {
     val experiment = new Experiment(Params("iggp-minimal-decay-next-value"))
     experiment.load()
@@ -347,7 +359,7 @@ object Invention:
     val metaTransition2 = Parser.parseRule("r1(V0, V1, V2) :- w(V1, V2), k(V0, V2).").get
     val metaTransition3 = Parser.parseRule("r4(V0, V1) :- r(V0, V1, V2), n(V0, V4, V3).").get
 
-    val q = Parser.parseHypothesis("next_value(V0,V1):- c5(V1),does(V0,V3,V2),press_button(V2).\n"+
+    val q = Parser.parseHypothesis("next_value(V0,V1):- c5(V1),does(V0,V3,V2),press_button(V2).\n" +
       "next_value(V0,V1):- my_succ(V1,V2),true_value(V0,V2),does(V0,V4,V3),noop(V3).").get
 
     val scoreThreshold = 0.9
@@ -388,6 +400,7 @@ object Invention:
 
     results.foreach(h => h.normalize().print())
   }
+
   def testIGGPChickenGoalScore(): Unit = {
     val experiment = new Experiment(Params("iggp-gt-chicken-goal"))
     experiment.load()
@@ -437,6 +450,7 @@ object Invention:
 
     results.foreach(h => h.normalize().print())
   }
+
   def testIGGPSokobanGoalScore(): Unit = {
     val experiment = new Experiment(Params("iggp-sokoban-goal"))
     experiment.load()
@@ -890,7 +904,7 @@ object Invention:
 
 
     val q = Parser.parseHypothesis("zendo(V0) :- piece(V0,V1),green(V1),coord1(V1,V3),piece(V0,V2),lhs(V2),coord1(V2,V3).\n" +
-      "zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).").get
+        "zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).").get
       .build()
       .compact()
 
@@ -937,6 +951,72 @@ object Invention:
     results.foreach(h => h.normalize().print())
   }
 
+  def testSynthesis(): Unit = {
+
+    val experiment = new Experiment(Params("synthesis-next"))
+    experiment.load()
+
+    val db = experiment.database
+    val engine = Engine(db)
+    val pos = experiment.positives
+    val neg = experiment.negatives
+    val windowSize = 3
+
+    val metaRecursion = Parser.parseRule("re(V0, V1) :- pi(V0, V2), re(V2,V1).").get
+    val metaRest = Parser.parseRule("re(V0, V1, V2) :- t(V1, V2), c(V2, V1).").get
+    val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V0, V3), alpha(V3).").get
+    val metaRest3 = Parser.parseRule("re(V0, V2) :- rest(V0, V1, V2), r2(V0, V3), alpha(V2).").get
+
+
+    val q = Parser.parseHypothesis(
+        "next_list(V0,V1):- tail(V0,V2),head(V2,V1), head(V3,V0),x(V3).\n" +
+        "next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
+      .build()
+      .compact()
+
+    val scoreThreshold = 0.94
+    val resembleThreshold = 1.0
+    val filterSize = 200
+
+    val heBinary = new HeBinaryFunctional(engine)
+      .addMetaRule(metaRecursion)
+      .addMetaRule(metaRest)
+      .addMetaRule(metaRest2)
+      .addMetaRule(metaRest3)
+      .setPositiveThreshold(0.0)
+      .setNegativeThreshold(1.0)
+      .setScoreThreshold(scoreThreshold)
+      .setFilterSize(filterSize)
+      .setResembleThreshold(resembleThreshold)
+      .setResembleWindow(3)
+
+    val heUnion = new HeUnionFunctional(engine)
+      .setNegativeThreshold(0.0)
+      .setPositiveThreshold(0.05)
+      .setScoreThreshold(scoreThreshold)
+      .setFilterSize(filterSize)
+      .setResembleThreshold(resembleThreshold)
+      .setResembleWindow(3)
+
+    val execution = Execution(engine)
+      .setIter(10)
+      .setWindow(windowSize)
+      .setFilterSize(filterSize)
+      .setScoreThreshold(scoreThreshold)
+      .setNegThreshold(1.0)
+      .setPositives(pos)
+      .setNegatives(neg)
+      .addTemplate(heUnion)
+      .addTemplate(heBinary)
+      .compile()
+
+    heBinary.igFunctional(q).print()
+
+    val results = execution.induction()
+
+    results.foreach(h => h.normalize().print())
+  }
+
   def testHeRecursive(): Unit = {
     val experiment = new Experiment(Params("kinship-ancestor"))
     experiment.load()
@@ -966,6 +1046,6 @@ object Invention:
 
 
   def main(args: Array[String]): Unit = {
-    testZendo2()
+    testSynthesis()
 
   }
