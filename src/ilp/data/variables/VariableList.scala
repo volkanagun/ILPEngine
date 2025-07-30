@@ -3,7 +3,12 @@ package ilp.data.variables
 import ilp.data.Substitution
 
 
-class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm):
+final class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm):
+
+  val containsNumber = nonEmpty() && values.head.isNumber()
+  val containsSymbol = nonEmpty() && values.head.isSymbol()
+  val size = values.length
+  val empty = values.isEmpty
 
   def this(name: String) = this(name, Array[Variable]())
   def this(name: String, var1: Variable) = this(name, Array(var1))
@@ -13,24 +18,28 @@ class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm)
   def this(name: String, head:Double, items: Array[Double]) = this(name, (head +: items).zipWithIndex.map(pair => Num("item" + pair._2, pair._1).asVariable()))
   def this(name: String, head:String, items: Array[String]) = this(name, (head +: items).zipWithIndex.map(pair => Sym("item" + pair._2, pair._1).asVariable()))
 
-  override def isVariable(): Boolean = true
-  override def isVariableList(): Boolean = true
-  override def isList(): Boolean = true
-  override def isSymbol(): Boolean = true
-  override def isNumberList(): Boolean =
-    nonEmpty() && values.head.isNumber()
-  override def isSymbolList(): Boolean =
-    nonEmpty() && values.head.isSymbol()
+  override inline def isVariable(): Boolean = true
+  override inline def isVariableList(): Boolean = true
+  override inline def isList(): Boolean = true
+  override inline def isSymbol(): Boolean = true
+  override inline def isNumberList(): Boolean =
+    containsNumber
 
-  override def getSize(): Int = values.size
+  inline def reverse():VariableList=
+    VariableList(name, values.reverse)
 
-  def sum(resultName:String):Variable =
-    if isSymbolList() then
+  override inline def isSymbolList(): Boolean =
+    containsSymbol
+
+  override inline def getSize(): Int = size
+
+  inline def  sum(resultName:String):Variable =
+    if containsSymbol then
       val result = values.foldRight[String](""){case(item, main)=>{
         main + item.asSymbol().value
       }}
       Sym(resultName, result)
-    else if isNumberList() then
+    else if containsNumber then
       val result = values.foldRight[Double](0.0) { case (item, main) => {
         main + item.asNumber().getNumber()
       }}
@@ -38,55 +47,59 @@ class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm)
     else
       Variable(resultName)
 
+  inline def  avg(resultName:String):Variable =
+    if containsNumber then
+      val result = values.foldRight[Double](0.0) { case (item, main) => {
+        main + item.asNumber().getNumber()
+      }}
+      Num(resultName, result / values.size)
+    else
+      Num(resultName, 0.0)
 
-  override def isEmpty(): Boolean = values.isEmpty
-  override def substitution(substitution: Substitution): Variable =
 
+  override inline def isEmpty(): Boolean = empty
+  override inline def substitution(substitution: Substitution): Variable =
     if substitution.hasVariable(this) then {
       val target = substitution.valueByVariable(this).get
-      if target.isVariableList() then target.asVariableList()
+      if target.isVariableList() then target.copy(getName())
       else this
     }
     else
       this
 
-  def getArray(): Array[Variable] = values
 
-  def getLength(): Num = Num(name, values.length)
+  inline def getHead(): Variable = values.head
 
-  def getHead(): Variable = values.head
+  inline def getTail(): VariableList = VariableList(name, values.tail)
 
-  def getTail(): VariableList = VariableList(name, values.tail)
+  inline def nonEmpty(): Boolean = !empty
 
-  def nonEmpty(): Boolean = values.nonEmpty
-
-
-  def member(variable: Sym): Variable =
+  inline def member(variable: Variable): Variable =
     val isFound = values.contains(variable)
     new Sym(variable.name, isFound.toString)
 
-  def append(variable: Sym): Variable =
+  inline def append(variable: Variable): Variable =
     val newArray = values :+ variable
     VariableList(name, newArray)
 
-  def prepend(variable: Sym): Variable =
+  inline def prepend(variable: Variable): Variable =
     val newArray = variable +: values
     VariableList(name, newArray)
 
-  override def hashCode(): Int = values.foldRight[Int](name.hashCode()){case(variable, main)=> main*7 + variable.hashCode()}
+  override inline def hashCode(): Int = values.foldRight[Int](name.hashCode()){case(variable, main)=> main*7 + variable.hashCode()}
 
-  override def equals(obj: Any): Boolean = {
+  override inline def equals(obj: Any): Boolean = {
     obj.isInstanceOf[Variable] && obj.asInstanceOf[Variable].name == name
   }
 
-  override def equalValue(variable: Variable): Boolean =
+  override inline def equalValue(variable: Variable): Boolean =
     if variable.isVariableList() then
       variable.asVariableList().hashCode() == hashCode()
     else
       false
 
-  override def toString: String = values.mkString("[", ",", "]")
+  override inline def toString: String = values.mkString("[", ",", "]")
 
-  override def copy(): Variable = VariableList(name, values)
-  override def copy(newName:String): Variable = VariableList(newName, values)
+  override inline def copy(): Variable = VariableList(name, values)
+  override inline def copy(newName:String): Variable = VariableList(newName, values)
 

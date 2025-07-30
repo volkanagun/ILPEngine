@@ -107,7 +107,7 @@ class Execution(var engine: Engine):
 
     this
 
-  def reusable(newHypothesis:Set[Hypothesis], previousHypothesis:Array[Hypothesis]):Array[Hypothesis] = {
+  /*def reusable(newHypothesis:Set[Hypothesis], previousHypothesis:Array[Hypothesis]):Array[Hypothesis] = {
 
     previousHypothesis.foreach(previous => {
       val includeList = newHypothesis.filter(pred=> pred.containsLast(previous))
@@ -115,7 +115,7 @@ class Execution(var engine: Engine):
       previous.setTested(allTested)
     })
     previousHypothesis
-  }
+  }*/
 
 
   def induction(): Set[Hypothesis] =

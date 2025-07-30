@@ -1,25 +1,24 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{NumList, Variable}
+import ilp.data.variables.{Variable, VariableList}
 
 
-class Reverse(val list: NumList, val result: NumList) extends Functional("reverse", Array[Variable](list, result)):
+final class Reverse(val list: VariableList, val result: VariableList) extends Functional("reverse", Array[Variable](list, result)):
 
-  override def isDefinite(): Boolean =  true
-  override def isExecutable(): Boolean = list.nonEmpty()
+  override inline def isDefinite(): Boolean =  true
+  override inline def isExecutable(): Boolean = list.nonEmpty()
 
-  //override def isList(): Boolean = list.nonEmpty()
-  override def getValue(): Variable = {
+  override inline def getValue(): Variable = {
     list.reverse()
   }
-  override def copy(): Variable =
-    Reverse(list.copy().asNumList(), result.copy().asNumList())
+  override inline def copy(): Variable =
+    Reverse(list.copy().asVariableList(), result.copy().asVariableList())
 
-  override def substitution(substitution: Substitution): Variable =
-    val newList = list.substitution(substitution).asNumList()
-    val newResult = result.substitution(substitution).asNumList()
-    Reverse(newList, newResult).asVariable()
+  override inline def substitution(substitution: Substitution): Variable =
+    val newList = list.substitution(substitution)
+    val newResult = result.substitution(substitution)
+    Reverse(newList.asVariableList(), newResult.asVariableList()).asVariable()
 
-  override def execute(): Option[Substitution] =
+  override inline def execute(): Option[Substitution] =
     Some(Substitution().add(result, getValue()))

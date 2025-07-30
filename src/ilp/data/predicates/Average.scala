@@ -1,14 +1,14 @@
 package ilp.data.predicates
 
-import ilp.data.variables.{NumList, Variable}
+import ilp.data.variables.{Variable, VariableList}
 
 
-class Average(array: NumList) extends Functional("average", Array(array)):
+final class Average(array: VariableList) extends Functional("average", Array(array)):
 
-  override def isDefinite(): Boolean = true
+  override inline def isDefinite(): Boolean = true
+  override inline def isExecutable(): Boolean = true
 
-  override def getValue(): Variable =
-    val items = array.average().getNumber()
-    NumList(name, items)
+  override inline def getValue(): Variable =
+    array.avg(name)
 
-  override def toString: String = "Average(" + array + ")"
+  override inline def toString: String = "Average(" + array + ")"

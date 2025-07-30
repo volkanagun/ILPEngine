@@ -7,7 +7,7 @@ import org.roaringbitmap.RoaringBitmap
 import java.util
 
 
-class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: Int = 128) extends Serializable{
+final class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: Int = 128) extends Serializable{
 
   var rowMap = predicate.getPositions().map(position => {
     position.getIndex() -> new util.HashMap[Variable, Set[Int]]()
@@ -16,9 +16,6 @@ class Index(val predicate: Predicate, var data: Array[Predicate], val bitsize: I
   var roaringBitmap = predicate.getPositions().map(position => {
     position.getIndex() -> new util.HashMap[Variable, RoaringBitmap]()
   }).toMap
-
-
-
 
 
   def addIndex(predicates: Array[Predicate]): this.type = {

@@ -17,19 +17,14 @@ class Variable(var name: String) extends Serializable:
 
   def getName(): String = name
 
-  def getShortName(): String = name.hashCode.toHexString.take(2)
-
   def setName(name: String): Variable =
     this.name = name
     this
 
 
   def getComplexity(): Double = 1.0
-
   def getSize(): Int = 0
-
   def getValue(): Variable = this
-
   def id(): Int =
     name.hashCode
 
@@ -56,9 +51,6 @@ class Variable(var name: String) extends Serializable:
 
   def asNumber(): Num =
     this.asInstanceOf[Num]
-
-  def asNumList(): NumList =
-    this.asInstanceOf[NumList]
 
   def asVariableList(): VariableList =
     this.asInstanceOf[VariableList]

@@ -5,7 +5,7 @@ import ilp.data.variables.Variable
 import ilp.data.{Query, Substitution}
 import org.roaringbitmap.RoaringBitmap
 
-class Optimized(val query: Query, var variables: Array[Variable] = Array(), var predicates: Array[Predicate] = Array()) extends Serializable{
+final class Optimized(val query: Query, var variables: Array[Variable] = Array(), var predicates: Array[Predicate] = Array()) extends Serializable{
 
   var rows: Map[Int, Set[Int]] = Map()
   var roaringBitmap: Map[Int, RoaringBitmap] = Map()

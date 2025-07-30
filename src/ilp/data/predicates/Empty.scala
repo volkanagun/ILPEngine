@@ -3,16 +3,16 @@ package ilp.data.predicates
 import ilp.data.Substitution
 import ilp.data.variables.{Sym, Variable}
 
-class Empty(val nm:String, val variable: Variable) extends Functional(nm, Array(variable)) {
+final class Empty(val nm:String, val variable: Variable) extends Functional(nm, Array(variable)) {
 
-  override def isDefinite(): Boolean = true
-  override def isExecutable(): Boolean = variable.isNumberList() && variable.asNumList().getSize() == 0
-  override def getValue(): Variable = {
-    val result = variable.asNumList().getSize() == 0
+  override inline def isDefinite(): Boolean = true
+  override inline def isExecutable(): Boolean = variable.isVariableList() && variable.isEmpty()
+  override inline def getValue(): Variable = {
+    val result = variable.isEmpty()
     Sym(name, result.toString)
   }
 
-  override def substitution(substitution: Substitution): Variable =
+  override inline def substitution(substitution: Substitution): Variable =
     variable.substitution(substitution)
 
 

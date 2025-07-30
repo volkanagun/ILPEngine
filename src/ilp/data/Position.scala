@@ -3,47 +3,45 @@ package ilp.data
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
-class Position(val predicate:Predicate, val pindex:Int, val index:Int) extends Serializable{
-  override def hashCode(): Int = (predicate.identifier().hashCode() * 7 + pindex) * 7 + index
+final class Position(val predicate:Predicate, val pindex:Int, val index:Int) extends Serializable{
+  override inline def hashCode(): Int = (predicate.identifier().hashCode() * 7 + pindex) * 7 + index
 
-  override def equals(obj: Any): Boolean = {
+  override inline def equals(obj: Any): Boolean = {
     val other = obj.asInstanceOf[Position]
     other.predicate.identifier() == predicate.identifier() && other.pindex == pindex && other.index == index
   }
 
-  def equalsByName(obj: Any): Boolean = {
+  inline def equalsByName(obj: Any): Boolean = {
     val other = obj.asInstanceOf[Position]
     other.getVariable().equals(getVariable())
   }
 
-  override def toString = predicate.name + "/"+ pindex + "_" + index + s"_${getName()}"
+  override inline def toString = predicate.name + "/"+ pindex + "_" + index + s"_${getName()}"
 
 
-
-  def getValueIdentifier():Int =
-    predicate.identifier() * 7 + index
-
+/*
+  inline def getValueIdentifier():Int =
+    predicate.identifier() * 7 + index*/
+/*
   def getVariableIdentifier():Int =
-    getVariable().hashCode()
+    getVariable().hashCode()*/
 
-  def getVariable():Variable =
+  inline def getVariable():Variable =
     predicate.getVariable(index)
 
-  def getName():String =
+  inline def getName():String =
     predicate.getVariable(index).getName()
 
-  def getPredicate():Predicate =
-    predicate
+/*  def getPredicate():Predicate =
+    predicate*/
 
-  def getIdentifier():Int =
+  inline def getIdentifier():Int =
     predicate.identifier()
 
-  def getPredicateIdentifier():Int =
+  inline def getPredicateIdentifier():Int =
     predicate.identifier(pindex)
 
-
-
-  def getIndex():Int =
+  inline def getIndex():Int =
     index
 
   /*

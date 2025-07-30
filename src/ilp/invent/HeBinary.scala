@@ -6,7 +6,7 @@ import ilp.data.database.Engine
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 import scala.util.control.Breaks
 
-class HeBinary(engine: Engine) extends HeI(engine):
+class HeBinary(engine: Engine) extends Template(engine):
 
   override def source(): Array[Hypothesis] =
     val selectedSet = sources.sortBy(_.posRate)
@@ -23,13 +23,6 @@ class HeBinary(engine: Engine) extends HeI(engine):
     val isFound = array.exists(item => item.isFinished(scoreThreshold) && item.negRate == 0.0)
     isFound
   }
-
-/*  def union(crr: Set[Hypothesis]): Set[Hypothesis] =
-    crr.groupBy(hypothesis => hypothesis.getHead())
-      .map { case (head, set) => {
-        igParallel(Hypothesis(head, set.flatMap(_.rules).toArray))
-      }
-      }.toSet*/
 
   override def addTarget(hypotheses: Array[Hypothesis]): this.type = {
     this.candidates = candidates ++ hypotheses

@@ -3,35 +3,35 @@ package ilp.data.predicates
 import ilp.data.variables.Variable
 import ilp.data.{Substitution, variables}
 
-class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional("subtract", Array(e1, e2, result)):
-  override def isExecutable(): Boolean = isDefinite()
-  override def isDefinite(): Boolean = e1.isSymbol() && e2.isSymbol()
+final class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional("subtract", Array(e1, e2, result)):
+  override inline def isExecutable(): Boolean = isDefinite()
+  override inline def isDefinite(): Boolean = e1.isSymbol() && e2.isSymbol()
 
-  override def substitution(substitution: Substitution): Variable =
+  override inline def substitution(substitution: Substitution): Variable =
     val crrName = Variable(name)
     val newName = crrName.substitution(substitution).getName()
     val newE1 = e1.substitution(substitution)
     val newE2 = e2.substitution(substitution)
     Minus(result, newE1, newE2)
 
-  override def getValue(): Variable =
+  override inline def getValue(): Variable =
     val headNumber = e1.getValue().asNumber().getNumber()
     val lastNumber = e2.getValue().asNumber().getNumber()
     variables.Num(result.getName(), headNumber - lastNumber)
 
-  def getReverse(substitution: Substitution):Variable =
+  inline def getReverse(substitution: Substitution):Variable =
     val computedResult = result.substitution(substitution)
     val computedNumber = computedResult.getValue().asNumber().getNumber()
     val lastNumber = e2.getValue().asNumber().getNumber()
     variables.Num(e1.getName(), computedNumber + lastNumber)
 
 
-  override def contains(variable: Variable): Boolean = e1 == variable
+  override inline def contains(variable: Variable): Boolean = e1 == variable
 
-  override def execute(): Option[Substitution] =
+  override inline def execute(): Option[Substitution] =
     Some(Substitution().add(result.asVariable(), getValue()))
 
-  override def reverseExecute(substitution: Substitution): Option[Substitution] = {
+  override inline def reverseExecute(substitution: Substitution): Option[Substitution] = {
     if substitution.contains(result) then {
       val reverseNumber = getReverse(substitution)
       val newSubstitution = substitution.appendNew(reverseNumber, reverseNumber)
@@ -42,4 +42,4 @@ class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional("subtr
     }
   }
 
-  override def toString: String = e1.toString + "-" + e2.toString
+  override inline def toString: String = e1.toString + "-" + e2.toString

@@ -1,26 +1,25 @@
 package ilp.data.predicates
 
 import ilp.data.Substitution
-import ilp.data.variables.{NumList, Variable}
+import ilp.data.variables.{Variable, VariableList}
 
-class Prepend(val item: Variable, val list: NumList, val result: NumList) extends Functional("prepend", Array(item, list, result)):
+final class Prepend(val item: Variable, val list: VariableList, val result: VariableList) extends Functional("prepend", Array(item, list, result)):
 
-  override def isDefinite(): Boolean =  true
-  override def isExecutable(): Boolean = list.nonEmpty() && item.isSymbol()
+  override inline def isDefinite(): Boolean =  true
+  override inline def isExecutable(): Boolean = list.nonEmpty() && item.isSymbol()
 
-  //override def isList(): Boolean = list.nonEmpty()
-  override def getValue(): Variable = {
-    list.prepend(item.asNumber())
+  override inline def getValue(): Variable = {
+    list.prepend(item)
   }
-  override def copy(): Variable =
-    Prepend(item.copy(), list.copy().asNumList(), result.copy().asNumList())
+  override inline def copy(): Variable =
+    Prepend(item.copy(), list.copy().asVariableList(), result.copy().asVariableList())
 
-  override def substitution(substitution: Substitution): Variable =
+  override inline def substitution(substitution: Substitution): Variable =
     val newItem = item.substitution(substitution)
-    val newList = list.substitution(substitution).asNumList()
-    val newResult = result.substitution(substitution).asNumList()
-    Prepend(newItem, newList, newResult).asVariable()
+    val newList = list.substitution(substitution)
+    val newResult = result.substitution(substitution)
+    Prepend(newItem, newList.asVariableList(), newResult.asVariableList()).asVariable()
 
-  override def execute(): Option[Substitution] =
+  override inline def execute(): Option[Substitution] =
     Some(Substitution().add(result, getValue()))
 

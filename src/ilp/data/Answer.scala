@@ -3,11 +3,11 @@ package ilp.data
 import ilp.data.predicates.Predicate
 
 
-class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()) extends Serializable:
+final class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set()) extends Serializable:
 
   def this(main: Substitution, content: Substitution) = this(main, Set(content))
 
-  override def toString: String = {
+  override inline def toString: String = {
     substitutions.mkString("|")
   }
 
@@ -28,17 +28,3 @@ class Answer(var main: Substitution, var substitutions: Set[Substitution] = Set(
     .toSet
 
 
-/*
-  def isEmpty(): Boolean =
-    substitutions.isEmpty
-
-  def setMain(main: Substitution): this.type =
-    this.main = main
-    this
-
-  def setSubstitutions(substitutions: Set[Substitution]): this.type =
-    this.substitutions = substitutions
-    this
-
-  def getSubstitutions(): Set[Substitution] = substitutions
-*/

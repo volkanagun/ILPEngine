@@ -8,7 +8,7 @@ import org.roaringbitmap.RoaringBitmap
 
 class Database(name: String) extends Serializable:
 
-  var symbols = Array[Collection]()
+
   private var sets = Set[Predicate]()
   var templates = Map[Int, Set[Predicate]]()
   private var templates2 = Map[Int, Set[Predicate]]()

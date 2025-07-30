@@ -172,11 +172,11 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   override def contains(variable: Variable): Boolean =
     array.exists(item => item.getName().equals(variable.getName()))
 
-  def hasInput(variable: Variable):Boolean =
-    inputVariables.exists(item=> item.getName() == variable.getName())
+/*  def hasInput(variable: Variable):Boolean =
+    inputVariables.exists(item=> item.getName() == variable.getName())*/
 
-  def hasInput(position: Int):Boolean =
-    hasInput(array(position))
+/*  def hasInput(position: Int):Boolean =
+    hasInput(array(position))*/
 
   def contains(variables: Array[Variable]): Boolean =
     variables.forall(variable => contains(variable))

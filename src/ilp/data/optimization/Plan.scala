@@ -13,7 +13,7 @@ case class Key(predicate: Predicate, index: Int) extends Serializable{
     other.hashCode() == hashCode()
 }
 
-class Plan(val db: Database) extends Serializable{
+final class Plan(val db: Database) extends Serializable{
 
 
   val statistics = db.getStatistics()

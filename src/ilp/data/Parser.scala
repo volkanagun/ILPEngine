@@ -1,5 +1,6 @@
 package ilp.data
 
+import ilp.data.database.Type
 import ilp.data.predicates.*
 import ilp.data.variables.*
 
@@ -52,17 +53,12 @@ object Parser extends JavaTokenParsers {
 
   def keywordIs: Parser[String] = "is".r
 
-  /** Parser for a variable (starts with an uppercase letter) */
   def variable: Parser[Variable] =
     "[A-Z]([A-Za-z0-9\\_]*)".r ^^ {
       case item => Variable(item)
     }
 
-  /** Parser for a variable (starts with an uppercase letter) */
-  def collection: Parser[Variable] =
-    "[A-Z0-9\\_]+".r ^^ {
-      case item => Collection(item, Set())
-    }
+
 
   /** Parser for a variable (starts with an lowercase letter) */
   def symbol: Parser[variables.Sym] =
@@ -237,8 +233,7 @@ object Parser extends JavaTokenParsers {
       functionCall |
       number |
       symbol |
-      variable |
-      collection
+      variable
   }
 
   def argument_int: Parser[Variable] = {
@@ -256,9 +251,7 @@ object Parser extends JavaTokenParsers {
       functionCall |
       number_int |
       symbol |
-      variable |
-      collection
-
+      variable
   }
 
   def negativePlusCall: Parser[Predicate] =
@@ -273,7 +266,7 @@ object Parser extends JavaTokenParsers {
 
   def isListArgument: Parser[Predicate] =
     "is_list(" ~ islist ~ ")" ^^ {
-      case "is_list(" ~ item ~ ")" => IsList(NumList("E", Array[Double]()))
+      case "is_list(" ~ item ~ ")" => IsList(VariableList("E", Array[Variable]()))
     }
 
   def plusArgument: Parser[Predicate] =
@@ -307,10 +300,10 @@ object Parser extends JavaTokenParsers {
     }
 
   def appendArgument: Parser[Predicate] =
-    "append([" ~ variable ~ "]," ~ variable ~ "," ~ variable ~ ")" ^^ {
+    "append([" ~ variable ~ "]," ~ variableList ~ "," ~ variable ~ ")" ^^ {
       case "append([" ~ item ~ "]," ~ list ~ "," ~ result ~ ")" => Append(item, list, result)
     } |
-      "append(" ~ variable ~ ",[" ~ variable ~ "]," ~ variable ~ ")" ^^ {
+      "append(" ~ variableList ~ ",[" ~ variable ~ "]," ~ variable ~ ")" ^^ {
         case "append(" ~ list ~ ",[" ~ item ~ "]," ~ result ~ ")" => Append(item, list, result)
       }
 
@@ -405,7 +398,7 @@ object Parser extends JavaTokenParsers {
 
   def emptyListArgument: Parser[Empty] =
     "empty([])" ^^ {
-      case "empty([])" => Empty("empty", NumList("L"))
+      case "empty([])" => Empty("empty", VariableList("L"))
     }
 
   def assignArgument: Parser[Assign] =

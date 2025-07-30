@@ -3,35 +3,37 @@ package ilp.data.optimization
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
-class Statistics(var predicate: Predicate, val data: Array[Predicate]) extends Serializable{
+final class Statistics(var predicate: Predicate, val data: Array[Predicate]) extends Serializable{
 
-  val minScalar = 1.0 / (1000)
-  val maxScalar = 1000
+  //val minScalar = 1.0 / (1000)
+  //val maxScalar = 1000
+
+  val size = data.size
 
   def this(predicate: Predicate) = this(predicate, Array(predicate))
 
   private var activeMap = Range(0, predicate.getArity()).map(index => index -> computeActiveSize(index)).toMap
   private var relativeMap = computeRelative()
-  private var inverseRelativeMap = computeInverseRelative()
+  private val inverseRelativeMap = computeInverseRelative()
 
-  def identifier(): Int =
+  inline def identifier(): Int =
     predicate.identifier()
 
-  def getData(): Array[Predicate] =
+  inline def getData(): Array[Predicate] =
     data
 
-  def getDataSize(): Int =
+  inline def getDataSize(): Int =
     data.size
 
-  def getAttributes() = predicate.getVariables()
+  inline def getAttributes() = predicate.getVariables()
 
-  def setPredicate(predicate: Predicate): Statistics = {
+  inline def setPredicate(predicate: Predicate): Statistics = {
     this.predicate = predicate
     this
   }
 
 
-  private def computeRelative(): Map[(Int, Int), Double] = {
+  private inline def computeRelative(): Map[(Int, Int), Double] = {
     val map = Range(0, predicate.getArity()).flatMap(current => {
       val size1 = activeMap(current)
 
@@ -44,7 +46,7 @@ class Statistics(var predicate: Predicate, val data: Array[Predicate]) extends S
     map
   }
 
-  private def computeInverseRelative(): Map[(Int, Int), Double] = {
+  private inline def computeInverseRelative(): Map[(Int, Int), Double] = {
     val map = Range(0, predicate.getArity()).flatMap(current => {
       val size1 = activeMap(current)
 
@@ -57,25 +59,24 @@ class Statistics(var predicate: Predicate, val data: Array[Predicate]) extends S
     map
   }
 
-  def init(activeMap: Map[Int, Double]): this.type = {
+  inline def init(activeMap: Map[Int, Double]): this.type = {
     this.activeMap = activeMap
     this.relativeMap = computeRelative()
     this
   }
 
-  def hasVariable(variable: Variable): Boolean =
+  inline def hasVariable(variable: Variable): Boolean =
     predicate.contains(variable)
 
-  def isInput(variable: Variable): Boolean =
-    predicate.hasInput(variable)
+/*  def isInput(variable: Variable): Boolean =
+    predicate.hasInput(variable)*/
 
-  def rowSize(): Int = data.size
+  inline def rowSize(): Int = size
 
-  def getActiveSize(position: Int): Double =
+  inline def getActiveSize(position: Int): Double =
     activeMap(position)
 
-
-  def getDuplicateRatio(): Double = {
+  inline def getDuplicateRatio(): Double = {
     val total = Range(0, predicate.getArity()).map(activeMap)
       .map(d=> d/getDataSize()).sum
 
@@ -151,5 +152,5 @@ class Statistics(var predicate: Predicate, val data: Array[Predicate]) extends S
     data.map(predicate => predicate.getVariable(position)).size
   }
 
-  override def toString = predicate.toString
+  override inline def toString = predicate.toString
 }

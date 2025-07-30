@@ -1,17 +1,15 @@
 package ilp.data.variables
 
-class Num(vname: String, var item: Double) extends Sym(vname, item.toString):
-  override def isNumber(): Boolean = true
+final class Num(vname: String, val item: Double) extends Variable(vname):
+  override inline def isNumber(): Boolean = true
+  override inline def isSymbol(): Boolean = true
+  inline def getNumber(): Double = item
 
-  override def isSymbol(): Boolean = true
-
-  def getNumber(): Double = item
-
-  override def hashCode(): Int = {
+  override inline def hashCode(): Int = {
     item.hashCode()
   }
 
-  override def equals(obj: Any): Boolean = {
+  override inline def equals(obj: Any): Boolean = {
     obj match {
       case num: Num => num.item == item
       case variable:Variable => variable.getName() == getName()
@@ -20,32 +18,31 @@ class Num(vname: String, var item: Double) extends Sym(vname, item.toString):
 
   }
 
-  override def equalValue(variable: Variable): Boolean = variable.isNumber() && variable.asNumber().getNumber() == getNumber()
+  override inline def equalValue(variable: Variable): Boolean = variable.isNumber() && variable.asNumber().getNumber() == getNumber()
 
-  override def toString: String = getName() + "=" + value
+  override inline def toString: String = getName() + "=" + item.toString
 
-  override def id(): Int = name.hashCode * 7 + item.hashCode()
+  override inline def id(): Int = name.hashCode * 7 + item.hashCode()
 
-  override def copy(): Variable = Num(name, item)
-  override def copy(name:String): Variable = new Num(name, item)
+  override inline def copy(): Variable = Num(name, item)
+  override inline def copy(name:String): Variable = new Num(name, item)
 
-  def greater(other: Variable): Boolean =
+  inline def greater(other: Variable): Boolean =
     item > other.asNumber().item
 
-  def greaterEqual(other: Variable): Boolean =
+  inline def greaterEqual(other: Variable): Boolean =
     item >= other.asNumber().item
 
-  def lower(other: Variable): Boolean =
+  inline def lower(other: Variable): Boolean =
     item < other.asNumber().item
 
-  def lowerEqual(other: Variable): Boolean =
+  inline def lowerEqual(other: Variable): Boolean =
     item <= other.asNumber().item
 
-  def equal(other: Variable): Boolean =
+  inline def equal(other: Variable): Boolean =
     item == other.asNumber().item
 
-
-  def log(): Num =
+  inline def log(): Num =
     Num(name, math.log(item))
 
 

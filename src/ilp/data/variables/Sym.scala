@@ -1,24 +1,24 @@
 package ilp.data.variables
 
-class Sym(n: String, var value: String) extends Variable(n):
+final class Sym(n: String, var value: String) extends Variable(n):
 
-  override def getComplexity(): Double = 0
+  override inline def getComplexity(): Double = 0
 
-  override def isSymbol() = true
+  override inline def isSymbol() = true
 
-  override def isPredicate() = false
+  override inline def isPredicate() = false
 
-  override def isVariable() = false
+  override inline def isVariable() = false
 
-  override def copy(): Variable = new Sym(name, value)
+  override inline def copy(): Variable = new Sym(name, value)
 
-  override def copy(name: String): Variable = new Sym(name, value)
+  override inline def copy(name: String): Variable = new Sym(name, value)
 
-  override def hashCode(): Int = value.hashCode
+  override inline def hashCode(): Int = value.hashCode
 
-  override def id(): Int = name.hashCode * 7 + value.hashCode
+  override inline def id(): Int = name.hashCode * 7 + value.hashCode
 
-  override def equalValue(variable: Variable): Boolean = {
+  override inline def equalValue(variable: Variable): Boolean = {
     variable.isSymbol() && variable.asSymbol().value == value
   }
 

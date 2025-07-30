@@ -1,7 +1,7 @@
 package ilp.data
 
 import ilp.data.predicates.{Predicate, Sum}
-import ilp.data.variables.{Num, NumList, Variable, VariableList}
+import ilp.data.variables.{Num, Variable, VariableList}
 
 import scala.util.control.Breaks
 

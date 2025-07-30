@@ -7,7 +7,7 @@ import ilp.data.variables.{Sym, Variable}
 import scala.collection.immutable.HashSet
 
 
-class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) extends Serializable{
+final class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) extends Serializable{
 
   def this() = this(Array[Variable](), Array[Variable]())
 
@@ -17,13 +17,10 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def this(variable: String, symbol: String) = this(Variable(variable), Variable(symbol))
 
-  def getVariables() = variables
-
-  def getVariable(index: Int) = variables(index)
-
-  def getSymbols() = symbols
-
-  def getSymbol(index: Int) = symbols(index)
+  inline def getVariables() = variables
+  inline def getVariable(index: Int) = variables(index)
+  inline def getSymbols() = symbols
+  inline def getSymbol(index: Int) = symbols(index)
 
   def getSymbol(variable: Variable): Option[Variable] = {
     for (index <- 0 until variables.length) {
@@ -37,7 +34,7 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
 
   def containsAll(variables: Array[Variable]) = variables.forall(variable => contains(variable))
 
-  def copy(): Substitution =
+  inline def copy(): Substitution =
     Substitution(variables, symbols)
 
   def get(variables: Array[Variable]) = {
@@ -55,13 +52,13 @@ class Substitution(var variables: Array[Variable], var symbols: Array[Variable])
     Substitution(newVariables, newSymbols)
   }
 
-  def length(): Int =
+  inline def length(): Int =
     variables.length
 
-  def isEmpty(): Boolean =
+  inline def isEmpty(): Boolean =
     variables.isEmpty
 
-  def nonEmpty(): Boolean =
+  inline def nonEmpty(): Boolean =
     variables.nonEmpty
 
   def id(): Int =
