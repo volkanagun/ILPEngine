@@ -51,6 +51,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
       }))
   }
 
+
   override def hashCode(): Int =
     getSortedBody()
       .foldRight[Int](head.hashCode()) { case (predicate, main) => main * 7 + predicate.hashCode() }
@@ -75,6 +76,8 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
   def getSize(): Int =
     body.length
+
+
 
   def getRuleSize(): Int =
     1
@@ -176,7 +179,18 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
       Rule(crrHead, newBody)
 
 
-  def substitution(substitution: Substitution, doRecursion: Boolean = false): Hypothesis =
+  def substitution(substitution: Substitution, doRecursion: Boolean = false): Rule =
+
+    val newHead = head.substitution(substitution).asPredicate()
+    val newBody = body.map(_.substitution(substitution).asPredicate())
+    val recursiveRule = Rule(newHead, newBody)
+      .setInputVariables(inputVariables)
+      .setRecursion(recursive).setFunctional(functional)
+
+    recursiveRule
+/*
+
+  def substitution(substitution: Substitution, doRecursion: Boolean = false): Rule =
 
     val newHead = head.substitution(substitution).asPredicate()
     val newBody = body.map(_.substitution(substitution).asPredicate())
@@ -185,10 +199,14 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
       val atoms = body.zip(newBody).filter { case (original, named) => {
         original.identifier() == head.identifier()
       }}.map { case (original, named) => Rule(named, original) }
-      Hypothesis(newHead, atoms :+ recursiveRule.setRecursion(isRecursive()))
+
+      Hypothesis(newHead, atoms :+ recursiveRule.setRecursion(isRecursive())
+        .setFunctional(functional))
 
     else
-      Hypothesis(newHead, recursiveRule.setRecursion(isRecursive()))
+      Hypothesis(newHead, recursiveRule.setRecursion(isRecursive())
+        .setFunctional(functional))
+*/
 
 
   def matches(test: Set[Predicate], facts: Set[Predicate]): Set[Predicate] =

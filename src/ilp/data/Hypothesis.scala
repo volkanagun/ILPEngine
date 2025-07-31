@@ -37,8 +37,9 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   }
 
   def build(): this.type = {
-    sorted = getRanked()
+    buildDependency()
     buildInputs()
+    buildFunctional()
   }
 
   def normalize(): Hypothesis = {
@@ -100,8 +101,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
         val symbol = Variable(replacement.get.getHead().getName())
         subs.add(variable, symbol)
       }
-    }
-    }
+    }}
 
     if array.length != rules.length then
       val hypothesis = Hypothesis(array.reverse)
@@ -112,10 +112,12 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   }
 
   override def substitution(substitution: Substitution, doRecursion: Boolean): Hypothesis = {
-    val newRules = rules.map(rule => rule.substitution(substitution)).flatMap(_.getRules()).distinct
+    //val newRules = rules.map(rule => rule.substitution(substitution)).flatMap(_.getRules()).distinct
+    val newRules = rules.map(rule => rule.substitution(substitution)).distinct
     val newHead = newRules.last.getHead()
     Hypothesis(newHead, newRules)
       .setRecursive(recursive)
+      .setFunctional(functional)
       .setInputVariables(inputVariables)
   }
 
@@ -164,13 +166,41 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     rules.filter(rule => rule.getHead() != crrHead)
 
 
+  def buildFunctional():this.type = {
+    sorted.foreach(rule => {
+      val ruleHead = rule.getHead()
+      sorted.filter(target=> target.containsByIdentifier(ruleHead)).foreach(target=>{
+        val func = target.isFunctional() || rule.isFunctional()
+        target.setFunctional(func)
+      })
+    })
+    this
+  }
+
+  def buildDependency():this.type = {
+    sorted = getRanked()
+    this
+  }
+
+  def buildOperational():this.type = {
+    buildInputs()
+    buildFunctional()
+  }
+
   def buildInputs():this.type = {
 
     sorted.foreach(rule=> {
       val head = rule.getHead()
-      val input = rule.getBody().flatMap(predicate => predicate.getInput()
+      val headVariables = head.getVariables()
+      val bodyPredicates = rule.getBody()
+
+      val input = headVariables.filter(variable =>
+        bodyPredicates.filter(predicate=> predicate.contains(variable))
+          .forall(predicate=> predicate.containsInput(variable)))
+
+/*      val input = rule.getBody().flatMap(predicate => predicate.getInput()
         .filter(inputVariable=> head.contains(inputVariable)))
-        .distinct
+        .distinct*/
       head.setInput(input)
       val inputIndices = head.getInputIndices()
       rule.setInputVariables(head.getInput())
@@ -184,7 +214,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
   def getRanked(): Array[Rule] = {
     val damping = 0.85
-    val numIterations = 2
+    val numIterations = 10
     val N = rules.size
     val initialRank = 1.0 / N
     val add = (1 - damping) / N
@@ -192,16 +222,18 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     //val ruleMap = rules.groupBy(r=> r.identifier())
     var ranks = Map[Int, Double](rules.map(r => r.identifier() -> initialRank): _*)
     var outLinks = Map[Int, Set[Rule]]()
-    rules.foreach { r =>
-      outLinks = outLinks.updated(r.identifier(), rules.filter(other => r.calls(other)).toSet)
+    rules.foreach { crrRule =>
+      val identifier = crrRule.identifier()
+      outLinks = outLinks.updated(crrRule.identifier(), rules.filter(otherRule => crrRule.calls(otherRule) && otherRule.identifier()!=identifier).toSet)
     }
 
     for (_ <- 1 to numIterations) {
       var newRanks = Map[Int, Double]()
       for (r <- rules) {
+        val id = r.identifier()
         val outbound = outLinks.getOrElse(r.identifier(), Set.empty)
-        val rankSum = outbound.map(p => ranks(p.identifier()) / p.getSize()).sum
-        newRanks = newRanks.updated(r.identifier(), add + damping * rankSum)
+        val rankSum = outbound.map(p => ranks(p.identifier()) / p.getNonRecursiveSize()).sum
+        newRanks = newRanks.updated(id, add + damping * rankSum)
       }
       ranks = newRanks
     }

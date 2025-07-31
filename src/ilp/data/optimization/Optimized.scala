@@ -68,6 +68,9 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
   def isRecursive(): Boolean =
     query.isRecursive()
 
+  def isFunctional():Boolean =
+    query.isFunctional()
+
   def getQueryId(): Int =
     queryId
 

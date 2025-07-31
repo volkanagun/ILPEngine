@@ -9,5 +9,5 @@ g(g).
 h(h).
 i(i).
 j(j).
-head([H|_],H).
-tail([_|T],T).
+head(H, L).
+tail(L, T).

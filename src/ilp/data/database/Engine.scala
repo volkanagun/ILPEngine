@@ -399,14 +399,16 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     var substitutions = Set[Substitution]()
     contextProgram.foreach(context => {
       if context.isTarget() then context.setSubstitution(substitution)
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinParallel(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+      }
 
-      val headPredicate = context.getHead()
-      val crrSubstitutions = joinParallel(contextMap, context, context)
-        .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
-      val crrPredicates = context.get(crrSubstitutions)
-      substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-      contextProgram.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
     })
 
     substitutions
@@ -421,17 +423,17 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     var substitutions = Set[Substitution]()
     contextProgram.foreach(context => {
       if context.isTarget() then context.setSubstitution(substitution)
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinRoaringSerial(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
 
-      val headPredicate = context.getHead()
-      val crrSubstitutions = joinRoaringSerial(contextMap, context, context)
-        .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
-      val crrPredicates = context.get(crrSubstitutions)
-
-
-      updateIndex(headPredicate, crrPredicates.toArray)
-      substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-      contextProgram.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
+        updateIndex(headPredicate, crrPredicates.toArray)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
+      }
     })
 
     substitutions
@@ -446,17 +448,16 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     var substitutions = Set[Substitution]()
     contextProgram.foreach(context => {
       if context.isTarget() then context.setSubstitution(substitution)
-
-      val headPredicate = context.getHead()
-      val crrSubstitutions = joinRoaringParallel(contextMap, context, context)
-        .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
-      val crrPredicates = context.get(crrSubstitutions)
-
-
-      updateIndex(headPredicate, crrPredicates.toArray)
-      substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-      contextProgram.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinRoaringParallel(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        updateIndex(headPredicate, crrPredicates.toArray)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
+      }
     })
 
     substitutions
@@ -472,22 +473,31 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
     contextProgram.foreach(context => {
       if context.isTarget() then context.setSubstitution(substitution)
-      val headPredicate = context.getHead()
+
       val ruleId = context.getRuleId(substitution)
-      val crrSubstitutions = if programCache.contains(ruleId) then {
-        programCache.get(ruleId)
+      if !context.isFunctional() && programCache.contains(ruleId) then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = programCache.get(ruleId)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
       }
-      else {
+      else if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
         val parallelResult = joinParallel(contextMap, context, context)
-        val newSubstitutions = parallelResult
+        val crrSubstitutions = parallelResult
           .map(substitution => substitution.get(headPredicate.getVariables())) ++
           atomSubstitutions(headPredicate, substitution)
-        programCache.update(ruleId, newSubstitutions)
+
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+
+        programCache.update(ruleId, crrSubstitutions)
       }
-      val crrPredicates = context.get(crrSubstitutions)
-      substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-      contextProgram.filter(other => context.calledFrom(other))
-        .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+
     })
 
     substitutions

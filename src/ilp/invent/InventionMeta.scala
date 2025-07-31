@@ -194,7 +194,7 @@ object InventionMeta:
     if pairs.length == combinedCombinations.length then
       val substitution = Substitution.create(pairs)
       val newRule = canonicalize(metaRule.substitution(substitution))
-      val combinedRules = Array(source, newRule)
+      val combinedRules = source.getRules() :+ newRule
       val newHypothesis = Hypothesis(newRule.getHead(), combinedRules)
       Array(newHypothesis)
     else

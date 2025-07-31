@@ -50,7 +50,8 @@ abstract class Template(val engine: Engine) extends Serializable:
 
       val crrResults = inventNext(targets)
       val validResults = crrResults.par.map(hypothesis => {
-          hypothesis.build().compact()
+          hypothesis.buildDependency().compact()
+            .buildOperational()
         }).filter(hypothesis => hypothesis.getRules().length < maxRules)
         .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
 

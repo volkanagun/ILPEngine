@@ -4,7 +4,7 @@ pos(next_list([b,d,h,j, x, b],b)).
 pos(next_list([h,e,g,h,j,c,x,g],g)).
 pos(next_list([a,f,k,d,e,x,d,a,b,c],d)).
 pos(next_list([a,e,d,x,f,a],f)).
-pos(next_list([a, x, h],h)).
+pos(next_list([x, h], h)).
 
 neg(next_list([c, d, i, j],d)).
 neg(next_list([a, j, c, e, b, c, d],b)).

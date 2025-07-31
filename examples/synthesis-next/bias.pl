@@ -16,7 +16,7 @@ body_pred(i,1).
 body_pred(j,1).
 
 type(next_list,(list,element)).
-type(head,(list,element)).
+type(head,(element,list)).
 type(tail,(list,list)).
 type(x,(element)).
 type(a,(element)).

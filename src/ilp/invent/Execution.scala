@@ -89,7 +89,7 @@ class Execution(var engine: Engine):
   def compile(): this.type =
     val head = positives.head
     candidates = db.getTemplate3().flatMap(predicate => {
-      val generic = predicate.toGeneric()
+      val generic = predicate.copy().asPredicate()
       val newName = InventionMeta.canonicalize(generic)
       val newHeads = InventionMeta.combinations(head, generic.array)
       newHeads.map(newHead => {

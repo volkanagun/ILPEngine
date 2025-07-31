@@ -6,7 +6,7 @@ import ilp.data.predicates.Predicate
 import ilp.data.variables.{Num, Variable}
 import org.roaringbitmap.RoaringBitmap
 
-class ExecutionContext(var rule: Optimized,
+final class ExecutionContext(var rule: Optimized,
                        var dataMap: Map[Int, Array[Predicate]],
                        var originalMap: Map[Int, Array[Predicate]],
                        var rowMap: Map[Int, RoaringBitmap],
@@ -137,15 +137,14 @@ class ExecutionContext(var rule: Optimized,
 
   def updateData(predicate: Predicate, set: Array[Predicate]): ExecutionContext =
     val id = predicate.identifier()
-    val targetMap = relations.zipWithIndex.filter { case (relation, position) => relation.identifier() == predicate.identifier() }
+    val targetMap = relations.zipWithIndex.filter { case (relation, position) => relation.identifier() == id }
       .map { case (predicate, index) => {
         predicate.identifier(index) -> set
-      }
-      }
+      }}
       .toMap
 
     dataMap = dataMap ++ targetMap
-    //originalMap = originalMap ++ targetMap
+
     this
 
   override def toString: String =
@@ -160,9 +159,13 @@ class ExecutionContext(var rule: Optimized,
       new ExecutionContext(rule, originalMap, originalMap, originalRowMap,originalRowMap, newSubstitution, targetVariable, relations, attributes, depth + 1)
   */
 
-  def emptyAttributes() = attributes.isEmpty
+  inline def emptyAttributes() = attributes.isEmpty
 
-  def getRuleId(substitution: Substitution): Int = rule.getQueryId()*7 + substitution.id()
+  inline def getRuleId(substitution: Substitution): Int =
+    rule.getQueryId()*7 + substitution.id()
+
+  inline def relevant(substitution: Substitution):Boolean=
+    rule.getHead().getInput().forall(variable=> substitution.contains(variable))
 
   def getQuery(): Query = rule.getQuery()
 
@@ -187,6 +190,7 @@ class ExecutionContext(var rule: Optimized,
   def getDepth(): Int = depth
 
   def isTarget(): Boolean = rule.getTarget()
+  def isFunctional():Boolean = rule.isFunctional()
 }
 
 object ExecutionContext {

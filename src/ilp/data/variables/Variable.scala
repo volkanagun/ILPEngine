@@ -61,6 +61,9 @@ class Variable(var name: String) extends Serializable:
   def toVariable(): Variable =
     Variable(name)
 
+  def toVariableList(): VariableList =
+    VariableList(name)
+
   def candidates(names: Array[String]): Array[Variable] =
     names.map(name => Variable(name))
 

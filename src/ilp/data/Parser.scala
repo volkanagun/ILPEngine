@@ -114,9 +114,9 @@ object Parser extends JavaTokenParsers {
     }
 
   def tailArgument2: Parser[Tail] =
-    "tail(" ~ variable ~ "," ~ variable ~ ")" ^^ {
+    "tail(" ~ varstr ~ "," ~ varstr ~ ")" ^^ {
       case "tail(" ~ var1 ~ "," ~ var2 ~ ")" => {
-        Tail("tail", VariableList(var1.getName()), VariableList(var2.getName()))
+        Tail("tail", VariableList(var1), VariableList(var2))
       }
     }
 
@@ -124,7 +124,7 @@ object Parser extends JavaTokenParsers {
   def headTailArgument: Parser[HeadTail] =
     "[" ~ variable ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ head ~ "|" ~ tail ~ "]" => {
-        HeadTail("headTail", head, VariableList(tail.getName()), VariableList("LIST"))
+        HeadTail("headTail", head, VariableList(tail.getName()), VariableList("L"))
       }
     }
 
@@ -139,9 +139,9 @@ object Parser extends JavaTokenParsers {
     headArgument3 | headArgument2 | headArgument1 | headNameArgument
 
   def headArgument1: Parser[Head] =
-    "[" ~ variable ~ "|" ~ anystr ~ "]" ^^ {
-      case "[" ~ h ~ "|" ~ lst_var ~ "]" => {
-        Head("head", h, VariableList(lst_var))
+    "[" ~ variable ~ "|" ~ varstr ~ "]" ^^ {
+      case "[" ~ h ~ "|" ~ name ~ "]" => {
+        Head("head", h, VariableList(name))
       }
     }
 
@@ -153,9 +153,9 @@ object Parser extends JavaTokenParsers {
     }
 
   def headArgument3: Parser[Head] =
-    "head(" ~ variable ~ "," ~ variable ~ ")" ^^ {
+    "head(" ~ variable ~ "," ~ varstr ~ ")" ^^ {
       case "head(" ~ var1 ~ "," ~ var2 ~ ")" => {
-        Head("head", var1, VariableList(var2.getName()))
+        Head("head", var1, VariableList(var2))
       }
     }
 
@@ -214,12 +214,8 @@ object Parser extends JavaTokenParsers {
       plusEqualArgument |
       minusArgument |
       minusEqualArgument |
-      headArgument1 |
-      headArgument2 |
-      headArgument3 |
-      tailArgument1 |
-      tailArgument2 |
-      tailNameArgument |
+      headArgument |
+      tailArgument |
       headTailArgument |
       variableList |
       modCall |
@@ -358,7 +354,6 @@ object Parser extends JavaTokenParsers {
     modModCall ~ "." ^^ {
       case predicate ~ "." => predicate
     }
-
 
   def single_head: Parser[Predicate] =
     headNameArgument ~ "." ^^ {

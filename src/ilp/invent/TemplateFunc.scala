@@ -13,7 +13,8 @@ abstract class TemplateFunc(engine: Engine) extends Template(engine) {
     val crrResults = inventNext(source, targets)
 
     val validResults = crrResults.par.map(hypothesis => {
-        hypothesis.build().compact()
+        hypothesis.buildDependency().compact()
+          .buildOperational()
       }).filter(hypothesis => hypothesis.getRules().length < maxRules)
       .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
 

@@ -6,6 +6,7 @@ import ilp.data.variables.Variable
 class Query(var head: Predicate, var body: Array[Predicate]) extends Serializable:
 
   var recursive = false
+  var functional = body.exists(_.isFunctional())
   var inputVariables = body.flatMap(predicate=> predicate.getInput())
 
 
@@ -47,6 +48,10 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
     this.recursive = recursive
     this
 
+  def setFunctional(functional: Boolean): this.type =
+    this.functional = functional
+    this
+
   def doRecursion(item: Predicate): Boolean =
     item.identifier() == head.identifier() && !item.isEmpty()
 
@@ -60,6 +65,7 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
   def getBodyId() = getSortedBody().foldRight[Int](1){case(p, main) => main * 7 + p.hashCode()}
 
   def isRecursive(): Boolean = recursive
+  def isFunctional(): Boolean = functional
 
   def isComplete(): Boolean =
     val set = Set(head) ++ body

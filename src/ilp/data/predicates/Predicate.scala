@@ -172,6 +172,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   override def contains(variable: Variable): Boolean =
     array.exists(item => item.getName().equals(variable.getName()))
 
+  inline def containsInput(variable:Variable):Boolean=
+    inputVariables.contains(variable)
+
 /*  def hasInput(variable: Variable):Boolean =
     inputVariables.exists(item=> item.getName() == variable.getName())*/
 
@@ -248,12 +251,15 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   override def copy(): Variable =
     val copyArray = array.map(_.copy())
     Predicate(name, copyArray)
+      .setInput(inputVariables)
 
   def copy(newArray: Array[Variable]): Predicate =
     Predicate(name, newArray)
+      .setInput(inputVariables)
 
   override def copy(newName: String): Predicate =
     Predicate(newName, array)
+      .setInput(inputVariables)
 
 
 

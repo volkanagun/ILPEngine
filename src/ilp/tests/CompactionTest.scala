@@ -4,6 +4,19 @@ import ilp.data.{Hypothesis, Parser}
 
 object CompactionTest {
 
+  def testRecursive(): Unit = {
+    val p = Parser.parseHypothesis("func3198432(H,L) :- head(H,L).\n"+
+      "func3552336(L,T) :- tail(L,T).\n"+
+      "func1669201693(V0,V1,V2) :- func151141526(V1,V2), func975389211(V0,V2).\n"+
+      "func975389211(V0,V1) :- func3198432(V0,V2), func975389211(V2,V1).\n"+
+      "func151141526(V0,V1) :- func3552336(V0,V2), func151141526(V2,V1).").get
+
+    val r = p.buildDependency().getSorted()
+    println(p.getRules().mkString("\n"))
+    println("+++++++++++++++++++++++++++")
+    println(r.mkString("\n"))
+  }
+
   def test1(): Unit = {
     val r1 = Parser.parseRule("r1(X,Y) :- f(X,K), g(K, Y).").get
     val r2 = Parser.parseRule("r2(X, T) :- f(X,K), g(K, T).").get
@@ -75,6 +88,6 @@ object CompactionTest {
   }
 
   def main(args: Array[String]): Unit = {
-    test4()
+    testRecursive()
   }
 }

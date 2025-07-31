@@ -261,6 +261,58 @@ object DatabaseTest {
     roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
   }
+  def simpleListMix(): Unit = {
+
+    val db = Database("listTest")
+    val p1 = Parser.parsePredicate("x(x).").get
+    val p2 = Parser.parsePredicate("a(a).").get
+    val p3 = Parser.parsePredicate("b(b).").get
+    val p4 = Parser.parsePredicate("c(c).").get
+    val p5 = Parser.parsePredicate("d(d).").get
+    val p6 = Parser.parsePredicate("e(e).").get
+    val p7 = Parser.parsePredicate("f(f).").get
+    val g0 = Parser.parsePredicate("g(g).").get
+    val g1 = Parser.parsePredicate("h(h).").get
+    val g2 = Parser.parsePredicate("i(i).").get
+    val g3 = Parser.parsePredicate("j(j).").get
+
+    db.add(p1)
+      .add(p2)
+      .add(p3)
+      .add(p4)
+      .add(p5)
+      .add(p6)
+      .add(p7)
+      .add(g0)
+      .add(g1)
+      .add(g2)
+      .add(g3)
+      .build()
+
+    val engine = Engine(db)
+    val plan = Plan(db)
+    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("h")))
+      .add(Variable("V1"), Sym("V1","h"))
+
+    val pr1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
+      "func3198432(H,L) :- head(H,L).\n"+
+      "func120(A) :- x(A).\n"+
+      "func71410313(V0,V1,V2) :- func3552336(V0,V2) & func3198432(V1,V2).\n"+
+      "func590646503(V0,V1) :- func71410313(V0,V1,V2) & func3198432(V3,V0) & func120(V3).").get.build().compact()
+
+    val queries = plan.optimizeExperimental(pr1)
+
+    val parallelSubstitutions = engine.joinParallel(queries, substitution)
+    println("Parallel result: ")
+    parallelSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+
+    val roaringSubstitutions = engine.joinParallelCache(queries, substitution)
+    println("Roaring result: ")
+    roaringSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+  }
+
   def simpleList(): Unit = {
 
     val db = Database("listTest")
@@ -291,9 +343,10 @@ object DatabaseTest {
 
     val engine = Engine(db)
     val plan = Plan(db)
-    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "a", Array("x", "h")))
+    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "a", Array("x","h")))
       .add(Variable("V1"), Sym("V1","h"))
 
+    //func590646503(V0,V1) :- tail(V0,V2) & head(V1,V2) & head(V3,V0) & x(V3).
     val pr1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2),head(V3,V0),x(V3).").get
     val pr2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
       .setRecursive(true)
@@ -315,7 +368,7 @@ object DatabaseTest {
   }
 
   def main(args: Array[String]): Unit = {
-    simpleList()
+    simpleListMix()
   }
 
 }

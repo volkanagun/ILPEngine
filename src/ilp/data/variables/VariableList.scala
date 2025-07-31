@@ -5,27 +5,36 @@ import ilp.data.Substitution
 
 final class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm):
 
+  val empty = values.isEmpty
   val containsNumber = nonEmpty() && values.head.isNumber()
   val containsSymbol = nonEmpty() && values.head.isSymbol()
   val size = values.length
-  val empty = values.isEmpty
+
 
   def this(name: String) = this(name, Array[Variable]())
+
   def this(name: String, var1: Variable) = this(name, Array(var1))
+
   def this(name: String, var1: Variable, var2: Variable) = this(name, Array(var1, var2))
+
   def this(name: String, var1: Variable, var2: Variable, var3: Variable) = this(name, Array(var1, var2, var3))
 
-  def this(name: String, head:Double, items: Array[Double]) = this(name, (head +: items).zipWithIndex.map(pair => Num("item" + pair._2, pair._1).asVariable()))
-  def this(name: String, head:String, items: Array[String]) = this(name, (head +: items).zipWithIndex.map(pair => Sym("item" + pair._2, pair._1).asVariable()))
+  def this(name: String, head: Double, items: Array[Double]) = this(name, (head +: items).zipWithIndex.map(pair => Num("item" + pair._2, pair._1).asVariable()))
+
+  def this(name: String, head: String, items: Array[String]) = this(name, (head +: items).zipWithIndex.map(pair => Sym("item" + pair._2, pair._1).asVariable()))
 
   override inline def isVariable(): Boolean = true
+
   override inline def isVariableList(): Boolean = true
+
   override inline def isList(): Boolean = true
+
   override inline def isSymbol(): Boolean = true
+
   override inline def isNumberList(): Boolean =
     containsNumber
 
-  inline def reverse():VariableList=
+  inline def reverse(): VariableList =
     VariableList(name, values.reverse)
 
   override inline def isSymbolList(): Boolean =
@@ -33,35 +42,41 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
 
   override inline def getSize(): Int = size
 
-  inline def  sum(resultName:String):Variable =
+  inline def sum(resultName: String): Variable =
     if containsSymbol then
-      val result = values.foldRight[String](""){case(item, main)=>{
+      val result = values.foldRight[String]("") { case (item, main) => {
         main + item.asSymbol().value
-      }}
+      }
+      }
       Sym(resultName, result)
     else if containsNumber then
       val result = values.foldRight[Double](0.0) { case (item, main) => {
         main + item.asNumber().getNumber()
-      }}
+      }
+      }
       Num(resultName, result)
     else
       Variable(resultName)
 
-  inline def  avg(resultName:String):Variable =
+  inline def avg(resultName: String): Variable =
     if containsNumber then
       val result = values.foldRight[Double](0.0) { case (item, main) => {
         main + item.asNumber().getNumber()
-      }}
+      }
+      }
       Num(resultName, result / values.size)
     else
       Num(resultName, 0.0)
 
 
   override inline def isEmpty(): Boolean = empty
-  override inline def substitution(substitution: Substitution): Variable =
+
+  override def substitution(substitution: Substitution): Variable =
     if substitution.hasVariable(this) then {
       val target = substitution.valueByVariable(this).get
+      //Modify in the Future, be careful!!!
       if target.isVariableList() then target.copy(getName())
+      else if target.isVariable() then target.toVariableList()
       else this
     }
     else
@@ -86,7 +101,7 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
     val newArray = variable +: values
     VariableList(name, newArray)
 
-  override inline def hashCode(): Int = values.foldRight[Int](name.hashCode()){case(variable, main)=> main*7 + variable.hashCode()}
+  override inline def hashCode(): Int = values.foldRight[Int](name.hashCode()) { case (variable, main) => main * 7 + variable.hashCode() }
 
   override inline def equals(obj: Any): Boolean = {
     obj.isInstanceOf[Variable] && obj.asInstanceOf[Variable].name == name
@@ -98,8 +113,12 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
     else
       false
 
-  override inline def toString: String = values.mkString("[", ",", "]")
+  override inline def toString: String = {
+    if values.nonEmpty then values.mkString("[", ",", "]")
+    else name
+  }
 
   override inline def copy(): Variable = VariableList(name, values)
-  override inline def copy(newName:String): Variable = VariableList(newName, values)
+
+  override inline def copy(newName: String): Variable = VariableList(newName, values)
 
