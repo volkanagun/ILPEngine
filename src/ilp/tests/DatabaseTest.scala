@@ -291,14 +291,17 @@ object DatabaseTest {
 
     val engine = Engine(db)
     val plan = Plan(db)
-    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("h")))
+    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("ü")))
       .add(Variable("V1"), Sym("V1","h"))
 
     val pr1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
       "func3198432(H,L) :- head(H,L).\n"+
       "func120(A) :- x(A).\n"+
-      "func71410313(V0,V1,V2) :- func3552336(V0,V2) & func3198432(V1,V2).\n"+
-      "func590646503(V0,V1) :- func71410313(V0,V1,V2) & func3198432(V3,V0) & func120(V3).").get.build().compact()
+      "func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).\n" +
+      "func590646503(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get.
+      buildDependency()
+      .compact()
+      .buildOperational()
 
     val queries = plan.optimizeExperimental(pr1)
 

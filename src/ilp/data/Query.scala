@@ -50,6 +50,7 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
 
   def setFunctional(functional: Boolean): this.type =
     this.functional = functional
+    this.head.setFunctional(functional)
     this
 
   def doRecursion(item: Predicate): Boolean =

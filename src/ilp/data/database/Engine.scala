@@ -266,9 +266,10 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
     val domains = nextContext.getRelations().zipWithIndex.flatMap {
       case (predicate, index) => {
-        if predicate.isFunctional() && predicate.contains(attribute) && attribute.isSymbol() then
+       /* if predicate.isFunctional() && predicate.contains(attribute) && attribute.isSymbol() then
           Some(Set[Variable](attribute.copy()))
-        else if !predicate.isFunctional() && predicate.contains(attribute) then
+*/
+        if predicate.contains(attribute) then
           val predicateId = predicate.identifier()
           val pid = predicate.identifier(index)
           val position = predicate.getPosition(attribute)
@@ -511,6 +512,8 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     if executedContext.isEmpty then Set()
     else if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) && executedContext.isDefined then
       Set(Substitution())
+    else if executedContext.nonEmpty && executedContext.get.contains(currentContext.getTargetVariable()) then
+      Set(executedContext.get)
     else {
       val newSubstitution = executedContext.get
       val nextContext = currentContext.nextContext(newSubstitution)

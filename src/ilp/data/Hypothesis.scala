@@ -167,13 +167,28 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
 
   def buildFunctional():this.type = {
-    sorted.foreach(rule => {
+    for (i<-0 until sorted.length - 1){
+      val rule = sorted(i)
       val ruleHead = rule.getHead()
-      sorted.filter(target=> target.containsByIdentifier(ruleHead)).foreach(target=>{
-        val func = target.isFunctional() || rule.isFunctional()
-        target.setFunctional(func)
-      })
-    })
+      val ruleIdentifier = rule.identifier()
+      val headFunctional = rule.isFunctional()
+      for(j<-i+1 until sorted.length){
+        val ruleNext = sorted(j)
+        val bodyPredicates = ruleNext.getBody()
+        var ruleFunctional = ruleNext.isFunctional()
+        bodyPredicates.foreach(predicate=>{
+
+          if predicate.identifier() == ruleIdentifier then {
+            val predicateFunctional = predicate.isFunctional() || headFunctional
+            ruleFunctional = ruleFunctional || predicateFunctional
+            predicate.setFunctional(predicateFunctional)
+          }
+        })
+
+        ruleNext.setFunctional(ruleFunctional)
+
+      }}
+
     this
   }
 
@@ -198,12 +213,10 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
         bodyPredicates.filter(predicate=> predicate.contains(variable))
           .forall(predicate=> predicate.containsInput(variable)))
 
-/*      val input = rule.getBody().flatMap(predicate => predicate.getInput()
-        .filter(inputVariable=> head.contains(inputVariable)))
-        .distinct*/
       head.setInput(input)
+      rule.setInputVariables(input)
       val inputIndices = head.getInputIndices()
-      rule.setInputVariables(head.getInput())
+
       sorted.foreach(other=> {
         val callPredicates = other.getBody().filter(element=> element.equalByIdentifier(head))
         callPredicates.foreach(element=> element.setInputBy(inputIndices))

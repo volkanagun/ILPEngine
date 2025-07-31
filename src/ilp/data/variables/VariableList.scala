@@ -114,8 +114,7 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
       false
 
   override inline def toString: String = {
-    if values.nonEmpty then values.mkString("[", ",", "]")
-    else name
+    name
   }
 
   override inline def copy(): Variable = VariableList(name, values)

@@ -7,6 +7,7 @@ import ilp.data.variables.Variable
 class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(crr_name):
 
   var inputVariables : Array[Variable] = array
+  var functional = false
 
   def this(name: String, item1: Variable) = this(name, Array(item1))
 
@@ -79,6 +80,11 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     this.inputVariables = inputVariables
     this
   }
+
+  def setFunctional(functional:Boolean): this.type = {
+    this.functional = functional
+    this
+  }
   def setInputBy(inputIndices:Array[Int]): this.type = {
     this.inputVariables = inputIndices.map(array)
     this
@@ -89,6 +95,8 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     val newName = crrName.substitution(substitution).getName()
     val newArray = array.map(variable => variable.substitution(substitution))
     Predicate(newName, newArray)
+      .setInput(inputVariables)
+      .setFunctional(functional)
 
 /*  override def symbolSubstitution(substitution: Substitution): Variable =
     val crrName = Variable(name)
@@ -128,6 +136,8 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def toPredicate(newName: String): Predicate =
     Predicate(newName, array.map(_.copy()))
+      .setFunctional(functional)
+      .setInput(inputVariables)
 
 
   def toGeneric(): Predicate =
@@ -150,15 +160,15 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def toGeneric(names: Array[String]): Predicate =
     Predicate(name, names.take(getArity()).map(item => Variable(item)))
 
-  def isDefinite() = array.forall(a => a.isSymbol())
+  def isDefinite() = inputVariables.forall(a => a.isSymbol())
 
   def isNegative() = false
 
   def isCount() = false
 
-  def isExecutable() = false
+  def isExecutable() = inputVariables.forall(a => a.isSymbol())
 
-  def isFunctional() = false
+  def isFunctional() = functional
 
 
   override def isPredicate() = true
