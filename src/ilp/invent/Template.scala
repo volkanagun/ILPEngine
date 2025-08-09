@@ -37,6 +37,8 @@ abstract class Template(val engine: Engine) extends Serializable:
   var sourceIterator = sources.iterator
 
 
+  def getHead():Predicate =
+    positives.head
 
   def invent(): Set[Hypothesis] =
 
@@ -249,8 +251,9 @@ abstract class Template(val engine: Engine) extends Serializable:
     val newHypothesis = hypothesis.substitution(substitution)
 
     val optimization = plan.optimizeExperimental(newHypothesis)
-    val crrSubstitutions = engine.joinParallelCache(optimization, Substitution())
+    val crrSubstitutions = engine.joinSerial(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
+
 
     hypothesis.ig(crrFacts, positives, negatives)
     hypothesis.accuracy()
@@ -259,17 +262,17 @@ abstract class Template(val engine: Engine) extends Serializable:
   def igFunctional(hypothesis: Hypothesis): Hypothesis =
 
     val items = positives ++ negatives
+    val ruleHead = hypothesis.getLastHead()
     val crrFacts = items.flatMap(targetHead=>{
-      val ruleHead = hypothesis.getLastHead()
       val substitution = targetHead.toSubstitution(ruleHead)
-      val newHypothesis = hypothesis.substitution(substitution)
-      val optimization = plan.optimizeExperimental(newHypothesis)
-      val crrSubstitutions = engine.joinParallelCache(optimization, substitution)
+      val optimization = plan.optimizeExperimental(hypothesis)
+      val crrSubstitutions = engine.joinSerial(optimization, substitution)
       crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
     })
 
     //val crrFacts = substitutions.map(crrSubstition => hypothesis.callHead(crrSubstition))
-
+    val positiveSize = positives.size
+    val negativeSize = negatives.size
     hypothesis.ig(crrFacts, positives, negatives)
     hypothesis.accuracy()
     hypothesis
@@ -310,7 +313,7 @@ abstract class Template(val engine: Engine) extends Serializable:
   def metaApply(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
     metaRules.flatMap(metaRule => {
       if metaRule.isRecursive() && metaRule.getSize() == 2 then
-        InventionMeta.metaWithRecursive(source, metaRule)
+         InventionMeta.metaWithRecursive(source, metaRule) ++ InventionMeta.metaWithRecursive(source, candidates, metaRule)
       else
         InventionMeta.metaWith(source, candidates, metaRule)
     }).toArray

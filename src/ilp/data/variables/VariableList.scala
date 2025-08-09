@@ -34,6 +34,8 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
   override inline def isNumberList(): Boolean =
     containsNumber
 
+
+
   inline def reverse(): VariableList =
     VariableList(name, values.reverse)
 
@@ -114,7 +116,7 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
       false
 
   override inline def toString: String = {
-    name
+    name+"="+values.mkString("[",",","]")
   }
 
   override inline def copy(): Variable = VariableList(name, values)

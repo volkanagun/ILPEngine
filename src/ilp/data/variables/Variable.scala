@@ -78,6 +78,12 @@ class Variable(var name: String) extends Serializable:
 
   def equalValue(variable: Variable) = true
 
+  def equalType(variable:Variable) =
+    (this.isInstanceOf[Sym] && variable.isInstanceOf[Sym]) ||
+      (this.isInstanceOf[Num] && variable.isInstanceOf[Num]) ||
+      (this.isInstanceOf[VariableList] && variable.isInstanceOf[VariableList])||
+      (this.isInstanceOf[Variable] && variable.isInstanceOf[Variable])
+
   def equalName(variable: Variable) = variable.name.equals(name)
 
 

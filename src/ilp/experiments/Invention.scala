@@ -960,22 +960,20 @@ object Invention:
     val engine = Engine(db)
     val pos = experiment.positives
     val neg = experiment.negatives
-    val windowSize = 3
+    val windowSize = 5
 
     val metaRecursion = Parser.parseRule("re(V0, V1) :- pi(V0, V2), re(V2,V1).").get
-      .setRecursion(true)
+      .buildRecursion()
     val metaRest1 = Parser.parseRule("re(V0, V1, V2) :- t(V0, V2), c(V1, V2).").get
     val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V3, V0), alpha(V3).").get
 
 
-    val p1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2), head(V3,V0),x(V3).").get
+    val p1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2), head(V3,V0), x(V3).").get
     val p2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
-      .setRecursion(true)
+      .buildRecursion()
 
     val q = Hypothesis(p2.getHead(), Array(p1,p2))
-      .setRecursion(true)
       .build()
-      .compact()
 
     val scoreThreshold = 0.94
     val resembleThreshold = 1.0
@@ -994,7 +992,7 @@ object Invention:
 
     val heUnion = new HeUnionFunctional(engine)
       .setNegativeThreshold(0.0)
-      .setPositiveThreshold(0.05)
+      .setPositiveThreshold(0.0)
       .setScoreThreshold(scoreThreshold)
       .setFilterSize(filterSize)
       .setResembleThreshold(resembleThreshold)

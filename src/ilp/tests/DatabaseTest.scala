@@ -291,7 +291,7 @@ object DatabaseTest {
 
     val engine = Engine(db)
     val plan = Plan(db)
-    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("ü")))
+    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("h")))
       .add(Variable("V1"), Sym("V1","h"))
 
     val pr1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
@@ -305,7 +305,7 @@ object DatabaseTest {
 
     val queries = plan.optimizeExperimental(pr1)
 
-    val parallelSubstitutions = engine.joinParallel(queries, substitution)
+    val parallelSubstitutions = engine.joinSerial(queries, substitution)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
@@ -346,32 +346,60 @@ object DatabaseTest {
 
     val engine = Engine(db)
     val plan = Plan(db)
-    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "a", Array("x","h")))
-      .add(Variable("V1"), Sym("V1","h"))
+    val sample = Substitution().add(Variable("V0"),VariableList("V0", "p", Array("x","h")))
+      .add(Variable("V1"),Sym("V1","h"))
 
-    //func590646503(V0,V1) :- tail(V0,V2) & head(V1,V2) & head(V3,V0) & x(V3).
+
+    val m1 = Parser.parseRule("next_list(V0,V1) :- head(V3,V0) & head(V1,V2) & x(V3) & tail(V0, V2).").get
+    val m2 = Parser.parseRule("next_list(V0,V1) :- tail(V0, V2) & next_list(V2, V1).").get.buildRecursion()
+
+
     val pr1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2),head(V3,V0),x(V3).").get
     val pr2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
-      .setRecursive(true)
+      .buildRecursion()
+
+    val rr1 = Parser.parseRule("func3552336(V0,V2) :- tail(V0,V2).").get
+    val rr2 = Parser.parseRule("func3198432(V1,V2) :- head(V1,V2).").get
+    val rr3 = Parser.parseRule("func120(V3) :- x(V3).").get
+    val rr4 = Parser.parseRule("func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).").get
+    val rr5 = Parser.parseRule("next_list(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get
+    val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()
+    
+    val gamma1 = Parser.parseRule("next_list(V0,V1) :- x(H153) & head(H153,V0) & head(V1,D720) & tail(V0,D720).").get
+    val gamma2 = Parser.parseRule("next_list(V0,V1) :- tail(V0,G235) & x(H153) & head(H153,G235) & head(V1,D720) & tail(G235,D720).").get
+    
+
 
     val r1 = Hypothesis(pr1.getHead(), Array(pr1, pr2))
       .build()
 
-    val queries = plan.optimizeExperimental(r1)
 
-    val parallelSubstitutions = engine.joinParallel(queries, substitution)
+    val hr1 = Hypothesis(rr6.getHead(), Array(rr1, rr2, rr3, rr4, rr5, rr6))
+      .build()
+
+    val mr1 = Hypothesis(m2.getHead(), Array(m1, m2))
+      .build()
+
+    val gm = Hypothesis(gamma1.getHead(), Array(gamma1, gamma2.buildRecursion()))
+      .build()
+
+    println(hr1)
+
+    val queries = plan.optimizeNone(hr1)
+
+    val parallelSubstitutions = engine.joinSerial(queries, sample)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
 
-    val roaringSubstitutions = engine.joinRoaringParallel(queries, substitution)
+    val roaringSubstitutions = engine.joinRoaringParallel(queries, sample)
     println("Roaring result: ")
     roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
   }
 
   def main(args: Array[String]): Unit = {
-    simpleListMix()
+    simpleList()
   }
 
 }

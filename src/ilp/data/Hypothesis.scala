@@ -40,6 +40,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     buildDependency()
     buildInputs()
     buildFunctional()
+    buildRecursion()
   }
 
   def normalize(): Hypothesis = {
@@ -166,6 +167,12 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     rules.filter(rule => rule.getHead() != crrHead)
 
 
+  override def buildRecursion():this.type = {
+    rules.foreach(rule=> rule.buildRecursion())
+    recursive = rules.last.recursive
+    this
+  }
+
   def buildFunctional():this.type = {
     for (i<-0 until sorted.length - 1){
       val rule = sorted(i)
@@ -200,6 +207,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def buildOperational():this.type = {
     buildInputs()
     buildFunctional()
+    buildRecursion()
   }
 
   def buildInputs():this.type = {
@@ -284,25 +292,40 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def containsAll(rule:Hypothesis) =
     rule.getRules().forall(r => contains(r))
 
-  def containsLast(rule:Hypothesis) =
-    rule.getRules().exists(r => containsName(r.getHead().getName()))
 
   def containsName(predicate:String) =
     rules.exists(rule=> rule.getBody().exists(p=> p.getName() == predicate))
 
   def similarity(targetHypothesis: Hypothesis, window: Int): Double =
     val currentRules = rules.map(_.getHead().getName())
-    val otherRules = targetHypothesis.getRules().map(rule => rule.getHead().getName()).sliding(window, 1).toSet
-    val otherSize = math.max(otherRules.size, currentRules.length)
-    val resembleSize = otherRules.count(array => array.forall(name => currentRules.contains(name)))
+    val otherWindows = targetHypothesis.getRules().map(rule => rule.getHead().getName()).sliding(window, 1).toSet
+    val otherSize = math.max(otherWindows.size, currentRules.length)
+    val resembleSize = otherWindows.count(array => array.forall(name => currentRules.contains(name)))
     val matchScore = resembleSize.toDouble / otherSize
     matchScore
+
+  def containsLast(targetHypothesis: Hypothesis): Boolean =
+    val currentLast = rules.last.getHead().getName()
+    val otherRules = targetHypothesis.getRules().map(rule => rule.getHead().getName())
+    val resembleSize = otherRules.count(otherRule => otherRule == currentLast)
+    resembleSize > 0
+
+  def equalArity(targetHypothesis:Hypothesis):Boolean =
+    getAritry() == targetHypothesis.getAritry()
+
+  def equalArity(headPredicate:Predicate):Boolean =
+    getAritry() == headPredicate.getArity()
+
+  def isImproved(crrHypothesis:Hypothesis) : Boolean = {
+    val crrScore = crrHypothesis.getScore()
+    score > crrScore
+  }
 
   override def toString: String =
     sorted.map(_.toString).mkString("\n")
 
 
-  override def isRecursive(): Boolean = rules.exists(_.recursive)
+  override def isRecursive(): Boolean = recursive
 
   override def isComplete(): Boolean = rules.forall(item => item.isComplete()) && rules.nonEmpty
 

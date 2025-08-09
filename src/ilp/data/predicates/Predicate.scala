@@ -8,6 +8,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   var inputVariables : Array[Variable] = array
   var functional = false
+  var recursive = false
 
   def this(name: String, item1: Variable) = this(name, Array(item1))
 
@@ -85,6 +86,11 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     this.functional = functional
     this
   }
+
+  def setRecursive(recursive:Boolean): this.type = {
+    this.recursive = recursive
+    this
+  }
   def setInputBy(inputIndices:Array[Int]): this.type = {
     this.inputVariables = inputIndices.map(array)
     this
@@ -160,15 +166,16 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def toGeneric(names: Array[String]): Predicate =
     Predicate(name, names.take(getArity()).map(item => Variable(item)))
 
-  def isDefinite() = inputVariables.forall(a => a.isSymbol())
+  def isDefinite() = false
 
   def isNegative() = false
 
   def isCount() = false
 
-  def isExecutable() = inputVariables.forall(a => a.isSymbol())
+  def isExecutable() = false
 
   def isFunctional() = functional
+  def isRecursive() = recursive
 
 
   override def isPredicate() = true
@@ -184,6 +191,12 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   inline def containsInput(variable:Variable):Boolean=
     inputVariables.contains(variable)
+
+  inline def containsInput(index:Int):Boolean=
+    inputVariables.contains(array(index))
+
+  inline def containsExact(variable:Variable):Boolean=
+    array.contains(variable)
 
 /*  def hasInput(variable: Variable):Boolean =
     inputVariables.exists(item=> item.getName() == variable.getName())*/

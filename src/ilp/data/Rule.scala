@@ -10,6 +10,8 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
   var posRate: Double = 0
   var negRate: Double = 0
+  var posSize : Int = 0
+  var negSize: Int = 0
 
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
@@ -28,6 +30,9 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     head.setName(name)
     this
   }
+
+  def isTested():Boolean =
+    tested
 
   def setBody(predicates: Array[Predicate]): this.type = {
     this.body = predicates
@@ -141,6 +146,14 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this
   }
 
+  def getPositiveSize():Int = {
+    this.posSize
+  }
+
+  def getNegativeSize():Int = {
+    this.negSize
+  }
+
   def setPositives(positives: Set[Predicate]): this.type =
     this.positives = positives
     this
@@ -160,6 +173,16 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   def setRecursion(recursive: Boolean): this.type =
     this.recursive = recursive
     this
+
+  def buildRecursion(): this.type = {
+    this.body.foreach(predicate=> {
+      if predicate.identifier() == head.identifier() then {
+        predicate.setRecursive(true)
+        recursive = true
+      }
+    })
+    this
+  }
 
   def replace(index: Int, rule: Rule, keepHead: Boolean = true): Query =
     var newBody = Array[Predicate]()
@@ -229,19 +252,33 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
     acc
 
-  def ig(facts: Set[Predicate], posItems: Set[Predicate], negItems: Set[Predicate]): Double =
+  def ig(posSize:Int, negSize:Int):this.type = {
+    this.posSize = posSize
+    this.negSize = negSize
+    posRate = positives.size.toDouble / posSize
+    negRate = negatives.size.toDouble / negSize
+    score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
+    this
+  }
+
+  def ig(facts: Set[Predicate], posItems: Set[Predicate], negItems: Set[Predicate]): this.type =
     val functName = posItems.head.getName()
     val matchFacts = facts.map(predicate => predicate.setName(functName).asPredicate())
     tested = true
     genfacts = facts
+
+    this.posSize = posItems.size
+    this.negSize = negItems.size
+
     positives = matches(posItems, matchFacts)
     negatives = matches(negItems, matchFacts)
 
-    posRate = positives.size.toDouble / math.max(posItems.size, 1.0)
-    negRate = negatives.size.toDouble / math.max(negItems.size, 1.0)
+    posRate = positives.size.toDouble / math.max(posSize, 1.0)
+    negRate = negatives.size.toDouble / math.max(negSize, 1.0)
 
     score = posRate * math.log(1 + posRate) / math.log(2) - negRate * math.log(1 + negRate) / math.log(2)
     score
+    this
 
 
 

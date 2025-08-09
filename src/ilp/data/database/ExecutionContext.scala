@@ -53,6 +53,9 @@ final class ExecutionContext(var rule: Optimized,
     hasInputVariables
   }
 
+  def canExecute(predicate: Predicate):Boolean =
+    substitution.hasInputs(predicate)
+
   def conflictContext(newContext: ExecutionContext): Boolean = {
     val result = depth == newContext.getDepth() && substitution.conflicts(newContext.getSubstitution())
     if result then {
@@ -71,6 +74,9 @@ final class ExecutionContext(var rule: Optimized,
   }
 
   def nextContext(newSubstitution: Substitution): ExecutionContext =
+
+
+
     val restAttributes = newSubstitution.compose(attributes.tail)
     val nextAttribute = newSubstitution.compose(attributes.head)
     new ExecutionContext(rule, dataMap, originalMap, rowMap, originalRowMap, newSubstitution, nextAttribute, relations, restAttributes, depth)
@@ -144,7 +150,7 @@ final class ExecutionContext(var rule: Optimized,
       .toMap
 
     dataMap = dataMap ++ targetMap
-
+    originalMap = dataMap
     this
 
   override def toString: String =

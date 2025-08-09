@@ -6,6 +6,7 @@ import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import org.roaringbitmap.RoaringBitmap
 
+import java.text.AttributedCharacterIterator.Attribute
 import java.util.concurrent.locks.ReentrantLock
 import scala.collection.concurrent.TrieMap as ConcurrentMap
 import scala.collection.immutable.{BitSet, Set}
@@ -81,6 +82,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
     newMap
 
+/*
 
   def serialSwitch(contextMap: Map[Int, Array[ExecutionContext]],
                    programContext: ExecutionContext,
@@ -115,8 +117,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
     if variables.nonEmpty then Some(variables) else None
   }
+*/
 
-
+/*
   def parallelSwitch(contextMap: Map[Int, Array[ExecutionContext]],
                      programContext: ExecutionContext,
                      nextContext: ExecutionContext, predicate: Predicate,
@@ -148,13 +151,163 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       val newVariable = currentContext.getHead().getVariable(position)
       substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, targetName)
         .map(variable => variable))
-    }}
+    }
+    }
 
     if variables.nonEmpty then Some(variables) else None
+  }*/
+
+  def switchSerial(contextMap: Map[Int, Array[ExecutionContext]],
+                   programContext: ExecutionContext,
+                   nextContext: ExecutionContext, predicate: Predicate,
+                   attribute: Variable, predicateId: Int, position: Int): Set[Variable] = {
+
+    val executionId = executionCache.id(nextContext, predicate)
+    val existingSubstitutions = executionCache.get(executionId)
+
+    val items = (if contextMap.contains(predicateId) then {
+      val results = contextMap(predicateId)
+        .flatMap(currentContext => {
+          currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
+        }).map(currentContext => {
+          val substitutions = joinSerial(contextMap, programContext, currentContext)
+          (currentContext, substitutions)
+        }).toSet
+
+      executionCache.update(executionId, results)
+      results
+    }
+    else {
+      Set[(ExecutionContext, Set[Substitution])]()
+    })
+
+
+    //Switch back to current context
+    val targetName = attribute.getName()
+    val variables = items.flatMap { case (currentContext, substitutions) => {
+      val newVariable = currentContext.getHead().getVariable(position)
+      substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, targetName)
+        .map(variable => variable))
+    }
+    }
+
+    variables
+  }
+
+  def parallelSwitch(contextMap: Map[Int, Array[ExecutionContext]],
+                     programContext: ExecutionContext,
+                     nextContext: ExecutionContext, predicate: Predicate,
+                     attribute: Variable, predicateId: Int, position: Int): Set[Variable] = {
+
+    val executionId = executionCache.id(nextContext, predicate)
+    val existingSubstitutions = executionCache.get(executionId)
+
+    val items = (if contextMap.contains(predicateId) then {
+      val results = contextMap(predicateId)
+        .flatMap(currentContext => {
+          currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
+        }).map(currentContext => {
+          val substitutions = joinParallel(contextMap, programContext, currentContext)
+          (currentContext, substitutions)
+        }).toSet
+
+      executionCache.update(executionId, results)
+      results
+    }
+    else {
+      Set[(ExecutionContext, Set[Substitution])]()
+    })
+
+
+    //Switch back to current context
+    val targetName = attribute.getName()
+    val variables = items.flatMap { case (currentContext, substitutions) => {
+      val newVariable = currentContext.getHead().getVariable(position)
+      substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, targetName)
+        .map(variable => variable))
+    }
+    }
+
+    variables
+  }
+
+  def roaringSerialSwitch(contextMap: Map[Int, Array[ExecutionContext]],
+                     programContext: ExecutionContext,
+                     nextContext: ExecutionContext, predicate: Predicate,
+                     attribute: Variable, predicateId: Int, position: Int): Set[Variable] = {
+
+    val executionId = executionCache.id(nextContext, predicate)
+    val existingSubstitutions = executionCache.get(executionId)
+
+    val items = (if contextMap.contains(predicateId) then {
+      val results = contextMap(predicateId)
+        .flatMap(currentContext => {
+          currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
+        }).map(currentContext => {
+          val substitutions = joinRoaringSerial(contextMap, programContext, currentContext)
+          (currentContext, substitutions)
+        }).toSet
+
+      executionCache.update(executionId, results)
+      results
+    }
+    else {
+      Set[(ExecutionContext, Set[Substitution])]()
+    })
+
+
+    //Switch back to current context
+    val targetName = attribute.getName()
+    val variables = items.flatMap { case (currentContext, substitutions) => {
+      val newVariable = currentContext.getHead().getVariable(position)
+      substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, targetName)
+        .map(variable => variable))
+    }
+    }
+
+    variables
   }
 
 
-  def roaringSwitch(contextMap: Map[Int, Array[ExecutionContext]],
+  def roaringParallelSwitch(contextMap: Map[Int, Array[ExecutionContext]],
+                     programContext: ExecutionContext,
+                     nextContext: ExecutionContext, predicate: Predicate,
+                     attribute: Variable, predicateId: Int, position: Int): Set[Variable] = {
+
+    val executionId = executionCache.id(nextContext, predicate)
+    val existingSubstitutions = executionCache.get(executionId)
+
+    val items = (if contextMap.contains(predicateId) then {
+      val results = contextMap(predicateId)
+        .flatMap(currentContext => {
+          currentContext.switchContext(nextContext.getSubstitution(), predicate, position, nextContext.getDepth() + 1)
+        }).map(currentContext => {
+          val substitutions = joinRoaringParallel(contextMap, programContext, currentContext)
+          (currentContext, substitutions)
+        }).toSet
+
+      executionCache.update(executionId, results)
+      results
+    }
+    else {
+      Set[(ExecutionContext, Set[Substitution])]()
+    })
+
+
+    //Switch back to current context
+    val targetName = attribute.getName()
+    val variables = items.flatMap { case (currentContext, substitutions) => {
+      val newVariable = currentContext.getHead().getVariable(position)
+      substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, targetName)
+        .map(variable => variable))
+    }
+    }
+
+    variables
+  }
+
+
+  /*def roaringSwitch(contextMap: Map[Int, Array[ExecutionContext]],
                     programContext: ExecutionContext,
                     nextContext: ExecutionContext, predicate: Predicate,
                     attribute: Variable, predicateId: Int, position: Int): Option[Set[Variable]] = {
@@ -186,9 +339,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     }
 
     if variables.nonEmpty then Some(variables) else None
-  }
+  }*/
 
-  def roaringSerialSwitch(contextMap: Map[Int, Array[ExecutionContext]],
+  /*def roaringSerialSwitch(contextMap: Map[Int, Array[ExecutionContext]],
                           programContext: ExecutionContext,
                           nextContext: ExecutionContext, predicate: Predicate,
                           attribute: Variable, predicateId: Int, position: Int): Option[Set[Variable]] = {
@@ -220,9 +373,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     }
 
     if variables.nonEmpty then Some(variables) else None
-  }
+  }*/
 
-  def activeSerial(contextMap: Map[Int, Array[ExecutionContext]],
+ /* def activeSerial(contextMap: Map[Int, Array[ExecutionContext]],
                    programContext: ExecutionContext,
                    nextContext: ExecutionContext): Set[Variable] = {
 
@@ -254,22 +407,37 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     }
 
     intersection(domains)
-  }
+  }*/
 
-  def activeParallel(contextMap: Map[Int, Array[ExecutionContext]],
+  /*def activeParallel(contextMap: Map[Int, Array[ExecutionContext]],
                      programContext: ExecutionContext,
                      nextContext: ExecutionContext): Set[Variable] = {
 
-
     val dataMap = nextContext.getDataMap()
     val attribute = nextContext.getTargetVariable()
-
+    val substitution = nextContext.getSubstitution()
     val domains = nextContext.getRelations().zipWithIndex.flatMap {
       case (predicate, index) => {
-       /* if predicate.isFunctional() && predicate.contains(attribute) && attribute.isSymbol() then
+        if predicate.isFunctional() && attribute.isSymbol() && predicate.containsInput(attribute) then {
+          //No need input execution
           Some(Set[Variable](attribute.copy()))
-*/
-        if predicate.contains(attribute) then
+        }
+        else if predicate.isFunctional() && predicate.contains(attribute) && nextContext.canExecute(predicate) then {
+          //Execute here and retrieve here...
+          //If function has no result, or conflicting, switch context and retrieve result
+          val predicateId = predicate.identifier()
+          val position = predicate.getPosition(attribute)
+          val resultOption = executeActive(nextContext)
+
+          if resultOption.isDefined && resultOption.get.isEmpty then
+            parallelSwitch(contextMap, programContext, nextContext, predicate, attribute, predicateId, position)
+          else if resultOption.isDefined then
+            Some(resultOption.get)
+          else
+            Some(Set[Variable]())
+
+        }
+        else if predicate.contains(attribute) then
           val predicateId = predicate.identifier()
           val pid = predicate.identifier(index)
           val position = predicate.getPosition(attribute)
@@ -291,9 +459,93 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     }
 
     intersection(domains)
+  }*/
+
+  def activeSerial(contextMap: Map[Int, Array[ExecutionContext]],
+                   programContext: ExecutionContext,
+                   nextContext: ExecutionContext): Set[Variable] = {
+
+    val dataMap = nextContext.getDataMap()
+    val attribute = nextContext.getTargetVariable()
+    val substitution = nextContext.getSubstitution()
+    val domains = nextContext.getRelations().zipWithIndex.flatMap {
+      case (predicate, index) => {
+        if predicate.contains(attribute) && predicate.isFunctional() && !nextContext.canExecute(predicate) then
+          None
+        else if predicate.contains(attribute) then
+          Some(executeSerial(contextMap, programContext, nextContext, predicate, index, attribute))
+        else
+          None
+      }
+    }
+
+    intersection(domains)
+  }
+
+  def activeParallel(contextMap: Map[Int, Array[ExecutionContext]],
+                     programContext: ExecutionContext,
+                     nextContext: ExecutionContext): Set[Variable] = {
+
+    val dataMap = nextContext.getDataMap()
+    val attribute = nextContext.getTargetVariable()
+    val substitution = nextContext.getSubstitution()
+    val domains = nextContext.getRelations().zipWithIndex.flatMap {
+      case (predicate, index) => {
+        if predicate.contains(attribute) && predicate.isFunctional() && !nextContext.canExecute(predicate) then
+          None
+        else if predicate.contains(attribute) then
+          Some(executeParallel(contextMap, programContext, nextContext, predicate, index, attribute))
+        else
+          None
+      }
+    }
+
+    intersection(domains)
+  }
+
+  def activeRoaringSerial(contextMap: Map[Int, Array[ExecutionContext]],
+                     programContext: ExecutionContext,
+                     nextContext: ExecutionContext): Set[Variable] = {
+
+
+    val attribute = nextContext.getTargetVariable()
+    val substitution = nextContext.getSubstitution()
+    val domains = nextContext.getRelations().zipWithIndex.flatMap {
+      case (predicate, index) => {
+        if predicate.contains(attribute) && predicate.isFunctional() && !nextContext.canExecute(predicate) then
+          None
+        else if predicate.contains(attribute) then
+          Some(executeRoaringSerial(contextMap, programContext, nextContext, predicate, index, attribute))
+        else
+          None
+      }
+    }
+
+    intersection(domains)
   }
 
   def activeRoaringParallel(contextMap: Map[Int, Array[ExecutionContext]],
+                     programContext: ExecutionContext,
+                     nextContext: ExecutionContext): Set[Variable] = {
+
+
+    val attribute = nextContext.getTargetVariable()
+    val substitution = nextContext.getSubstitution()
+    val domains = nextContext.getRelations().zipWithIndex.flatMap {
+      case (predicate, index) => {
+        if predicate.contains(attribute) && predicate.isFunctional() && !nextContext.canExecute(predicate) then
+          None
+        else if predicate.contains(attribute) then
+          Some(executeRoaringParallel(contextMap, programContext, nextContext, predicate, index, attribute))
+        else
+          None
+      }
+    }
+
+    intersection(domains)
+  }
+
+  /*def activeRoaringParallel(contextMap: Map[Int, Array[ExecutionContext]],
                             programContext: ExecutionContext,
                             nextContext: ExecutionContext): Set[Variable] = {
 
@@ -367,9 +619,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     }
 
     intersection(domains)
-  }
+  }*/
 
-  def joinSerial(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+  /*def joinSerial(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
 
     val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
     val contextMap = contextProgram
@@ -386,6 +638,54 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
       contextProgram.filter(other => context.calledFrom(other))
         .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+    })
+
+    substitutions
+  }*/
+
+  /*def joinParallel(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      if context.isTarget() then context.setSubstitution(substitution)
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinParallel(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+      }
+
+    })
+
+    substitutions
+  }
+  */
+  def joinSerial(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      if context.isTarget() then context.setSubstitution(substitution)
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinSerial(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+      }
+
     })
 
     substitutions
@@ -415,6 +715,128 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     substitutions
   }
 
+  /*
+    def joinParallelCache(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
+
+      val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+      val contextMap = contextProgram
+        .groupBy { context => context.getHead().identifier() }
+
+      var substitutions = Set[Substitution]()
+
+      contextProgram.foreach(context => {
+        if context.isTarget() then context.setSubstitution(substitution)
+
+        val ruleId = context.getRuleId(substitution)
+        if !context.isFunctional() && programCache.contains(ruleId) then {
+          val headPredicate = context.getHead()
+          val crrSubstitutions = programCache.get(ruleId)
+          val crrPredicates = context.get(crrSubstitutions)
+          substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+          contextProgram.filter(other => context.calledFrom(other))
+            .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+        }
+        else if !context.isFunctional() || context.isTarget() then {
+          val headPredicate = context.getHead()
+          val parallelResult = joinParallel(contextMap, context, context)
+          val crrSubstitutions = parallelResult
+            .map(substitution => substitution.get(headPredicate.getVariables())) ++
+            atomSubstitutions(headPredicate, substitution)
+
+          val crrPredicates = context.get(crrSubstitutions)
+          substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+          contextProgram.filter(other => context.calledFrom(other))
+            .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+
+          programCache.update(ruleId, crrSubstitutions)
+        }
+
+      })
+
+      substitutions
+    }*/
+
+  def joinParallelCache(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      val headPredicate = context.getHead()
+      val contextId = context.getRuleId(substitution)
+      if context.isTarget() then context.setSubstitution(substitution)
+
+      if programCache.contains(contextId) then
+        val crrSubstitutions = programCache.get(contextId)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+      else if !context.isFunctional() || context.isTarget() then {
+        val crrSubstitutions = joinParallel(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+        programCache.update(contextId, crrSubstitutions)
+      }
+
+    })
+
+    substitutions
+  }
+
+  def joinRoaringSerial(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      if context.isTarget() then context.setSubstitution(substitution)
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinRoaringSerial(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+      }
+    })
+
+    substitutions
+  }
+
+  def joinRoaringParallel(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead().identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      if context.isTarget() then context.setSubstitution(substitution)
+      if !context.isFunctional() || context.isTarget() then {
+        val headPredicate = context.getHead()
+        val crrSubstitutions = joinRoaringParallel(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables())) ++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+      }
+    })
+
+    substitutions
+  }
+
+
+/*
   def joinRoaringSerial(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
 
     val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
@@ -438,7 +860,8 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     })
 
     substitutions
-  }
+  }*/
+/*
 
   def joinRoaringParallel(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
 
@@ -463,112 +886,137 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
     substitutions
   }
-
-  def joinParallelCache(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
-
-    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
-    val contextMap = contextProgram
-      .groupBy { context => context.getHead().identifier() }
-
-    var substitutions = Set[Substitution]()
-
-    contextProgram.foreach(context => {
-      if context.isTarget() then context.setSubstitution(substitution)
-
-      val ruleId = context.getRuleId(substitution)
-      if !context.isFunctional() && programCache.contains(ruleId) then {
-        val headPredicate = context.getHead()
-        val crrSubstitutions = programCache.get(ruleId)
-        val crrPredicates = context.get(crrSubstitutions)
-        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-        contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
-      }
-      else if !context.isFunctional() || context.isTarget() then {
-        val headPredicate = context.getHead()
-        val parallelResult = joinParallel(contextMap, context, context)
-        val crrSubstitutions = parallelResult
-          .map(substitution => substitution.get(headPredicate.getVariables())) ++
-          atomSubstitutions(headPredicate, substitution)
-
-        val crrPredicates = context.get(crrSubstitutions)
-        substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
-        contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
-
-        programCache.update(ruleId, crrSubstitutions)
-      }
-
-    })
-
-    substitutions
-  }
+*/
 
 
-  def joinParallel(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
 
-    val executedContext = execute(currentContext)
-
-    if executedContext.isEmpty then Set()
-    else if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) && executedContext.isDefined then
-      Set(Substitution())
-    else if executedContext.nonEmpty && executedContext.get.contains(currentContext.getTargetVariable()) then
-      Set(executedContext.get)
-    else {
-      val newSubstitution = executedContext.get
-      val nextContext = currentContext.nextContext(newSubstitution)
-      val nextVariable = nextContext.getTargetVariable()
-
-      val activeDomain = activeParallel(contextMap, programContext, nextContext)
-
-      val results = activeDomain.flatMap(value => {
-
-        val filteredMap = filterData(currentContext.getDataMap(), currentContext.getRelations(), nextVariable, value)
-        val newContext = nextContext.newContext(newSubstitution.composition(value))
-          .setDataMap(filteredMap)
-
-        val partialResults = joinParallel(contextMap, programContext, newContext)
-
-        val substitutions = partialResults.map(partial => {
-          partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
-        })
-
-        substitutions
-
-      }).toArray.toSet
-
-      results
-    }
-  }
 
   def joinSerial(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
 
-    val executedContext = execute(currentContext)
-
-    if executedContext.isEmpty then Set()
-    else if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) && executedContext.isDefined then
+    if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) then
       Set(Substitution())
     else {
-      val newSubstitution = executedContext.get
+      val newSubstitution = currentContext.getSubstitution()
       val nextContext = currentContext.nextContext(newSubstitution)
       val nextVariable = nextContext.getTargetVariable()
 
       val activeDomain = activeSerial(contextMap, programContext, nextContext)
+      val count = activeDomain.size
       val results = activeDomain.flatMap(value => {
+
         val filteredMap = filterData(currentContext.getDataMap(), currentContext.getRelations(), nextVariable, value)
         val newContext = nextContext.newContext(newSubstitution.composition(value))
           .setDataMap(filteredMap)
 
         val partialResults = joinSerial(contextMap, programContext, newContext)
+
         val substitutions = partialResults.map(partial => {
           partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
         })
+
         substitutions
+
       }).toArray.toSet
 
       results
     }
   }
+
+  def joinParallel(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
+
+    if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) then
+      Set(Substitution())
+    else {
+      val newSubstitution = currentContext.getSubstitution()
+      val nextContext = currentContext.nextContext(newSubstitution)
+      val nextVariable = nextContext.getTargetVariable()
+
+      val activeDomain = activeParallel(contextMap, programContext, nextContext)
+      val count = activeDomain.size
+      val results = activeDomain.par.flatMap(value => {
+
+        val filteredMap = filterData(currentContext.getDataMap(), currentContext.getRelations(), nextVariable, value)
+        val newContext = nextContext.newContext(newSubstitution.composition(value))
+          .setDataMap(filteredMap)
+
+        val partialResults = joinSerial(contextMap, programContext, newContext)
+
+        val substitutions = partialResults.map(partial => {
+          partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
+        })
+
+        substitutions
+
+      }).toArray.toSet
+
+      results
+    }
+  }
+
+  def joinRoaringSerial(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
+
+    if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) then
+      Set(Substitution())
+    else {
+      val newSubstitution = currentContext.getSubstitution()
+      val nextContext = currentContext.nextContext(newSubstitution)
+      val nextVariable = nextContext.getTargetVariable()
+
+      val activeDomain = activeRoaringSerial(contextMap, programContext, nextContext)
+      val count = activeDomain.size
+      val results = activeDomain.flatMap(value => {
+
+        val filteredMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
+        val newContext = nextContext.newContext(newSubstitution.composition(value))
+          .setRowMap(filteredMap)
+
+        val partialResults = joinRoaringSerial(contextMap, programContext, newContext)
+
+        val substitutions = partialResults.map(partial => {
+          partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
+        })
+
+        substitutions
+
+      }).toArray.toSet
+
+      results
+    }
+  }
+
+  def joinRoaringParallel(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
+
+    if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) then
+      Set(Substitution())
+    else {
+      val newSubstitution = currentContext.getSubstitution()
+      val nextContext = currentContext.nextContext(newSubstitution)
+      val nextVariable = nextContext.getTargetVariable()
+
+      val activeDomain = activeRoaringParallel(contextMap, programContext, nextContext)
+      val count = activeDomain.size
+      val results = activeDomain.par.flatMap(value => {
+
+        val filteredMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
+        val newContext = nextContext.newContext(newSubstitution.composition(value))
+          .setRowMap(filteredMap)
+
+        val partialResults = joinRoaringParallel(contextMap, programContext, newContext)
+
+        val substitutions = partialResults.map(partial => {
+          partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
+        })
+
+        substitutions
+
+      }).toArray.toSet
+
+      results
+    }
+  }
+/*
+
+
 
   def joinRoaringParallel(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
 
@@ -632,9 +1080,10 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       results
     }
   }
+*/
 
 
-  def execute(originalQuery: Optimized, substitution: Substitution = Substitution()): Substitution = {
+/*  def execute(originalQuery: Optimized, substitution: Substitution = Substitution()): Substitution = {
 
     var main = substitution
 
@@ -650,8 +1099,241 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       })
 
     main
+  }*/
+
+  def executeSerial(contextMap: Map[Int, Array[ExecutionContext]],
+                    programContext: ExecutionContext,
+                    context: ExecutionContext, predicate: Predicate, predicateIndex:Int, attribute: Variable): Set[Variable] = {
+    val result = if attribute.isSymbol() && predicate.isFunctional() && predicate.containsInput(attribute) then {
+      //No need execution or context switch
+      Set[Variable](attribute)
+    }
+    else if !predicate.isRecursive() && predicate.isFunctional() && context.canExecute(predicate) then
+      val result = executeActive(context)
+      if result.isDefined && result.get.isEmpty then {
+        //No confliction exists but switch maybe needed
+        val identifier = predicate.identifier()
+        val position = predicate.getPosition(attribute)
+        val switchResult = switchSerial(contextMap, programContext, context, predicate, attribute, identifier, position)
+        checkConfliction(context, switchResult)
+      }
+      else if result.isDefined && result.get.nonEmpty then {
+        //Execution is successfully return value
+        result.get
+      }
+      else {
+        //Has confliction
+        Set[Variable]()
+      }
+    else if predicate.contains(attribute) then {
+      //No need execution lookup results from cache or switch context
+      val predicateId = predicate.identifier()
+      val pid = predicate.identifier(predicateIndex)
+      val position = predicate.getPosition(attribute)
+      val dataMap = context.getDataMap()
+      val targetName = attribute.getName()
+
+      val crrResults = dataMap.getOrElse(pid, Array[Predicate]())
+        .map(predicate => predicate.getVariable(position).copy(targetName))
+        .filter(variable => attribute.equalValue(variable)).toSet
+
+      if !dataMap.contains(pid) && crrResults.isEmpty then {
+        val switchResult = switchSerial(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        switchResult
+      }
+      else if context.isRecursive() && crrResults.isEmpty then
+        val switchResult = switchSerial(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        //checkConfliction(context, switchResult)
+        switchResult
+      else
+        crrResults
+    }
+    else{
+      Set[Variable]()
+    }
+
+    //checkConfliction(context, result)
+    result
   }
 
+  def executeParallel(contextMap: Map[Int, Array[ExecutionContext]],
+                          programContext: ExecutionContext,
+                          context: ExecutionContext, predicate: Predicate, predicateIndex:Int, attribute: Variable): Set[Variable] = {
+    val result = if attribute.isSymbol() && predicate.isFunctional() && predicate.containsInput(attribute) then {
+      //No need execution or context switch
+      Set[Variable](attribute)
+    }
+    else if !predicate.isRecursive() && predicate.isFunctional() && context.canExecute(predicate) then
+      val result = executeActive(context)
+      if result.isDefined && result.get.isEmpty then {
+        //No confliction exists but switch maybe needed
+        val identifier = predicate.identifier()
+        val position = predicate.getPosition(attribute)
+        val switchResult = parallelSwitch(contextMap, programContext, context, predicate, attribute, identifier, position)
+        checkConfliction(context, switchResult)
+      }
+      else if result.isDefined && result.get.nonEmpty then {
+        //Execution is successfully return value
+        result.get
+      }
+      else {
+        //Has confliction
+        Set[Variable]()
+      }
+    else if predicate.contains(attribute) then {
+      //No need execution lookup results from cache or switch context
+      val predicateId = predicate.identifier()
+      val pid = predicate.identifier(predicateIndex)
+      val position = predicate.getPosition(attribute)
+      val dataMap = context.getDataMap()
+      val targetName = attribute.getName()
+
+      val crrResults = dataMap.getOrElse(pid, Array[Predicate]())
+        .map(predicate => predicate.getVariable(position).copy(targetName))
+        .filter(variable => attribute.equalValue(variable)).toSet
+
+      if !dataMap.contains(pid) && crrResults.isEmpty then {
+        val switchResult = parallelSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        switchResult
+      }
+      else if context.isRecursive() && crrResults.isEmpty then
+        val switchResult = parallelSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        //checkConfliction(context, switchResult)
+        switchResult
+      else
+        crrResults
+    }
+    else{
+      Set[Variable]()
+    }
+
+    //checkConfliction(context, result)
+    result
+  }
+
+  def executeRoaringSerial(contextMap: Map[Int, Array[ExecutionContext]],
+                           programContext: ExecutionContext,
+                           context: ExecutionContext, predicate: Predicate, predicateIndex:Int, attribute: Variable): Set[Variable] = {
+    val result = if attribute.isSymbol() && predicate.isFunctional() && predicate.containsInput(attribute) then {
+      //No need execution or context switch
+      Set[Variable](attribute)
+    }
+    else if !predicate.isRecursive() && predicate.isFunctional() && context.canExecute(predicate) then
+      val result = executeActive(context)
+      if result.isDefined && result.get.isEmpty then {
+        //No confliction exists but switch maybe needed
+        val identifier = predicate.identifier()
+        val position = predicate.getPosition(attribute)
+        val switchResult = roaringSerialSwitch(contextMap, programContext, context, predicate, attribute, identifier, position)
+        checkConfliction(context, switchResult)
+      }
+      else if result.isDefined && result.get.nonEmpty then {
+        //Execution is successfully return value
+        result.get
+      }
+      else {
+        //Has confliction
+        Set[Variable]()
+      }
+    else if predicate.contains(attribute) then {
+      //No need execution lookup results from cache or switch context
+      val predicateId = predicate.identifier()
+      val pid = predicate.identifier(predicateIndex)
+      val position = predicate.getPosition(attribute)
+      val dataMap = context.getDataMap()
+      val targetName = attribute.getName()
+
+      val crrResults = dataMap.getOrElse(pid, Array[Predicate]())
+        .map(predicate => predicate.getVariable(position).copy(targetName))
+        .filter(variable => attribute.equalValue(variable)).toSet
+
+      if !dataMap.contains(pid) && crrResults.isEmpty then {
+        val switchResult = roaringSerialSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        switchResult
+      }
+      else if context.isRecursive() && crrResults.isEmpty then
+        val switchResult = roaringSerialSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        //checkConfliction(context, switchResult)
+        switchResult
+      else
+        crrResults
+    }
+    else{
+      Set[Variable]()
+    }
+    result
+  }
+
+
+  def executeRoaringParallel(contextMap: Map[Int, Array[ExecutionContext]],
+                           programContext: ExecutionContext,
+                           context: ExecutionContext, predicate: Predicate, predicateIndex:Int, attribute: Variable): Set[Variable] = {
+    val result = if attribute.isSymbol() && predicate.isFunctional() && predicate.containsInput(attribute) then {
+      //No need execution or context switch
+      Set[Variable](attribute)
+    }
+    else if !predicate.isRecursive() && predicate.isFunctional() && context.canExecute(predicate) then
+      val result = executeActive(context)
+      if result.isDefined && result.get.isEmpty then {
+        //No confliction exists but switch maybe needed
+        val identifier = predicate.identifier()
+        val position = predicate.getPosition(attribute)
+        val switchResult = roaringParallelSwitch(contextMap, programContext, context, predicate, attribute, identifier, position)
+        checkConfliction(context, switchResult)
+      }
+      else if result.isDefined && result.get.nonEmpty then {
+        //Execution is successfully return value
+        result.get
+      }
+      else {
+        //Has confliction
+        Set[Variable]()
+      }
+    else if predicate.contains(attribute) then {
+      //No need execution lookup results from cache or switch context
+      val predicateId = predicate.identifier()
+      val pid = predicate.identifier(predicateIndex)
+      val position = predicate.getPosition(attribute)
+      val dataMap = context.getDataMap()
+      val targetName = attribute.getName()
+
+      val crrResults = dataMap.getOrElse(pid, Array[Predicate]())
+        .map(predicate => predicate.getVariable(position).copy(targetName))
+        .filter(variable => attribute.equalValue(variable)).toSet
+
+      if !dataMap.contains(pid) && crrResults.isEmpty then {
+        val switchResult = roaringParallelSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        switchResult
+      }
+      else if context.isRecursive() && crrResults.isEmpty then
+        val switchResult = roaringParallelSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
+        //checkConfliction(context, switchResult)
+        switchResult
+      else
+        crrResults
+    }
+    else{
+      Set[Variable]()
+    }
+    result
+  }
+
+  def executeActive(context: ExecutionContext): Option[Set[Variable]] =
+
+
+    val result = executeResult(context)
+    if result.nonEmpty then {
+      val (substitution, executed) = result.get
+      if executed then
+        val targetVariable = context.getTargetVariable()
+        val results = substitution.valueByVariable(targetVariable)
+        Some(Set(results.get))
+      else
+        Some(Set())
+    }
+    else {
+      None
+    }
 
   def execute(context: ExecutionContext): Option[Substitution] = {
     val rule = context.getRule()
@@ -682,18 +1364,33 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
 
     Some(main)
   }
-/*
 
-  def execute(context: ContextRows): Option[Substitution] = {
+  def checkConfliction(context:ExecutionContext, attributes:Set[Variable]):Set[Variable]=
+    val substitution = context.getSubstitution()
+    val filters = attributes.map(attribute=> (substitution.valueByVariable(attribute), attribute))
+      .filter{case(value, attribute) => value.nonEmpty}
+
+    if filters.isEmpty then
+      //No confliction
+      attributes
+    else {
+      //May have confliction
+      filters.filter {case(value, attribute)=> value.get.equalType(attribute) && value.get.equalValue(attribute)}
+        .map{case(value, attribute)=> attribute}
+    }
+
+
+  def executeResult(context: ExecutionContext): Option[(Substitution, Boolean)] = {
     val rule = context.getRule()
     var main = context.getSubstitution()
-
-
+    val targetVariable = context.getTargetVariable()
+    var executed = false
     rule.getQuery().getBody()
+      .filter(predicate => predicate.isFunctional() && predicate.contains(targetVariable) && !predicate.containsInput(targetVariable))
       .foreach(predicate => {
         val newPredicate = predicate.substitution(main)
           .asPredicate()
-        if newPredicate.isFunctional() && newPredicate.isDefinite() then {
+        if newPredicate.isDefinite() then {
           if newPredicate.isExecutable() then {
             newPredicate.execute().foreach(newSubstitution => {
               val newComposed = main.composition(newSubstitution)
@@ -701,6 +1398,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
                 return None
               }
               else {
+                executed = true
                 main = newComposed
               }
             })
@@ -711,9 +1409,40 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
         }
       })
 
-    Some(main)
+    Some((main, executed))
   }
-*/
+  /*
+
+    def execute(context: ContextRows): Option[Substitution] = {
+      val rule = context.getRule()
+      var main = context.getSubstitution()
+
+
+      rule.getQuery().getBody()
+        .foreach(predicate => {
+          val newPredicate = predicate.substitution(main)
+            .asPredicate()
+          if newPredicate.isFunctional() && newPredicate.isDefinite() then {
+            if newPredicate.isExecutable() then {
+              newPredicate.execute().foreach(newSubstitution => {
+                val newComposed = main.composition(newSubstitution)
+                if main.hasConflict(newComposed) then {
+                  return None
+                }
+                else {
+                  main = newComposed
+                }
+              })
+            }
+            else {
+              return None
+            }
+          }
+        })
+
+      Some(main)
+    }
+  */
 
   /*
 

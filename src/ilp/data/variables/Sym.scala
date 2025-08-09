@@ -19,7 +19,7 @@ final class Sym(n: String, var value: String) extends Variable(n):
   override inline def id(): Int = name.hashCode * 7 + value.hashCode
 
   override inline def equalValue(variable: Variable): Boolean = {
-    variable.isSymbol() && variable.asSymbol().value == value
+    variable.isInstanceOf[Sym] && variable.asSymbol().value == value
   }
 
   override def equals(obj: Any): Boolean =

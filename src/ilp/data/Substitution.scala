@@ -17,6 +17,15 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
 
   def this(variable: String, symbol: String) = this(Variable(variable), Variable(symbol))
 
+  debug()
+
+  def debug():this.type = {
+    if variables.size > symbols.size then
+      val debug = 0;
+
+    this
+  }
+
   inline def getVariables() = variables
   inline def getVariable(index: Int) = variables(index)
   inline def getSymbols() = symbols
@@ -178,6 +187,12 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   def hasValue(variable: Variable): Boolean =
     this.symbols.exists(crrSymbol => crrSymbol.equals(variable))
 
+  def hasInputs(predicate: Predicate):Boolean =
+    predicate.getInput().forall(inputVariable => contains(inputVariable))
+
+  def sameValue(variable: Variable): Boolean =
+    this.variables.zip(symbols).exists{case(crr, symbol)=> crr.getName() == variable.getName() && symbol.equalValue(variable)}
+
   def variableByValue(variable: Variable): Option[Variable] = {
     val find = symbols.zipWithIndex.find(pair => pair._1.equals(variable))
     if find.isDefined then
@@ -189,10 +204,14 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
 
   def valueByVariable(variable: Variable): Option[Variable] = {
     val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
-    if find.isDefined then
+    if find.isDefined then {
       //Some(symbols(find.get._2).copy())
-      Some(symbols(find.get._2))
-    else
+      if find.get._2 >= symbols.length then
+        val error = 0;
+        Some(symbols.last)
+      else
+        Some(symbols(find.get._2))
+    } else
       None
   }
 
@@ -252,6 +271,9 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     val union = leftDifference ++ rightDifference ++ leftShared
     val unionVar = union.map(_._1)
     val unionSym = union.map(_._2)
+
+    if unionVar.length > unionSym.length then
+      val error = 0
 
     Substitution(unionVar, unionSym)
   /*

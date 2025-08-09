@@ -27,6 +27,11 @@ final class Plan(val db: Database) extends Serializable{
       None
   }
 
+  def getFunctions(attributes:Array[Variable], predicates:Array[Predicate]):Array[Variable] =
+
+    val ordered = attributes.sortBy(attribute=> predicates.count(function=> function.containsInput(attribute)))
+      .reverse
+    ordered
 
   def getStatistics(maxMap: Map[Int, Map[Int, Double]], predicate: Predicate): Statistics = {
     val id = predicate.identifier()
@@ -168,7 +173,7 @@ final class Plan(val db: Database) extends Serializable{
 
   def optimizeExperimental(attributes: Array[Variable], body: Array[Predicate], tables: Array[Statistics]): Array[(Variable, Double)] =
     val rowCounts = attributes.map(current => tables.filter(stats => stats.hasVariable(current))
-      .map(stats => stats.getActiveSize(current)).minOption.getOrElse(1.0))
+      .map(stats => stats.getActiveFunctionSize(current)).minOption.getOrElse(1.0))
     val zipAttributes = attributes.zip(rowCounts)
     val array = zipAttributes.map { case (current, rowCount) => {
       (current, rowCount) +: optimizeByExperimental(current, attributes.filter(variable => !variable.equals(current)), body, tables)
@@ -185,7 +190,7 @@ final class Plan(val db: Database) extends Serializable{
     val matrix = attributes.map(current => {
       attributes.map(other => {
         bodyZip.filter { case (predicate, table) => predicate.contains(other) && predicate.contains(current) }
-          .map { case (_, table) => table.getLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
+          .map { case (_, table) => table.getFunctionLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
       })
     })
     val (scores, order) = BellmanFordCycle.applyDirect(matrix)
@@ -198,7 +203,7 @@ final class Plan(val db: Database) extends Serializable{
     val matrix = attributes.map(current => {
       val scores = attributes.map(other => {
         bodyZip.filter { case (predicate, table) => predicate.contains(other) && predicate.contains(current) }
-          .map { case (_, table) => table.getLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
+          .map { case (_, table) => table.getFunctionLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
       }).filter(item=> item!=Double.PositiveInfinity)
 
       current -> scores.sum / scores.length
@@ -358,7 +363,7 @@ final class Plan(val db: Database) extends Serializable{
     val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
     val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
     val sorted = optimizeBellmanFord(attributes, sortedRelations, stats).map(_._1)
-    val sortedInputs = sorted // optimizeInputs(query, sorted)
+    val sortedInputs = sorted //getFunctions(sorted, sortedRelations)
 
     val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
       val statistics = getStatistics(predicate)
@@ -613,7 +618,7 @@ final class Plan(val db: Database) extends Serializable{
     val rowMap = getRowSizes(relations)
     val dataMap = stats.zipWithIndex.map { case (statistics, index) => statistics.predicate.identifier(index) -> statistics.data }
       .toMap
-    val sorted = attributes
+    val sorted = getFunctions(attributes, relations)
     Optimized(query, sorted, relations)
       .setData(dataMap)
       .initRows(rowMap)
