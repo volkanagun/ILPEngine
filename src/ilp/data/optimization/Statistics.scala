@@ -9,7 +9,8 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   //val maxScalar = 1000
 
   val size = data.size
-  val constant = 10
+  val constant1 = 2
+  val constant2 = 4
 
   def this(predicate: Predicate) = this(predicate, Array(predicate))
 
@@ -36,9 +37,9 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
 
   private inline def computeRelative(): Map[(Int, Int), Double] = {
     val map = Range(0, predicate.getArity()).flatMap(current => {
-      val size1 = if predicate.containsInput(current) then activeMap(current)/constant else activeMap(current)
+      val size1 = if predicate.containsInput(current) then activeMap(current)/constant1 else activeMap(current)
       Range(0, predicate.getArity()).map(next => {
-        val size2 = if predicate.containsInput(next) then activeMap(next)/constant else activeMap(next)
+        val size2 = if predicate.containsInput(next) then activeMap(next)/constant1 else activeMap(next)
         (current, next) -> size1 / size2
       })
     }).toMap
@@ -92,8 +93,10 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   def getActiveFunctionSize(variable: Variable): Double =
     val position = predicate.getPosition(variable)
     val size = activeMap.getOrElse(position, 1.0)
-    if predicate.containsInput(variable) then
-       size * constant
+    if predicate.isFunctional() && predicate.containsInput(variable) then
+       size * constant1
+    else if !predicate.isFunctional() then
+       size * constant2
     else
       size
 
@@ -138,7 +141,8 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
    def getFunctionLogRatio(predicate: Predicate, current: Variable, next: Variable): Double = {
      val size1 = getActiveFunctionSize(current)
      val size2 = getActiveFunctionSize(next)
-     val score = getDataSize() * size2/size1
+     val constant = if !predicate.isFunctional() then constant2 else constant1
+     val score = constant * getDataSize() * size2/size1
      math.log(score)
   }
 

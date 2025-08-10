@@ -218,6 +218,55 @@ object DatabaseTest {
 
   }
 
+  def simpleIGGP(): Unit = {
+    val params = Params("iggp-buttons-next")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase()
+
+    val query = Parser.parseHypothesis(
+      //"next(V0,V1):- my_succ(V2,V1),my_true(V0,V2).\n"+
+      "next(V0,V1):- my_true(V0,V1),c_r(V1),does(V0,V3,V2),c_b(V2).\n"+
+      "next(V0,V1):- my_true(V0,V1),c_r(V1),c_a(V2),does(V0,V3,V2).\n"+
+      "next(V0,V1):- my_true(V0,V1),c_q(V1),c_a(V2),does(V0,V3,V2).\n"+
+      "next(V0,V1):- my_true(V0,V1),c_p(V1),c_c(V2),does(V0,V3,V2).\n"+
+      "next(V0,V1):- c_p(V1),not_my_true(V0,V1),c_a(V3),does(V0,V2,V3).\n"+
+      "next(V0,V1):- c_p(V1),c_b(V3),does(V0,V2,V3),c_q(V4),my_true(V0,V4).\n"+
+      "next(V0,V1):- c_r(V1),does(V0,V4,V3),c_c(V3),c_q(V2),my_true(V0,V2).\n"+
+      "next(V0,V1):- c_q(V1),c_p(V2),my_true(V0,V2),c_b(V4),does(V0,V3,V4).\n"+
+      "next(V0,V1):- c_q(V1),c_c(V4),does(V0,V3,V4),c_r(V2),my_true(V0,V2).").get
+
+
+    val plan = Plan(db)
+    val optimizedNone = plan.optimizeNone(query)
+    val optimizedBellmanford = plan.optimizeBellmanFord(query)
+
+    val engine1 = Engine(db)
+    val engine2 = Engine(db)
+    val engine3 = Engine(db)
+    val engine4 = Engine(db)
+    val engine5 = Engine(db)
+    val engine6 = Engine(db)
+    val r1 = engine1.joinSerial(optimizedNone)
+    val r2 = engine2.joinSerial(optimizedBellmanford)
+    val r3 = engine3.joinParallel(optimizedNone)
+    val r4 = engine4.joinParallel(optimizedBellmanford)
+    val r5 = engine5.joinRoaringSerial(optimizedNone)
+    val r6 = engine6.joinRoaringSerial(optimizedBellmanford)
+
+    println("Result1 size: "+r1.size)
+    println("Result2 size: "+r2.size)
+    println("Result3 size: "+r3.size)
+    println("Result4 size: "+r4.size)
+    println("Result5 size: "+r5.size)
+    println("Result6 size: "+r6.size)
+    println("r1==r2 : "+ (r1.size==r2.size).toString)
+    println("r1==r3 : "+ (r1.size==r3.size).toString)
+    println("r3==r4 : "+ (r3.size==r4.size).toString)
+    println("r1==r4 : "+ (r1.size==r4.size).toString)
+    println("r1==r5 : "+ (r1.size==r5.size).toString)
+    println("r5==r6 : "+ (r5.size==r6.size).toString)
+  }
+
   def simpleRecursive(): Unit = {
 
     val db = Database("recursiveTest")
@@ -303,17 +352,13 @@ object DatabaseTest {
       .compact()
       .buildOperational()
 
-    val queries = plan.optimizeExperimental(pr1)
+    val queries = plan.optimizeBellmanFord(pr1)
 
     val parallelSubstitutions = engine.joinSerial(queries, substitution)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
 
-    val roaringSubstitutions = engine.joinParallelCache(queries, substitution)
-    println("Roaring result: ")
-    roaringSubstitutions.foreach(sub=> println(sub))
-    println("===========================================")
   }
 
   def simpleList(): Unit = {
@@ -353,53 +398,28 @@ object DatabaseTest {
     val m1 = Parser.parseRule("next_list(V0,V1) :- head(V3,V0) & head(V1,V2) & x(V3) & tail(V0, V2).").get
     val m2 = Parser.parseRule("next_list(V0,V1) :- tail(V0, V2) & next_list(V2, V1).").get.buildRecursion()
 
-
-    val pr1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2),head(V3,V0),x(V3).").get
-    val pr2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
-      .buildRecursion()
-
     val rr1 = Parser.parseRule("func3552336(V0,V2) :- tail(V0,V2).").get
     val rr2 = Parser.parseRule("func3198432(V1,V2) :- head(V1,V2).").get
     val rr3 = Parser.parseRule("func120(V3) :- x(V3).").get
     val rr4 = Parser.parseRule("func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).").get
     val rr5 = Parser.parseRule("next_list(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get
     val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()
-    
-    val gamma1 = Parser.parseRule("next_list(V0,V1) :- x(H153) & head(H153,V0) & head(V1,D720) & tail(V0,D720).").get
-    val gamma2 = Parser.parseRule("next_list(V0,V1) :- tail(V0,G235) & x(H153) & head(H153,G235) & head(V1,D720) & tail(G235,D720).").get
-    
-
-
-    val r1 = Hypothesis(pr1.getHead(), Array(pr1, pr2))
-      .build()
 
 
     val hr1 = Hypothesis(rr6.getHead(), Array(rr1, rr2, rr3, rr4, rr5, rr6))
       .build()
 
-    val mr1 = Hypothesis(m2.getHead(), Array(m1, m2))
-      .build()
-
-    val gm = Hypothesis(gamma1.getHead(), Array(gamma1, gamma2.buildRecursion()))
-      .build()
-
     println(hr1)
 
     val queries = plan.optimizeNone(hr1)
-
-    val parallelSubstitutions = engine.joinSerial(queries, sample)
+    val parallelSubstitutions = engine.joinRoaringSerial(queries, sample)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
-    println("===========================================")
-
-    val roaringSubstitutions = engine.joinRoaringParallel(queries, sample)
-    println("Roaring result: ")
-    roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
   }
 
   def main(args: Array[String]): Unit = {
-    simpleList()
+    simpleIGGP()
   }
 
 }

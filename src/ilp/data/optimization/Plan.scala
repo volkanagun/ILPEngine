@@ -17,6 +17,9 @@ final class Plan(val db: Database) extends Serializable{
 
 
   val statistics = db.getStatistics()
+  val constant0 = 0d
+  val constant1 = 1000d
+  val constant2 = 2000d
 
   def getStatistics(predicate: Predicate): Option[Statistics] = {
     val id = predicate.identifier()
@@ -27,10 +30,23 @@ final class Plan(val db: Database) extends Serializable{
       None
   }
 
-  def getFunctions(attributes:Array[Variable], predicates:Array[Predicate]):Array[Variable] =
+  def getScore(head:Predicate, functions:Array[Predicate], attribute:Variable):Double = {
+    if head.isFunctional() && head.containsInput(attribute) then {
+      constant2
+    }
+    else if head.isFunctional() then {
+      val countFunction = functions.count(function => function.containsInput(attribute))
+      1d / (countFunction + constant1)
+    }
+    else
+      1d
+  }
 
-    val ordered = attributes.sortBy(attribute=> predicates.count(function=> function.containsInput(attribute)))
-      .reverse
+
+  def getFunctions(head:Predicate, attributes:Array[Variable], predicates:Array[Predicate]):Array[Variable] =
+    val functions = predicates.filter(predicate=> predicate.isFunctional())
+    val ordered = attributes.sortBy(attribute=> getScore(head, functions, attribute))
+
     ordered
 
   def getStatistics(maxMap: Map[Int, Map[Int, Double]], predicate: Predicate): Statistics = {
@@ -190,7 +206,7 @@ final class Plan(val db: Database) extends Serializable{
     val matrix = attributes.map(current => {
       attributes.map(other => {
         bodyZip.filter { case (predicate, table) => predicate.contains(other) && predicate.contains(current) }
-          .map { case (_, table) => table.getFunctionLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
+          .map { case (_, table) => table.getLogRatio(table.predicate, current, other)}.maxOption.getOrElse(Double.PositiveInfinity)
       })
     })
     val (scores, order) = BellmanFordCycle.applyDirect(matrix)
@@ -363,7 +379,7 @@ final class Plan(val db: Database) extends Serializable{
     val statsMap = stats.map(stat => stat.identifier() -> stat).toMap
     val sortedRelations = relations.sortBy(predicate => statsMap(predicate.identifier()).getData().size)
     val sorted = optimizeBellmanFord(attributes, sortedRelations, stats).map(_._1)
-    val sortedInputs = sorted //getFunctions(sorted, sortedRelations)
+    val sortedInputs = getFunctions(query.getHead(), sorted, sortedRelations)
 
     val dataMap = sortedRelations.zipWithIndex.flatMap { case (predicate, index) => {
       val statistics = getStatistics(predicate)
@@ -618,7 +634,7 @@ final class Plan(val db: Database) extends Serializable{
     val rowMap = getRowSizes(relations)
     val dataMap = stats.zipWithIndex.map { case (statistics, index) => statistics.predicate.identifier(index) -> statistics.data }
       .toMap
-    val sorted = getFunctions(attributes, relations)
+    val sorted = getFunctions(query.getHead(), attributes, relations)
     Optimized(query, sorted, relations)
       .setData(dataMap)
       .initRows(rowMap)

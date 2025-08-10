@@ -138,7 +138,7 @@ final class ExecutionContext(var rule: Optimized,
     dataMap = dataMap ++ targetMap
     originalMap = originalMap ++ targetMap
     rowMap = rowMap ++ roaringMap
-    //originalRowMap = originalRowMap ++ roaringMap
+    originalRowMap = rowMap
     this
 
   def updateData(predicate: Predicate, set: Array[Predicate]): ExecutionContext =

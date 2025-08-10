@@ -106,7 +106,15 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
   override inline def hashCode(): Int = values.foldRight[Int](name.hashCode()) { case (variable, main) => main * 7 + variable.hashCode() }
 
   override inline def equals(obj: Any): Boolean = {
-    obj.isInstanceOf[Variable] && obj.asInstanceOf[Variable].name == name
+
+    obj match {
+      case list:VariableList => {list.hashCode() == hashCode()}
+      case num: Num => false
+      case sym: Sym => false
+      case num: Variable => num.name.equals(name)
+
+    }
+
   }
 
   override inline def equalValue(variable: Variable): Boolean =

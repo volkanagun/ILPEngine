@@ -12,6 +12,8 @@ final class Num(vname: String, val item: Double) extends Variable(vname):
   override inline def equals(obj: Any): Boolean = {
     obj match {
       case num: Num => num.item == item
+      case num: Sym => false
+      case num: VariableList => false
       case variable:Variable => variable.getName() == getName()
       case _ => false
     }

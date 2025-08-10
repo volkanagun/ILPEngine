@@ -62,7 +62,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     newMap
 
   def filterRoaring(rowMap: Map[Int, RoaringBitmap], relations: Array[Predicate], attribute: Variable, value: Variable): Map[Int, RoaringBitmap] =
-    val newMap = relations.zipWithIndex
+    val newMap = relations.filter(predicate=> !predicate.isFunctional() && !predicate.isRecursive()).zipWithIndex
       .flatMap { case (predicate, position) => {
         val pid = predicate.identifier(position)
         if rowMap.contains(pid) then
@@ -805,7 +805,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
       }
     })
 
@@ -828,7 +828,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget() then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
       }
     })
 
@@ -939,7 +939,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
         val newContext = nextContext.newContext(newSubstitution.composition(value))
           .setDataMap(filteredMap)
 
-        val partialResults = joinSerial(contextMap, programContext, newContext)
+        val partialResults = joinParallel(contextMap, programContext, newContext)
 
         val substitutions = partialResults.map(partial => {
           partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
@@ -966,9 +966,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       val count = activeDomain.size
       val results = activeDomain.flatMap(value => {
 
-        val filteredMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
+        val filteredRowMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
         val newContext = nextContext.newContext(newSubstitution.composition(value))
-          .setRowMap(filteredMap)
+          .setRowMap(filteredRowMap)
 
         val partialResults = joinRoaringSerial(contextMap, programContext, newContext)
 
@@ -997,9 +997,9 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       val count = activeDomain.size
       val results = activeDomain.par.flatMap(value => {
 
-        val filteredMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
+        val rowMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
         val newContext = nextContext.newContext(newSubstitution.composition(value))
-          .setRowMap(filteredMap)
+          .setRowMap(rowMap)
 
         val partialResults = joinRoaringParallel(contextMap, programContext, newContext)
 
@@ -1014,92 +1014,6 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       results
     }
   }
-/*
-
-
-
-  def joinRoaringParallel(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
-
-    val executedContext = execute(currentContext)
-
-    if executedContext.isEmpty then Set()
-    else if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) && executedContext.isDefined then
-      Set(Substitution())
-    else {
-      val newSubstitution = executedContext.get
-      val nextContext = currentContext.nextContext(newSubstitution)
-      val nextVariable = nextContext.getTargetVariable()
-
-      val activeDomain = activeRoaringParallel(contextMap, programContext, nextContext)
-      val results = activeDomain.par.flatMap(value => {
-
-        val filteredMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
-
-        val newContext = nextContext.newContext(newSubstitution.composition(value))
-          .setRowMap(filteredMap)
-
-        val partialResults = joinRoaringParallel(contextMap, programContext, newContext)
-        val substitutions = partialResults.map(partial => {
-          partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
-        })
-        substitutions
-      }).toArray.toSet
-
-      results
-    }
-  }
-
-
-  def joinRoaringSerial(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
-
-    val executedContext = execute(currentContext)
-
-    if executedContext.isEmpty then Set()
-    else if (currentContext.getDepth() > recursiveDepth || currentContext.emptyAttributes()) && executedContext.isDefined then
-      Set(Substitution())
-    else {
-      val newSubstitution = executedContext.get
-      val nextContext = currentContext.nextContext(newSubstitution)
-      val nextVariable = nextContext.getTargetVariable()
-
-      val activeDomain = activeRoaringSerial(contextMap, programContext, nextContext)
-      val results = activeDomain.flatMap(value => {
-
-        val filteredMap = filterRoaring(currentContext.getRowMap(), currentContext.getRelations(), nextVariable, value)
-
-        val newContext = nextContext.newContext(newSubstitution.composition(value))
-          .setRowMap(filteredMap)
-
-        val partialResults = joinRoaringSerial(contextMap, programContext, newContext)
-        val substitutions = partialResults.map(partial => {
-          partial.replaceNew(nextVariable, value.copy(nextVariable.getName()))
-        })
-        substitutions
-      }).toArray.toSet
-
-      results
-    }
-  }
-*/
-
-
-/*  def execute(originalQuery: Optimized, substitution: Substitution = Substitution()): Substitution = {
-
-    var main = substitution
-
-    originalQuery.getQuery().getBody()
-      .foreach(predicate => {
-        val newPredicate = predicate.substitution(main)
-          .asPredicate()
-        if newPredicate.isExecutable() then {
-          val newSubstitution = newPredicate.execute().get
-          main = main.composition(newSubstitution)
-        }
-
-      })
-
-    main
-  }*/
 
   def executeSerial(contextMap: Map[Int, Array[ExecutionContext]],
                     programContext: ExecutionContext,
@@ -1214,7 +1128,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
   def executeRoaringSerial(contextMap: Map[Int, Array[ExecutionContext]],
                            programContext: ExecutionContext,
                            context: ExecutionContext, predicate: Predicate, predicateIndex:Int, attribute: Variable): Set[Variable] = {
-    val result = if attribute.isSymbol() && predicate.isFunctional() && predicate.containsInput(attribute) then {
+    if attribute.isSymbol() && predicate.isFunctional() && predicate.containsInput(attribute) then {
       //No need execution or context switch
       Set[Variable](attribute)
     }
@@ -1241,13 +1155,14 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       val pid = predicate.identifier(predicateIndex)
       val position = predicate.getPosition(attribute)
       val dataMap = context.getDataMap()
+      val rowMap = context.getRowMap()
+      val values = dataMap.getOrElse(pid, Array[Predicate]())
+      val bitset = rowMap.getOrElse(pid, RoaringBitmap()).toArray
       val targetName = attribute.getName()
+      val crrResults = bitset.map(values).map(predicate=> predicate.getVariable(position).copy(attribute.getName()))
+        .toSet
 
-      val crrResults = dataMap.getOrElse(pid, Array[Predicate]())
-        .map(predicate => predicate.getVariable(position).copy(targetName))
-        .filter(variable => attribute.equalValue(variable)).toSet
-
-      if !dataMap.contains(pid) && crrResults.isEmpty then {
+      if !rowMap.contains(pid) && crrResults.isEmpty then {
         val switchResult = roaringSerialSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
         switchResult
       }
@@ -1261,7 +1176,7 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
     else{
       Set[Variable]()
     }
-    result
+
   }
 
 
@@ -1295,13 +1210,15 @@ class Engine(val database: Database, val recursiveDepth: Int = 10) extends Seria
       val pid = predicate.identifier(predicateIndex)
       val position = predicate.getPosition(attribute)
       val dataMap = context.getDataMap()
+      val rowMap = context.getRowMap()
+      val values = dataMap.getOrElse(pid, Array[Predicate]())
+      val bitset = rowMap.getOrElse(pid, RoaringBitmap()).toArray
       val targetName = attribute.getName()
 
-      val crrResults = dataMap.getOrElse(pid, Array[Predicate]())
-        .map(predicate => predicate.getVariable(position).copy(targetName))
-        .filter(variable => attribute.equalValue(variable)).toSet
+      val crrResults = bitset.map(values).map(predicate => predicate.getVariable(position).copy(attribute.getName()))
+        .toSet
 
-      if !dataMap.contains(pid) && crrResults.isEmpty then {
+      if !rowMap.contains(pid) && crrResults.isEmpty then {
         val switchResult = roaringParallelSwitch(contextMap, programContext, context, predicate, attribute, predicateId, position)
         switchResult
       }

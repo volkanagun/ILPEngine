@@ -26,7 +26,9 @@ final class Sym(n: String, var value: String) extends Variable(n):
     obj match {
       case other: Sym =>
         other.value.equals(value)
-      case _ => name.equals(obj.asInstanceOf[Variable].name)
+      case other: Num => false
+      case other: VariableList => false
+      case other: Variable => name.equals(obj.asInstanceOf[Variable].name)
     }
 
 
