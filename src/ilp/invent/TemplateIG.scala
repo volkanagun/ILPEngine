@@ -1,8 +1,8 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
 import ilp.data.predicates.Predicate
+import ilp.data.program.Hypothesis
 import org.apache.ignite.{Ignite, Ignition}
 import org.apache.ignite.configuration.IgniteConfiguration
 import org.apache.ignite.lang.IgniteRunnable
@@ -16,7 +16,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.jdk.CollectionConverters.IterableHasAsJava
 
-abstract class TemplateIG(engine: Engine) extends Template(engine) {
+abstract class TemplateIG(engine: EngineSerial) extends Template(engine) {
 
   def compute(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
     val crrResults = inventNext(source, targets)
@@ -24,7 +24,7 @@ abstract class TemplateIG(engine: Engine) extends Template(engine) {
     val validResults = crrResults.par.map(hypothesis => {
         hypothesis.buildDependency().compact()
           .buildOperational()
-      }).filter(hypothesis => hypothesis.getRules().length < maxRules)
+      }).filter(hypothesis => hypothesis.getRules.length < maxRules)
       .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
 
     val scoredResults = validResults.filter(_.validAritry(targetPredicate))

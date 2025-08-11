@@ -1,14 +1,14 @@
 package ilp.data.predicates
 
-import ilp.data.Substitution
+import ilp.data.program.Substitution
 import ilp.data.variables.{Variable, VariableList}
 
 final class Prepend(val item: Variable, val list: VariableList, val result: VariableList) extends Functional("prepend", Array(item, list, result)):
 
-  override inline def isDefinite(): Boolean =  true
-  override inline def isExecutable(): Boolean = list.nonEmpty() && item.isSymbol()
+  override inline def isDefinite: Boolean =  true
+  override inline def isExecutable: Boolean = list.nonEmpty && item.isSymbol
 
-  override inline def getValue(): Variable = {
+  override inline def getValue: Variable = {
     list.prepend(item)
   }
   override inline def copy(): Variable =
@@ -21,5 +21,5 @@ final class Prepend(val item: Variable, val list: VariableList, val result: Vari
     Prepend(newItem, newList.asVariableList(), newResult.asVariableList()).asVariable()
 
   override inline def execute(): Option[Substitution] =
-    Some(Substitution().add(result, getValue()))
+    Some(Substitution().add(result, getValue))
 

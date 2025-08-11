@@ -1,7 +1,6 @@
 package ilp.data.database
 
-import ilp.data.Substitution
-
+import ilp.data.program.Substitution
 import scala.collection.concurrent.TrieMap as ConcurrentMap
 class ProgramCache extends Serializable {
   var cache = ConcurrentMap[Int, Set[Substitution]]()

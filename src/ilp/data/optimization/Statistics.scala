@@ -5,29 +5,26 @@ import ilp.data.variables.Variable
 
 final class Statistics(var predicate: Predicate, val data: Array[Predicate]) extends Serializable{
 
-  //val minScalar = 1.0 / (1000)
-  //val maxScalar = 1000
-
-  val size = data.size
+  val size: Int = data.length
   val constant1 = 2
   val constant2 = 4
 
   def this(predicate: Predicate) = this(predicate, Array(predicate))
 
-  private var activeMap = Range(0, predicate.getArity()).map(index => index -> computeActiveSize(index)).toMap
+  private var activeMap = Range(0, predicate.getArity).map(index => index -> computeActiveSize(index)).toMap
   private var relativeMap = computeRelative()
   private val inverseRelativeMap = computeInverseRelative()
 
   inline def identifier(): Int =
     predicate.identifier()
 
-  inline def getData(): Array[Predicate] =
+  inline def getData: Array[Predicate] =
     data
 
-  inline def getDataSize(): Int =
-    data.size
+  inline def getDataSize: Int =
+    data.length
 
-  inline def getAttributes() = predicate.getVariables()
+  inline def getAttributes: Array[Variable] = predicate.getVariables
 
   inline def setPredicate(predicate: Predicate): Statistics = {
     this.predicate = predicate
@@ -36,9 +33,9 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
 
 
   private inline def computeRelative(): Map[(Int, Int), Double] = {
-    val map = Range(0, predicate.getArity()).flatMap(current => {
+    val map = Range(0, predicate.getArity).flatMap(current => {
       val size1 = if predicate.containsInput(current) then activeMap(current)/constant1 else activeMap(current)
-      Range(0, predicate.getArity()).map(next => {
+      Range(0, predicate.getArity).map(next => {
         val size2 = if predicate.containsInput(next) then activeMap(next)/constant1 else activeMap(next)
         (current, next) -> size1 / size2
       })
@@ -48,10 +45,10 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   }
 
   private inline def computeInverseRelative(): Map[(Int, Int), Double] = {
-    val map = Range(0, predicate.getArity()).flatMap(current => {
+    val map = Range(0, predicate.getArity).flatMap(current => {
       val size1 = activeMap(current)
 
-      Range(0, predicate.getArity()).map(next => {
+      Range(0, predicate.getArity).map(next => {
         val size2 = activeMap(next)
         (current, next) -> size2 / size1
       })
@@ -69,19 +66,16 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   inline def hasVariable(variable: Variable): Boolean =
     predicate.contains(variable)
 
-/*  def isInput(variable: Variable): Boolean =
-    predicate.hasInput(variable)*/
-
   inline def rowSize(): Int = size
 
   inline def getActiveSize(position: Int): Double =
     activeMap(position)
 
-  inline def getDuplicateRatio(): Double = {
-    val total = Range(0, predicate.getArity()).map(activeMap)
-      .map(d=> d/getDataSize()).sum
+  inline def getDuplicateRatio: Double = {
+    val total = Range(0, predicate.getArity).map(activeMap)
+      .map(d=> d/getDataSize).sum
 
-    total / predicate.getArity()
+    total / predicate.getArity
 
   }
 
@@ -93,16 +87,16 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   def getActiveFunctionSize(variable: Variable): Double =
     val position = predicate.getPosition(variable)
     val size = activeMap.getOrElse(position, 1.0)
-    if predicate.isFunctional() && predicate.containsInput(variable) then
+    if predicate.isFunctional && predicate.containsInput(variable) then
        size * constant1
-    else if !predicate.isFunctional() then
+    else if !predicate.isFunctional then
        size * constant2
     else
       size
 
   def getEntropySize(variable: Variable): Double =
     val position = predicate.getPosition(variable)
-    val score = -math.log(activeMap.getOrElse(position, 1.0) / data.size)
+    val score = -math.log(activeMap.getOrElse(position, 1.0) / data.length)
     score
 
   def getActiveSize(variable: Variable, defaultValue:Double): Double =
@@ -134,15 +128,15 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
    def getLogRatio(predicate: Predicate, current: Variable, next: Variable): Double = {
      val size1 = getActiveSize(current)
      val size2 = getActiveSize(next)
-     val score = getDataSize() * size2/size1
+     val score = getDataSize * size2/size1
      math.log(score)
   }
 
    def getFunctionLogRatio(predicate: Predicate, current: Variable, next: Variable): Double = {
      val size1 = getActiveFunctionSize(current)
      val size2 = getActiveFunctionSize(next)
-     val constant = if !predicate.isFunctional() then constant2 else constant1
-     val score = constant * getDataSize() * size2/size1
+     val constant = if !predicate.isFunctional then constant2 else constant1
+     val score = constant * getDataSize * size2/size1
      math.log(score)
   }
 
@@ -169,8 +163,8 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   }
 
   private def computeActiveSize(position: Int): Double = {
-    data.map(predicate => predicate.getVariable(position)).size
+    data.map(predicate => predicate.getVariable(position)).length
   }
 
-  override inline def toString = predicate.toString
+  override inline def toString: String = predicate.toString
 }

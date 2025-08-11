@@ -1,6 +1,6 @@
 package ilp.data.predicates
 
-import ilp.data.Substitution
+import ilp.data.program.Substitution
 import ilp.data.variables.Variable
 
 
@@ -12,7 +12,7 @@ final class Negative(name: String, array: Array[Variable]) extends Predicate(nam
 
   def this(name: String, var1: Variable, var2: Variable, var3: Variable) = this(name, Array(var1, var2, var3))
 
-  override inline def isNegative(): Boolean = true
+  override inline def isNegative: Boolean = true
 
   override inline def toString: String = "~" + name + "(" + array.mkString(",") + ")"
 
@@ -27,6 +27,6 @@ final class Negative(name: String, array: Array[Variable]) extends Predicate(nam
 
   override inline def substitution(substitution: Substitution): Predicate =
     val crrName = Variable(name)
-    val newName = crrName.substitution(substitution).getName()
+    val newName = crrName.substitution(substitution).getName
     val newArray = array.map(variable => variable.substitution(substitution))
     Negative(newName, newArray)

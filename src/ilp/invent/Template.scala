@@ -1,10 +1,10 @@
 package ilp.invent
 
-import ilp.data.database.{Database, Engine}
+import ilp.data.database.{Database, Engine, EngineSerial}
 import ilp.data.optimization.Plan
 import ilp.data.predicates.Predicate
+import ilp.data.program.{Hypothesis, Query, Rule, Substitution}
 import ilp.data.variables.Variable
-import ilp.data.{Hypothesis, Query, Rule, Substitution}
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
@@ -21,8 +21,7 @@ abstract class Template(val engine: Engine) extends Serializable:
   var shingleSize = 3
 
 
-
-  val database = engine.getDatabase()
+  val database: Database = engine.getDatabase
   val plan = Plan(database)
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
@@ -34,10 +33,10 @@ abstract class Template(val engine: Engine) extends Serializable:
   var primitives = Array[Hypothesis]()
   var sources = Array[Hypothesis]()
 
-  var sourceIterator = sources.iterator
+  var sourceIterator: Iterator[Hypothesis] = sources.iterator
 
 
-  def getHead():Predicate =
+  def getHead:Predicate =
     positives.head
 
   def invent(): Set[Hypothesis] =
@@ -48,13 +47,13 @@ abstract class Template(val engine: Engine) extends Serializable:
     var newResults = Set[Hypothesis]()
     val targets = target()
 
-    while hasSource() && !doStop do
+    while hasSource && !doStop do
 
       val crrResults = inventNext(targets)
       val validResults = crrResults.par.map(hypothesis => {
           hypothesis.buildDependency().compact()
             .buildOperational()
-        }).filter(hypothesis => hypothesis.getRules().length < maxRules)
+        }).filter(hypothesis => hypothesis.getRules.length < maxRules)
         .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
 
       val scoredResults = validResults.filter(_.validAritry(targetHead))
@@ -89,7 +88,7 @@ abstract class Template(val engine: Engine) extends Serializable:
     this
   }
 
-  def hasSource(): Boolean =
+  def hasSource: Boolean =
     sourceIterator.hasNext
 
   def nextSource(): Hypothesis = {
@@ -111,7 +110,7 @@ abstract class Template(val engine: Engine) extends Serializable:
     this
   }
 
-  def getPositiveThreshold(): Double = {
+  def getPositiveThreshold: Double = {
     this.posThreshold
   }
 
@@ -120,7 +119,7 @@ abstract class Template(val engine: Engine) extends Serializable:
     this
   }
 
-  def getNegativeThreshold(): Double = {
+  def getNegativeThreshold: Double = {
     this.negThreshold
   }
 
@@ -159,7 +158,7 @@ abstract class Template(val engine: Engine) extends Serializable:
     hypothesis.exists(hypothesis => hypothesis.score >= scoreThreshold && hypothesis.negRate == 0.0)
 
   def addMetaRule(metaRule: Rule): this.type =
-    if metaRule.getNonRecursiveSize() == 0 then
+    if metaRule.getNonRecursiveSize == 0 then
       this.metaRecursives :+= metaRule
     else
       this.metaRules :+= metaRule
@@ -186,56 +185,17 @@ abstract class Template(val engine: Engine) extends Serializable:
   def inventNext(source:Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis]
 
 
-/*
-  def ig(hypothesis: Hypothesis): Hypothesis =
-    ig(Set(), hypothesis)*/
-/*
-
-  def igRoaring(hypothesis: Hypothesis): Hypothesis =
-    igRoaring(Set(), hypothesis)
-*/
-
-/*  def igParallel(hypothesis: Hypothesis): Hypothesis =
-    igParallel(Set(), hypothesis)*/
-
   def igIncremental(hypothesis: Hypothesis):Hypothesis=
     igCache(hypothesis)
 
-  /*
-  def ig(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
-
-    val optimization = plan.optimizeNone(hypothesis)
-    val crrSubstitions = engine.joinAll(optimization, Substitution())
-    val crrFacts = optimization.zip(crrSubstitions)
-      .toSet
-      .flatMap { case (optimization, substitutions) => substitutions.map(crrSubstition => optimization.getHead().substitution(crrSubstition).asPredicate()) }
-
-    hypothesis.ig(crrFacts, positives, negatives)
-    hypothesis.accuracy()
-    hypothesis*/
-
-/*
-  def igRoaring(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
-
-    val optimization = plan.optimizeMinMin(hypothesis)
-    val crrSubstitions = engine.joinCyclicRoaring(optimization, Substitution())
-    val crrPairs = optimization.map(optimized => (optimized, crrSubstitions))
-    val crrFacts = crrPairs.flatMap { case (rule, substitutionSet) =>
-      substitutionSet.map(crrSubstitution => rule.getHead().substitution(crrSubstitution).asPredicate())
-    }.toSet
-
-    hypothesis.ig(crrFacts, positives, negatives)
-    hypothesis.accuracy()
-    hypothesis*/
-
   def igParallel(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
     val targetHead = positives.head
-    val lastHead = hypothesis.getHead()
+    val lastHead = hypothesis.getHead
     val substitution = Substitution(lastHead.asVariable(), targetHead.asVariable())
     val newHypothesis = hypothesis.substitution(substitution)
 
     val optimization = plan.optimizeExperimental(newHypothesis)
-    val crrSubstitutions = engine.joinParallel(optimization, Substitution())
+    val crrSubstitutions = engine.join(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
 
 
@@ -245,13 +205,13 @@ abstract class Template(val engine: Engine) extends Serializable:
 
   def igCache(hypothesis: Hypothesis): Hypothesis =
     val targetHead = positives.head
-    val lastRule = hypothesis.getLast()
-    val lastHead = lastRule.getHead()
+    val lastRule = hypothesis.getLast
+    val lastHead = lastRule.getHead
     val substitution = Substitution(lastHead.asVariable(), targetHead.asVariable())
     val newHypothesis = hypothesis.substitution(substitution)
 
     val optimization = plan.optimizeExperimental(newHypothesis)
-    val crrSubstitutions = engine.joinSerial(optimization, Substitution())
+    val crrSubstitutions = engine.join(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
 
 
@@ -262,11 +222,11 @@ abstract class Template(val engine: Engine) extends Serializable:
   def igFunctional(hypothesis: Hypothesis): Hypothesis =
 
     val items = positives ++ negatives
-    val ruleHead = hypothesis.getLastHead()
+    val ruleHead = hypothesis.getLastHead
     val crrFacts = items.flatMap(targetHead=>{
       val substitution = targetHead.toSubstitution(ruleHead)
       val optimization = plan.optimizeExperimental(hypothesis)
-      val crrSubstitutions = engine.joinSerial(optimization, substitution)
+      val crrSubstitutions = engine.join(optimization, substitution)
       crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
     })
 
@@ -277,24 +237,10 @@ abstract class Template(val engine: Engine) extends Serializable:
     hypothesis.accuracy()
     hypothesis
 
-  /*
-  def igParallel(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
-
-    val posHead = positives.head
-    val lastHead = hypothesis.getLastHead()
-    val optimization = plan.optimizeExperimental(hypothesis)
-    val crrSubstitions = engine.joinParallel(optimization, Substitution())
-    val crrFacts = crrSubstitions.map(crrSubstition=> lastHead.substitution(crrSubstition).asPredicate())
-      .map(predicate=>{posHead.copy(predicate.getVariables().take(posHead.getArity()))})
-
-    hypothesis.ig(crrFacts, positives, negatives)
-    hypothesis.accuracy()
-    hypothesis
-*/
 
 
-  def metaApply(lastRule: Rule, candidatePredicates: Array[Predicate]): Array[Query] =
-    val replaces = lastRule.getBody().zipWithIndex.flatMap { case (source, index) => {
+/*  def metaApply(lastRule: Rule, candidatePredicates: Array[Predicate]): Array[Query] =
+    val replaces = lastRule.getBody.zipWithIndex.flatMap { case (source, index) => {
       metaRules.map(rule => InventionMeta.genericRename(rule)).flatMap(metaRule => {
         InventionMeta.metaWith(database, Array(source), candidatePredicates, metaRule)
           .map(r => (r, index))
@@ -302,24 +248,13 @@ abstract class Template(val engine: Engine) extends Serializable:
     }
     }
 
-    val crr = metaRecursives.map(r => r.substitution(Substitution(r.getHead().asVariable(), lastRule.getHead().asVariable())))
-    replaces ++ crr
-
-/*  def metaApply(left: Predicate, right: Predicate): Array[Query] =
-    metaRules.flatMap(metaRule => {
-      InventionMeta.metaWith(database, Array(left), Array(right), metaRule)
-    })*/
+    val crr = metaRecursives.map(r => r.substitution(Substitution(r.getHead.asVariable(), lastRule.getHead.asVariable())))
+    replaces ++ crr*/
 
   def metaApply(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
     metaRules.flatMap(metaRule => {
-      if metaRule.isRecursive() && metaRule.getSize() == 2 then
+      if metaRule.isRecursive && metaRule.getSize == 2 then
          InventionMeta.metaWithRecursive(source, metaRule) ++ InventionMeta.metaWithRecursive(source, candidates, metaRule)
       else
         InventionMeta.metaWith(source, candidates, metaRule)
-    }).toArray
-
-/*  def metaApplyHeuristic(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
-    metaRules.par.flatMap(metaRule => {
-      InventionMeta.metaWith(source, candidates, metaRule)
-    }).toArray*/
-
+    })

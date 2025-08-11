@@ -1,9 +1,9 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
+import ilp.data.program.Hypothesis
 
-class HeUnionFunctional(engine: Engine) extends TemplateFunc(engine) {
+class HeUnionFunctional(engine: EngineSerial) extends TemplateFunc(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
@@ -25,20 +25,20 @@ class HeUnionFunctional(engine: Engine) extends TemplateFunc(engine) {
 
   override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] =
 
-    val sourceHead = currentSource.getHead()
-    val positiveHead = getHead()
+    val sourceHead = currentSource.getHead
+    val positiveHead = getHead
     val currentTargets = target()
     var unionHypothesis = currentSource
     var isFound = false
-    val isRecursive = currentSource.isRecursive()
+    val isRecursive = currentSource.isRecursive
     currentTargets.foreach(target => {
-      if sourceHead.equalByArity(target.getHead()) &&
+      if sourceHead.equalByArity(target.getHead) &&
         unionHypothesis.similarity(target, resembleWindow) < resembleThreshold &&
         !unionHypothesis.containsLast(target) then {
         if InventionMeta.metaUnionAccept(unionHypothesis, target) then
            unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target)
            isFound = true
-        else if target.equalArity(positiveHead) && (isRecursive || target.isRecursive()) then {
+        else if target.equalArity(positiveHead) && (isRecursive || target.isRecursive) then {
           var newHypothesis = InventionMeta.metaUnion(unionHypothesis, target)
           newHypothesis = igFunctional(newHypothesis)
           if newHypothesis.isImproved(unionHypothesis) && newHypothesis.isImproved(target) then

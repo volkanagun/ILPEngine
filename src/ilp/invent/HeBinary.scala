@@ -1,12 +1,12 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
+import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 import scala.util.control.Breaks
 
-class HeBinary(engine: Engine) extends Template(engine):
+class HeBinary(engine: EngineSerial) extends Template(engine):
 
   override def source(): Array[Hypothesis] =
     val selectedSet = sources.sortBy(_.posRate)

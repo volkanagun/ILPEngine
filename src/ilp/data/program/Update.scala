@@ -1,4 +1,4 @@
-package ilp.data
+package ilp.data.program
 
 import ilp.data.predicates.Predicate
 

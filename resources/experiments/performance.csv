@@ -1,242 +1,324 @@
 FigureName,IndexType,ExecutionMode,Optimization,Performance
-iggp-attrition-next-score, No Index, Serial, No Optimization,53.7944
-iggp-attrition-next-score, No Index, Serial, Bellmanford Optimization,22.6572
-iggp-attrition-next-score, No Index, Serial, Iterative Optimization,6.7557
-iggp-attrition-next-score, No Index, Parallel, No Optimization, 105.7341
-iggp-attrition-next-score, No Index, Parallel, BellmanFord Optimization, 15.1895
-iggp-attrition-next-score, No Index, Parallel, Iterative Optimization, 12.2302
-iggp-attrition-next-score, Roaring Index, Serial, No Optimization, 17.4367
-iggp-attrition-next-score, Roaring Index, Serial, BellmanFord Optimization, 6.7965
-iggp-attrition-next-score, Roaring Index, Serial, Iterative Optimization, 3.8671
-iggp-attrition-next-score, Roaring Index, Parallel, No Optimization, 17.1528
-iggp-attrition-next-score, Roaring Index, Parallel, BellmanFord Optimization, 8.9452
-iggp-attrition-next-score, Roaring Index, Parallel, Iterative Optimization, 10.0071
+iggp-gt_centipede-goal, No Index, Serial, No Optimization,20.684077
+iggp-gt_centipede-goal, No Index, Serial, Bellmanford Optimization,15.573704
+iggp-gt_centipede-goal, No Index, Serial, Iterative Optimization,18.333944
+iggp-gt_centipede-goal, No Index, Parallel, No Optimization, 47.224968
+iggp-gt_centipede-goal, No Index, Parallel, BellmanFord Optimization, 14.031992
+iggp-gt_centipede-goal, No Index, Parallel, Iterative Optimization, 17.683874
+iggp-gt_centipede-goal, Roaring Index, Serial, No Optimization, 10.907757
+iggp-gt_centipede-goal, Roaring Index, Serial, BellmanFord Optimization, 7.941584
+iggp-gt_centipede-goal, Roaring Index, Serial, Iterative Optimization, 14.820384
+iggp-gt_centipede-goal, Roaring Index, Parallel, No Optimization, 9.513927
+iggp-gt_centipede-goal, Roaring Index, Parallel, BellmanFord Optimization, 8.733775
+iggp-gt_centipede-goal, Roaring Index, Parallel, Iterative Optimization, 13.076498
 
-iggp-buttons-goal, No Index, Serial, No Optimization,4.4035
-iggp-buttons-goal, No Index, Serial, Bellmanford Optimization,4.4648
-iggp-buttons-goal, No Index, Serial, Iterative Optimization,3.5025
-iggp-buttons-goal, No Index, Parallel, No Optimization, 8.8051
-iggp-buttons-goal, No Index, Parallel, BellmanFord Optimization, 7.1938
-iggp-buttons-goal, No Index, Parallel, Iterative Optimization, 7.3796
-iggp-buttons-goal, Roaring Index, Serial, No Optimization, 3.7038
-iggp-buttons-goal, Roaring Index, Serial, BellmanFord Optimization, 4.1308
-iggp-buttons-goal, Roaring Index, Serial, Iterative Optimization, 3.6171
-iggp-buttons-goal, Roaring Index, Parallel, No Optimization, 6.5126
-iggp-buttons-goal, Roaring Index, Parallel, BellmanFord Optimization, 7.1759
-iggp-buttons-goal, Roaring Index, Parallel, Iterative Optimization, 5.9768
+iggp-coins-next-cell, No Index, Serial, No Optimization,26.454721
+iggp-coins-next-cell, No Index, Serial, Bellmanford Optimization,19.841276
+iggp-coins-next-cell, No Index, Serial, Iterative Optimization,14.534078
+iggp-coins-next-cell, No Index, Parallel, No Optimization, 30.009421
+iggp-coins-next-cell, No Index, Parallel, BellmanFord Optimization, 25.09397
+iggp-coins-next-cell, No Index, Parallel, Iterative Optimization, 22.625665
+iggp-coins-next-cell, Roaring Index, Serial, No Optimization, 26.364329
+iggp-coins-next-cell, Roaring Index, Serial, BellmanFord Optimization, 16.299465
+iggp-coins-next-cell, Roaring Index, Serial, Iterative Optimization, 13.837269
+iggp-coins-next-cell, Roaring Index, Parallel, No Optimization, 20.597286
+iggp-coins-next-cell, Roaring Index, Parallel, BellmanFord Optimization, 19.707623
+iggp-coins-next-cell, Roaring Index, Parallel, Iterative Optimization, 16.842622
 
-iggp-buttons-next, No Index, Serial, No Optimization,17.4786
-iggp-buttons-next, No Index, Serial, Bellmanford Optimization,12.4855
-iggp-buttons-next, No Index, Serial, Iterative Optimization,12.2897
-iggp-buttons-next, No Index, Parallel, No Optimization, 21.8212
-iggp-buttons-next, No Index, Parallel, BellmanFord Optimization, 30.9063
-iggp-buttons-next, No Index, Parallel, Iterative Optimization, 21.1333
-iggp-buttons-next, Roaring Index, Serial, No Optimization, 15.4564
-iggp-buttons-next, Roaring Index, Serial, BellmanFord Optimization, 12.3498
-iggp-buttons-next, Roaring Index, Serial, Iterative Optimization, 12.9219
-iggp-buttons-next, Roaring Index, Parallel, No Optimization, 23.9801
-iggp-buttons-next, Roaring Index, Parallel, BellmanFord Optimization, 24.4835
-iggp-buttons-next, Roaring Index, Parallel, Iterative Optimization, 24.2135
+iggp-connect4team-next-control, No Index, Serial, No Optimization,3.48308
+iggp-connect4team-next-control, No Index, Serial, Bellmanford Optimization,3.030834
+iggp-connect4team-next-control, No Index, Serial, Iterative Optimization,2.866861
+iggp-connect4team-next-control, No Index, Parallel, No Optimization, 14.681201
+iggp-connect4team-next-control, No Index, Parallel, BellmanFord Optimization, 14.524279
+iggp-connect4team-next-control, No Index, Parallel, Iterative Optimization, 12.843094
+iggp-connect4team-next-control, Roaring Index, Serial, No Optimization, 2.608208
+iggp-connect4team-next-control, Roaring Index, Serial, BellmanFord Optimization, 2.244543
+iggp-connect4team-next-control, Roaring Index, Serial, Iterative Optimization, 2.258033
+iggp-connect4team-next-control, Roaring Index, Parallel, No Optimization, 11.218391
+iggp-connect4team-next-control, Roaring Index, Parallel, BellmanFord Optimization, 11.506446
+iggp-connect4team-next-control, Roaring Index, Parallel, Iterative Optimization, 11.08479
 
-iggp-coins-goal, No Index, Serial, No Optimization,8.826
-iggp-coins-goal, No Index, Serial, Bellmanford Optimization,7.7122
-iggp-coins-goal, No Index, Serial, Iterative Optimization,10.9365
-iggp-coins-goal, No Index, Parallel, No Optimization, 13.2319
-iggp-coins-goal, No Index, Parallel, BellmanFord Optimization, 11.6187
-iggp-coins-goal, No Index, Parallel, Iterative Optimization, 14.0376
-iggp-coins-goal, Roaring Index, Serial, No Optimization, 8.6797
-iggp-coins-goal, Roaring Index, Serial, BellmanFord Optimization, 7.2905
-iggp-coins-goal, Roaring Index, Serial, Iterative Optimization, 11.3261
-iggp-coins-goal, Roaring Index, Parallel, No Optimization, 13.3287
-iggp-coins-goal, Roaring Index, Parallel, BellmanFord Optimization, 11.7294
-iggp-coins-goal, Roaring Index, Parallel, Iterative Optimization, 14.4148
+iggp-sokoban-goal, No Index, Serial, No Optimization,12.613381
+iggp-sokoban-goal, No Index, Serial, Bellmanford Optimization,1.763665
+iggp-sokoban-goal, No Index, Serial, Iterative Optimization,3.083904
+iggp-sokoban-goal, No Index, Parallel, No Optimization, 4.222111
+iggp-sokoban-goal, No Index, Parallel, BellmanFord Optimization, 11.81226
+iggp-sokoban-goal, No Index, Parallel, Iterative Optimization, 3.335598
+iggp-sokoban-goal, Roaring Index, Serial, No Optimization, 4.481595
+iggp-sokoban-goal, Roaring Index, Serial, BellmanFord Optimization, 1.226658
+iggp-sokoban-goal, Roaring Index, Serial, Iterative Optimization, 1.714575
+iggp-sokoban-goal, Roaring Index, Parallel, No Optimization, 3.705633
+iggp-sokoban-goal, Roaring Index, Parallel, BellmanFord Optimization, 1.052675
+iggp-sokoban-goal, Roaring Index, Parallel, Iterative Optimization, 1.646534
 
-iggp-coins-next-cell, No Index, Serial, No Optimization,51.8186
-iggp-coins-next-cell, No Index, Serial, Bellmanford Optimization,36.6682
-iggp-coins-next-cell, No Index, Serial, Iterative Optimization,28.2507
-iggp-coins-next-cell, No Index, Parallel, No Optimization, 38.8619
-iggp-coins-next-cell, No Index, Parallel, BellmanFord Optimization, 36.5507
-iggp-coins-next-cell, No Index, Parallel, Iterative Optimization, 34.4703
-iggp-coins-next-cell, Roaring Index, Serial, No Optimization, 55.5056
-iggp-coins-next-cell, Roaring Index, Serial, BellmanFord Optimization, 37.4935
-iggp-coins-next-cell, Roaring Index, Serial, Iterative Optimization, 28.9588
-iggp-coins-next-cell, Roaring Index, Parallel, No Optimization, 37.1131
-iggp-coins-next-cell, Roaring Index, Parallel, BellmanFord Optimization, 35.3159
-iggp-coins-next-cell, Roaring Index, Parallel, Iterative Optimization, 31.3695
+iggp-gt_centipede-legal, No Index, Serial, No Optimization,0.491567
+iggp-gt_centipede-legal, No Index, Serial, Bellmanford Optimization,0.411426
+iggp-gt_centipede-legal, No Index, Serial, Iterative Optimization,0.387395
+iggp-gt_centipede-legal, No Index, Parallel, No Optimization, 1.814806
+iggp-gt_centipede-legal, No Index, Parallel, BellmanFord Optimization, 2.172511
+iggp-gt_centipede-legal, No Index, Parallel, Iterative Optimization, 1.867637
+iggp-gt_centipede-legal, Roaring Index, Serial, No Optimization, 0.708761
+iggp-gt_centipede-legal, Roaring Index, Serial, BellmanFord Optimization, 0.425127
+iggp-gt_centipede-legal, Roaring Index, Serial, Iterative Optimization, 0.425016
+iggp-gt_centipede-legal, Roaring Index, Parallel, No Optimization, 1.809316
+iggp-gt_centipede-legal, Roaring Index, Parallel, BellmanFord Optimization, 1.761245
+iggp-gt_centipede-legal, Roaring Index, Parallel, Iterative Optimization, 1.980778
 
-iggp-connect4team-next-control, No Index, Serial, No Optimization,10.4383
-iggp-connect4team-next-control, No Index, Serial, Bellmanford Optimization,9.2394
-iggp-connect4team-next-control, No Index, Serial, Iterative Optimization,9.596
-iggp-connect4team-next-control, No Index, Parallel, No Optimization, 17.9955
-iggp-connect4team-next-control, No Index, Parallel, BellmanFord Optimization, 17.2518
-iggp-connect4team-next-control, No Index, Parallel, Iterative Optimization, 17.5511
-iggp-connect4team-next-control, Roaring Index, Serial, No Optimization, 9.6766
-iggp-connect4team-next-control, Roaring Index, Serial, BellmanFord Optimization, 9.0603
-iggp-connect4team-next-control, Roaring Index, Serial, Iterative Optimization, 16.0862
-iggp-connect4team-next-control, Roaring Index, Parallel, No Optimization, 17.2195
-iggp-connect4team-next-control, Roaring Index, Parallel, BellmanFord Optimization, 17.9498
-iggp-connect4team-next-control, Roaring Index, Parallel, Iterative Optimization, 17.9581
+uwcs, No Index, Serial, No Optimization,3.620792
+uwcs, No Index, Serial, Bellmanford Optimization,12.216096
+uwcs, No Index, Serial, Iterative Optimization,37.763683
+uwcs, No Index, Parallel, No Optimization, 2.326674
+uwcs, No Index, Parallel, BellmanFord Optimization, 3.42776
+uwcs, No Index, Parallel, Iterative Optimization, 15.742126
+uwcs, Roaring Index, Serial, No Optimization, 2.883911
+uwcs, Roaring Index, Serial, BellmanFord Optimization, 5.414578
+uwcs, Roaring Index, Serial, Iterative Optimization, 32.604409
+uwcs, Roaring Index, Parallel, No Optimization, 2.538096
+uwcs, Roaring Index, Parallel, BellmanFord Optimization, 6.99308
+uwcs, Roaring Index, Parallel, Iterative Optimization, 28.363318
 
-iggp-dont-touch-next-control, No Index, Serial, No Optimization,15.3293
-iggp-dont-touch-next-control, No Index, Serial, Bellmanford Optimization,14.9225
-iggp-dont-touch-next-control, No Index, Serial, Iterative Optimization,15.0885
-iggp-dont-touch-next-control, No Index, Parallel, No Optimization, 16.0104
-iggp-dont-touch-next-control, No Index, Parallel, BellmanFord Optimization, 15.2842
-iggp-dont-touch-next-control, No Index, Parallel, Iterative Optimization, 15.9294
-iggp-dont-touch-next-control, Roaring Index, Serial, No Optimization, 14.0603
-iggp-dont-touch-next-control, Roaring Index, Serial, BellmanFord Optimization, 12.476
-iggp-dont-touch-next-control, Roaring Index, Serial, Iterative Optimization, 11.6445
-iggp-dont-touch-next-control, Roaring Index, Parallel, No Optimization, 13.1753
-iggp-dont-touch-next-control, Roaring Index, Parallel, BellmanFord Optimization, 13.6498
-iggp-dont-touch-next-control, Roaring Index, Parallel, Iterative Optimization, 13.1547
+iggp-minimal-decay-next-value, No Index, Serial, No Optimization,0.331335
+iggp-minimal-decay-next-value, No Index, Serial, Bellmanford Optimization,0.308205
+iggp-minimal-decay-next-value, No Index, Serial, Iterative Optimization,0.167683
+iggp-minimal-decay-next-value, No Index, Parallel, No Optimization, 1.123636
+iggp-minimal-decay-next-value, No Index, Parallel, BellmanFord Optimization, 0.741421
+iggp-minimal-decay-next-value, No Index, Parallel, Iterative Optimization, 0.658489
+iggp-minimal-decay-next-value, Roaring Index, Serial, No Optimization, 0.357075
+iggp-minimal-decay-next-value, Roaring Index, Serial, BellmanFord Optimization, 0.182963
+iggp-minimal-decay-next-value, Roaring Index, Serial, Iterative Optimization, 0.190833
+iggp-minimal-decay-next-value, Roaring Index, Parallel, No Optimization, 0.867972
+iggp-minimal-decay-next-value, Roaring Index, Parallel, BellmanFord Optimization, 0.645429
+iggp-minimal-decay-next-value, Roaring Index, Parallel, Iterative Optimization, 1.535332
 
-iggp-eight-puzzle-legal-move, No Index, Serial, No Optimization,200.9905
-iggp-eight-puzzle-legal-move, No Index, Serial, Bellmanford Optimization,129.8216
-iggp-eight-puzzle-legal-move, No Index, Serial, Iterative Optimization,39.2604
-iggp-eight-puzzle-legal-move, No Index, Parallel, No Optimization, 126.8983
-iggp-eight-puzzle-legal-move, No Index, Parallel, BellmanFord Optimization, 98.0372
-iggp-eight-puzzle-legal-move, No Index, Parallel, Iterative Optimization, 44.2024
-iggp-eight-puzzle-legal-move, Roaring Index, Serial, No Optimization, 135.3644
-iggp-eight-puzzle-legal-move, Roaring Index, Serial, BellmanFord Optimization, 89.8712
-iggp-eight-puzzle-legal-move, Roaring Index, Serial, Iterative Optimization, 46.2759
-iggp-eight-puzzle-legal-move, Roaring Index, Parallel, No Optimization, 118.9817
-iggp-eight-puzzle-legal-move, Roaring Index, Parallel, BellmanFord Optimization, 78.467
-iggp-eight-puzzle-legal-move, Roaring Index, Parallel, Iterative Optimization, 44.0247
+iggp-rps-next-score, No Index, Serial, No Optimization,3.859356
+iggp-rps-next-score, No Index, Serial, Bellmanford Optimization,2.479345
+iggp-rps-next-score, No Index, Serial, Iterative Optimization,4.579416
+iggp-rps-next-score, No Index, Parallel, No Optimization, 3.842806
+iggp-rps-next-score, No Index, Parallel, BellmanFord Optimization, 3.935156
+iggp-rps-next-score, No Index, Parallel, Iterative Optimization, 5.052443
+iggp-rps-next-score, Roaring Index, Serial, No Optimization, 4.589446
+iggp-rps-next-score, Roaring Index, Serial, BellmanFord Optimization, 2.614568
+iggp-rps-next-score, Roaring Index, Serial, Iterative Optimization, 4.92288
+iggp-rps-next-score, Roaring Index, Parallel, No Optimization, 4.421174
+iggp-rps-next-score, Roaring Index, Parallel, BellmanFord Optimization, 4.612127
+iggp-rps-next-score, Roaring Index, Parallel, Iterative Optimization, 5.036472
 
-iggp-gt-chicken-goal, No Index, Serial, No Optimization,24.1616
-iggp-gt-chicken-goal, No Index, Serial, Bellmanford Optimization,21.1152
-iggp-gt-chicken-goal, No Index, Serial, Iterative Optimization,20.9338
-iggp-gt-chicken-goal, No Index, Parallel, No Optimization, 16.7718
-iggp-gt-chicken-goal, No Index, Parallel, BellmanFord Optimization, 16.6936
-iggp-gt-chicken-goal, No Index, Parallel, Iterative Optimization, 17.2981
-iggp-gt-chicken-goal, Roaring Index, Serial, No Optimization, 20.2013
-iggp-gt-chicken-goal, Roaring Index, Serial, BellmanFord Optimization, 20.4081
-iggp-gt-chicken-goal, Roaring Index, Serial, Iterative Optimization, 20.0159
-iggp-gt-chicken-goal, Roaring Index, Parallel, No Optimization, 17.1167
-iggp-gt-chicken-goal, Roaring Index, Parallel, BellmanFord Optimization, 17.2054
-iggp-gt-chicken-goal, Roaring Index, Parallel, Iterative Optimization, 17.2268
+iggp-buttons-next, No Index, Serial, No Optimization,3.134635
+iggp-buttons-next, No Index, Serial, Bellmanford Optimization,2.605608
+iggp-buttons-next, No Index, Serial, Iterative Optimization,2.354293
+iggp-buttons-next, No Index, Parallel, No Optimization, 7.435917
+iggp-buttons-next, No Index, Parallel, BellmanFord Optimization, 7.509418
+iggp-buttons-next, No Index, Parallel, Iterative Optimization, 4.005868
+iggp-buttons-next, Roaring Index, Serial, No Optimization, 2.330264
+iggp-buttons-next, Roaring Index, Serial, BellmanFord Optimization, 1.892888
+iggp-buttons-next, Roaring Index, Serial, Iterative Optimization, 2.033739
+iggp-buttons-next, Roaring Index, Parallel, No Optimization, 7.450037
+iggp-buttons-next, Roaring Index, Parallel, BellmanFord Optimization, 5.025072
+iggp-buttons-next, Roaring Index, Parallel, Iterative Optimization, 4.347203
 
-iggp-gt_centipede-goal, No Index, Serial, No Optimization,3.2729
-iggp-gt_centipede-goal, No Index, Serial, Bellmanford Optimization,4.8749
-iggp-gt_centipede-goal, No Index, Serial, Iterative Optimization,12.3497
-iggp-gt_centipede-goal, No Index, Parallel, No Optimization, 5.3355
-iggp-gt_centipede-goal, No Index, Parallel, BellmanFord Optimization, 6.019
-iggp-gt_centipede-goal, No Index, Parallel, Iterative Optimization, 9.1262
-iggp-gt_centipede-goal, Roaring Index, Serial, No Optimization, 3.4222
-iggp-gt_centipede-goal, Roaring Index, Serial, BellmanFord Optimization, 4.5964
-iggp-gt_centipede-goal, Roaring Index, Serial, Iterative Optimization, 11.7447
-iggp-gt_centipede-goal, Roaring Index, Parallel, No Optimization, 5.2316
-iggp-gt_centipede-goal, Roaring Index, Parallel, BellmanFord Optimization, 5.9517
-iggp-gt_centipede-goal, Roaring Index, Parallel, Iterative Optimization, 9.0143
+webkb, No Index, Serial, No Optimization,13.22058
+webkb, No Index, Serial, Bellmanford Optimization,5.201175
+webkb, No Index, Serial, Iterative Optimization,20.242301
+webkb, No Index, Parallel, No Optimization, 5.499839
+webkb, No Index, Parallel, BellmanFord Optimization, 3.333118
+webkb, No Index, Parallel, Iterative Optimization, 8.416081
+webkb, Roaring Index, Serial, No Optimization, 12.779364
+webkb, Roaring Index, Serial, BellmanFord Optimization, 4.8271
+webkb, Roaring Index, Serial, Iterative Optimization, 17.157566
+webkb, Roaring Index, Parallel, No Optimization, 4.376993
+webkb, Roaring Index, Parallel, BellmanFord Optimization, 2.428675
+webkb, Roaring Index, Parallel, Iterative Optimization, 6.076597
 
-iggp-gt_centipede-legal, No Index, Serial, No Optimization,0.8718
-iggp-gt_centipede-legal, No Index, Serial, Bellmanford Optimization,0.8384
-iggp-gt_centipede-legal, No Index, Serial, Iterative Optimization,0.8009
-iggp-gt_centipede-legal, No Index, Parallel, No Optimization, 2.9651
-iggp-gt_centipede-legal, No Index, Parallel, BellmanFord Optimization, 3.0646
-iggp-gt_centipede-legal, No Index, Parallel, Iterative Optimization, 2.8057
-iggp-gt_centipede-legal, Roaring Index, Serial, No Optimization, 0.9585
-iggp-gt_centipede-legal, Roaring Index, Serial, BellmanFord Optimization, 0.9527
-iggp-gt_centipede-legal, Roaring Index, Serial, Iterative Optimization, 0.9233
-iggp-gt_centipede-legal, Roaring Index, Parallel, No Optimization, 2.8876
-iggp-gt_centipede-legal, Roaring Index, Parallel, BellmanFord Optimization, 2.9498
-iggp-gt_centipede-legal, Roaring Index, Parallel, Iterative Optimization, 2.6261
+iggp-coins-goal, No Index, Serial, No Optimization,1.246708
+iggp-coins-goal, No Index, Serial, Bellmanford Optimization,1.008044
+iggp-coins-goal, No Index, Serial, Iterative Optimization,1.723384
+iggp-coins-goal, No Index, Parallel, No Optimization, 2.869442
+iggp-coins-goal, No Index, Parallel, BellmanFord Optimization, 3.007163
+iggp-coins-goal, No Index, Parallel, Iterative Optimization, 2.76048
+iggp-coins-goal, Roaring Index, Serial, No Optimization, 1.553003
+iggp-coins-goal, Roaring Index, Serial, BellmanFord Optimization, 1.238708
+iggp-coins-goal, Roaring Index, Serial, Iterative Optimization, 1.837016
+iggp-coins-goal, Roaring Index, Parallel, No Optimization, 2.367664
+iggp-coins-goal, Roaring Index, Parallel, BellmanFord Optimization, 2.237452
+iggp-coins-goal, Roaring Index, Parallel, Iterative Optimization, 2.263762
 
-iggp-horseshoe-next-cell, No Index, Serial, No Optimization,66.5013
-iggp-horseshoe-next-cell, No Index, Serial, Bellmanford Optimization,55.9754
-iggp-horseshoe-next-cell, No Index, Serial, Iterative Optimization,55.2769
-iggp-horseshoe-next-cell, No Index, Parallel, No Optimization, 45.4538
-iggp-horseshoe-next-cell, No Index, Parallel, BellmanFord Optimization, 47.5852
-iggp-horseshoe-next-cell, No Index, Parallel, Iterative Optimization, 41.7042
-iggp-horseshoe-next-cell, Roaring Index, Serial, No Optimization, 54.3767
-iggp-horseshoe-next-cell, Roaring Index, Serial, BellmanFord Optimization, 47.3071
-iggp-horseshoe-next-cell, Roaring Index, Serial, Iterative Optimization, 43.9322
-iggp-horseshoe-next-cell, Roaring Index, Parallel, No Optimization, 37.1696
-iggp-horseshoe-next-cell, Roaring Index, Parallel, BellmanFord Optimization, 35.9699
-iggp-horseshoe-next-cell, Roaring Index, Parallel, Iterative Optimization, 32.8166
+iggp-attrition-next-score, No Index, Serial, No Optimization,0.584208
+iggp-attrition-next-score, No Index, Serial, Bellmanford Optimization,0.434666
+iggp-attrition-next-score, No Index, Serial, Iterative Optimization,0.303825
+iggp-attrition-next-score, No Index, Parallel, No Optimization, 1.605373
+iggp-attrition-next-score, No Index, Parallel, BellmanFord Optimization, 1.366339
+iggp-attrition-next-score, No Index, Parallel, Iterative Optimization, 1.306408
+iggp-attrition-next-score, Roaring Index, Serial, No Optimization, 0.678909
+iggp-attrition-next-score, Roaring Index, Serial, BellmanFord Optimization, 0.589198
+iggp-attrition-next-score, Roaring Index, Serial, Iterative Optimization, 0.467456
+iggp-attrition-next-score, Roaring Index, Parallel, No Optimization, 1.321399
+iggp-attrition-next-score, Roaring Index, Parallel, BellmanFord Optimization, 1.141446
+iggp-attrition-next-score, Roaring Index, Parallel, Iterative Optimization, 1.38471
 
-iggp-minimal-decay-next-value, No Index, Serial, No Optimization,0.5803
-iggp-minimal-decay-next-value, No Index, Serial, Bellmanford Optimization,0.4001
-iggp-minimal-decay-next-value, No Index, Serial, Iterative Optimization,0.3906
-iggp-minimal-decay-next-value, No Index, Parallel, No Optimization, 1.4607
-iggp-minimal-decay-next-value, No Index, Parallel, BellmanFord Optimization, 1.2169
-iggp-minimal-decay-next-value, No Index, Parallel, Iterative Optimization, 1.1326
-iggp-minimal-decay-next-value, Roaring Index, Serial, No Optimization, 0.5188
-iggp-minimal-decay-next-value, Roaring Index, Serial, BellmanFord Optimization, 0.3292
-iggp-minimal-decay-next-value, Roaring Index, Serial, Iterative Optimization, 0.3549
-iggp-minimal-decay-next-value, Roaring Index, Parallel, No Optimization, 1.3616
-iggp-minimal-decay-next-value, Roaring Index, Parallel, BellmanFord Optimization, 1.1954
-iggp-minimal-decay-next-value, Roaring Index, Parallel, Iterative Optimization, 1.0874
+zendo2, No Index, Serial, No Optimization,55.953714
+zendo2, No Index, Serial, Bellmanford Optimization,157.550884
+zendo2, No Index, Serial, Iterative Optimization,59.221271
+zendo2, No Index, Parallel, No Optimization, 9.308764
+zendo2, No Index, Parallel, BellmanFord Optimization, 109.429423
+zendo2, No Index, Parallel, Iterative Optimization, 19.574651
+zendo2, Roaring Index, Serial, No Optimization, 38.316761
+zendo2, Roaring Index, Serial, BellmanFord Optimization, 66.568637
+zendo2, Roaring Index, Serial, Iterative Optimization, 43.194241
+zendo2, Roaring Index, Parallel, No Optimization, 8.647344
+zendo2, Roaring Index, Parallel, BellmanFord Optimization, 22.95326
+zendo2, Roaring Index, Parallel, Iterative Optimization, 9.69545
 
-iggp-polgrimage-goal, No Index, Serial, No Optimization,47.3818
-iggp-polgrimage-goal, No Index, Serial, Bellmanford Optimization,43.3493
-iggp-polgrimage-goal, No Index, Serial, Iterative Optimization,40.5372
-iggp-polgrimage-goal, No Index, Parallel, No Optimization, 32.5774
-iggp-polgrimage-goal, No Index, Parallel, BellmanFord Optimization, 31.4831
-iggp-polgrimage-goal, No Index, Parallel, Iterative Optimization, 31.7932
-iggp-polgrimage-goal, Roaring Index, Serial, No Optimization, 32.7706
-iggp-polgrimage-goal, Roaring Index, Serial, BellmanFord Optimization, 41.5949
-iggp-polgrimage-goal, Roaring Index, Serial, Iterative Optimization, 29.6439
-iggp-polgrimage-goal, Roaring Index, Parallel, No Optimization, 25.7187
-iggp-polgrimage-goal, Roaring Index, Parallel, BellmanFord Optimization, 26.3114
-iggp-polgrimage-goal, Roaring Index, Parallel, Iterative Optimization, 25.8649
+iggp-horseshoe-next-cell, No Index, Serial, No Optimization,22.32539
+iggp-horseshoe-next-cell, No Index, Serial, Bellmanford Optimization,22.634395
+iggp-horseshoe-next-cell, No Index, Serial, Iterative Optimization,23.134053
+iggp-horseshoe-next-cell, No Index, Parallel, No Optimization, 10.248217
+iggp-horseshoe-next-cell, No Index, Parallel, BellmanFord Optimization, 8.653484
+iggp-horseshoe-next-cell, No Index, Parallel, Iterative Optimization, 8.900268
+iggp-horseshoe-next-cell, Roaring Index, Serial, No Optimization, 17.498521
+iggp-horseshoe-next-cell, Roaring Index, Serial, BellmanFord Optimization, 18.114101
+iggp-horseshoe-next-cell, Roaring Index, Serial, Iterative Optimization, 14.980405
+iggp-horseshoe-next-cell, Roaring Index, Parallel, No Optimization, 20.378623
+iggp-horseshoe-next-cell, Roaring Index, Parallel, BellmanFord Optimization, 8.887138
+iggp-horseshoe-next-cell, Roaring Index, Parallel, Iterative Optimization, 8.238319
 
-iggp-rps-next-score, No Index, Serial, No Optimization,10.2606
-iggp-rps-next-score, No Index, Serial, Bellmanford Optimization,6.6849
-iggp-rps-next-score, No Index, Serial, Iterative Optimization,12.434
-iggp-rps-next-score, No Index, Parallel, No Optimization, 5.4512
-iggp-rps-next-score, No Index, Parallel, BellmanFord Optimization, 4.8358
-iggp-rps-next-score, No Index, Parallel, Iterative Optimization, 8.2393
-iggp-rps-next-score, Roaring Index, Serial, No Optimization, 10.2119
-iggp-rps-next-score, Roaring Index, Serial, BellmanFord Optimization, 6.4464
-iggp-rps-next-score, Roaring Index, Serial, Iterative Optimization, 12.9015
-iggp-rps-next-score, Roaring Index, Parallel, No Optimization, 7.06
-iggp-rps-next-score, Roaring Index, Parallel, BellmanFord Optimization, 5.3882
-iggp-rps-next-score, Roaring Index, Parallel, Iterative Optimization, 7.4192
+iggp-eight-puzzle-legal-move, No Index, Serial, No Optimization,68.18494
+iggp-eight-puzzle-legal-move, No Index, Serial, Bellmanford Optimization,55.025411
+iggp-eight-puzzle-legal-move, No Index, Serial, Iterative Optimization,8.200548
+iggp-eight-puzzle-legal-move, No Index, Parallel, No Optimization, 13.962231
+iggp-eight-puzzle-legal-move, No Index, Parallel, BellmanFord Optimization, 12.274476
+iggp-eight-puzzle-legal-move, No Index, Parallel, Iterative Optimization, 6.840638
+iggp-eight-puzzle-legal-move, Roaring Index, Serial, No Optimization, 46.500398
+iggp-eight-puzzle-legal-move, Roaring Index, Serial, BellmanFord Optimization, 31.082536
+iggp-eight-puzzle-legal-move, Roaring Index, Serial, Iterative Optimization, 8.610753
+iggp-eight-puzzle-legal-move, Roaring Index, Parallel, No Optimization, 13.038697
+iggp-eight-puzzle-legal-move, Roaring Index, Parallel, BellmanFord Optimization, 11.14165
+iggp-eight-puzzle-legal-move, Roaring Index, Parallel, Iterative Optimization, 7.088612
 
-iggp-sheep-and-wolf-goal, No Index, Serial, No Optimization,5102.0542
-iggp-sheep-and-wolf-goal, No Index, Serial, Bellmanford Optimization,3257.0253
-iggp-sheep-and-wolf-goal, No Index, Serial, Iterative Optimization,2191.3955
-iggp-sheep-and-wolf-goal, No Index, Parallel, No Optimization, 1688.8287
-iggp-sheep-and-wolf-goal, No Index, Parallel, BellmanFord Optimization, 1884.5127
-iggp-sheep-and-wolf-goal, No Index, Parallel, Iterative Optimization, 810.9028
-iggp-sheep-and-wolf-goal, Roaring Index, Serial, No Optimization, 1764.492
-iggp-sheep-and-wolf-goal, Roaring Index, Serial, BellmanFord Optimization, 1721.0715
-iggp-sheep-and-wolf-goal, Roaring Index, Serial, Iterative Optimization, 1554.1029
-iggp-sheep-and-wolf-goal, Roaring Index, Parallel, No Optimization, 977.1889
-iggp-sheep-and-wolf-goal, Roaring Index, Parallel, BellmanFord Optimization, 1029.3571
-iggp-sheep-and-wolf-goal, Roaring Index, Parallel, Iterative Optimization, 620.3664
+zendo3, No Index, Serial, No Optimization,22.134398
+zendo3, No Index, Serial, Bellmanford Optimization,23.084252
+zendo3, No Index, Serial, Iterative Optimization,11.172261
+zendo3, No Index, Parallel, No Optimization, 5.045562
+zendo3, No Index, Parallel, BellmanFord Optimization, 3.183236
+zendo3, No Index, Parallel, Iterative Optimization, 3.045413
+zendo3, Roaring Index, Serial, No Optimization, 18.634338
+zendo3, Roaring Index, Serial, BellmanFord Optimization, 12.450179
+zendo3, Roaring Index, Serial, Iterative Optimization, 8.458982
+zendo3, Roaring Index, Parallel, No Optimization, 4.674357
+zendo3, Roaring Index, Parallel, BellmanFord Optimization, 3.000483
+zendo3, Roaring Index, Parallel, Iterative Optimization, 2.168211
 
-iggp-sokoban-goal, No Index, Serial, No Optimization,11.8309
-iggp-sokoban-goal, No Index, Serial, Bellmanford Optimization,2.3162
-iggp-sokoban-goal, No Index, Serial, Iterative Optimization,4.0256
-iggp-sokoban-goal, No Index, Parallel, No Optimization, 4.3381
-iggp-sokoban-goal, No Index, Parallel, BellmanFord Optimization, 1.528
-iggp-sokoban-goal, No Index, Parallel, Iterative Optimization, 1.9677
-iggp-sokoban-goal, Roaring Index, Serial, No Optimization, 5.4581
-iggp-sokoban-goal, Roaring Index, Serial, BellmanFord Optimization, 2.5237
-iggp-sokoban-goal, Roaring Index, Serial, Iterative Optimization, 3.4759
-iggp-sokoban-goal, Roaring Index, Parallel, No Optimization, 3.0275
-iggp-sokoban-goal, Roaring Index, Parallel, BellmanFord Optimization, 1.3902
-iggp-sokoban-goal, Roaring Index, Parallel, Iterative Optimization, 1.7947
+iggp-sheep-and-wolf-goal, No Index, Serial, No Optimization,1174.057885
+iggp-sheep-and-wolf-goal, No Index, Serial, Bellmanford Optimization,1254.525011
+iggp-sheep-and-wolf-goal, No Index, Serial, Iterative Optimization,946.519583
+iggp-sheep-and-wolf-goal, No Index, Parallel, No Optimization, 592.090769
+iggp-sheep-and-wolf-goal, No Index, Parallel, BellmanFord Optimization, 243.230786
+iggp-sheep-and-wolf-goal, No Index, Parallel, Iterative Optimization, 177.825546
+iggp-sheep-and-wolf-goal, Roaring Index, Serial, No Optimization, 628.550053
+iggp-sheep-and-wolf-goal, Roaring Index, Serial, BellmanFord Optimization, 603.923479
+iggp-sheep-and-wolf-goal, Roaring Index, Serial, Iterative Optimization, 587.151428
+iggp-sheep-and-wolf-goal, Roaring Index, Parallel, No Optimization, 245.239764
+iggp-sheep-and-wolf-goal, Roaring Index, Parallel, BellmanFord Optimization, 286.555137
+iggp-sheep-and-wolf-goal, Roaring Index, Parallel, Iterative Optimization, 157.054927
 
-robots-functional, No Index, Serial, No Optimization,2.129075
-robots-functional, No Index, Serial, BellmanFord Optimization,0.2828
-robots-functional, No Index, Serial, Iterative Optimization,0.440775
-robots-functional, No Index, Parallel, No Optimization, 1.354925
-robots-functional, No Index, Parallel, BellmanFord Optimization, 0.40365
-robots-functional, No Index, Parallel, Iterative Optimization, 0.34635
-robots-functional, Roaring Index, Parallel, No Optimization, 1.802
-robots-functional, Roaring Index, Parallel, BellmanFord Optimization, 0.3658
-robots-functional, Roaring Index, Parallel, Iterative Optimization, 0.450675
+iggp-gt-chicken-goal, No Index, Serial, No Optimization,12.342128
+iggp-gt-chicken-goal, No Index, Serial, Bellmanford Optimization,6.495634
+iggp-gt-chicken-goal, No Index, Serial, Iterative Optimization,6.273001
+iggp-gt-chicken-goal, No Index, Parallel, No Optimization, 2.508846
+iggp-gt-chicken-goal, No Index, Parallel, BellmanFord Optimization, 2.77292
+iggp-gt-chicken-goal, No Index, Parallel, Iterative Optimization, 2.333434
+iggp-gt-chicken-goal, Roaring Index, Serial, No Optimization, 4.254032
+iggp-gt-chicken-goal, Roaring Index, Serial, BellmanFord Optimization, 4.098679
+iggp-gt-chicken-goal, Roaring Index, Serial, Iterative Optimization, 4.902241
+iggp-gt-chicken-goal, Roaring Index, Parallel, No Optimization, 2.920192
+iggp-gt-chicken-goal, Roaring Index, Parallel, BellmanFord Optimization, 5.482219
+iggp-gt-chicken-goal, Roaring Index, Parallel, Iterative Optimization, 2.602587
 
-robots-linear, No Index, Serial, No Optimization,0.3576
-robots-linear, No Index, Serial, BellmanFord Optimization,0.1668
-robots-linear, No Index, Serial, Iterative Optimization,0.1476
-robots-linear, No Index, Parallel, No Optimization, 0.5114
-robots-linear, No Index, Parallel, BellmanFord Optimization, 0.4375
-robots-linear, No Index, Parallel, Iterative Optimization, 0.2099
-robots-linear, Roaring Index, Parallel, No Optimization, 0.2224
-robots-linear, Roaring Index, Parallel, BellmanFord Optimization, 0.1849
-robots-linear, Roaring Index, Parallel, Iterative Optimization, 0.2793
+zendo1, No Index, Serial, No Optimization,1.542142
+zendo1, No Index, Serial, Bellmanford Optimization,0.68323
+zendo1, No Index, Serial, Iterative Optimization,0.66377
+zendo1, No Index, Parallel, No Optimization, 0.65371
+zendo1, No Index, Parallel, BellmanFord Optimization, 0.441877
+zendo1, No Index, Parallel, Iterative Optimization, 0.310494
+zendo1, Roaring Index, Serial, No Optimization, 1.483681
+zendo1, Roaring Index, Serial, BellmanFord Optimization, 0.532938
+zendo1, Roaring Index, Serial, Iterative Optimization, 0.462117
+zendo1, Roaring Index, Parallel, No Optimization, 0.69417
+zendo1, Roaring Index, Parallel, BellmanFord Optimization, 0.293475
+zendo1, Roaring Index, Parallel, Iterative Optimization, 0.308714
+
+dunnhumby1, No Index, Serial, No Optimization,1.755166
+dunnhumby1, No Index, Serial, Bellmanford Optimization,0.053141
+dunnhumby1, No Index, Serial, Iterative Optimization,0.6829
+dunnhumby1, No Index, Parallel, No Optimization, 0.594738
+dunnhumby1, No Index, Parallel, BellmanFord Optimization, 0.069961
+dunnhumby1, No Index, Parallel, Iterative Optimization, 0.347085
+dunnhumby1, Roaring Index, Serial, No Optimization, 1.760606
+dunnhumby1, Roaring Index, Serial, BellmanFord Optimization, 0.049971
+dunnhumby1, Roaring Index, Serial, Iterative Optimization, 0.69628
+dunnhumby1, Roaring Index, Parallel, No Optimization, 0.508838
+dunnhumby1, Roaring Index, Parallel, BellmanFord Optimization, 0.078551
+dunnhumby1, Roaring Index, Parallel, Iterative Optimization, 0.391575
+
+iggp-polgrimage-goal, No Index, Serial, No Optimization,19.566201
+iggp-polgrimage-goal, No Index, Serial, Bellmanford Optimization,18.993253
+iggp-polgrimage-goal, No Index, Serial, Iterative Optimization,17.985228
+iggp-polgrimage-goal, No Index, Parallel, No Optimization, 6.96928
+iggp-polgrimage-goal, No Index, Parallel, BellmanFord Optimization, 6.231139
+iggp-polgrimage-goal, No Index, Parallel, Iterative Optimization, 6.513324
+iggp-polgrimage-goal, Roaring Index, Serial, No Optimization, 10.765205
+iggp-polgrimage-goal, Roaring Index, Serial, BellmanFord Optimization, 11.13757
+iggp-polgrimage-goal, Roaring Index, Serial, Iterative Optimization, 10.552141
+iggp-polgrimage-goal, Roaring Index, Parallel, No Optimization, 6.91191
+iggp-polgrimage-goal, Roaring Index, Parallel, BellmanFord Optimization, 6.450053
+iggp-polgrimage-goal, Roaring Index, Parallel, Iterative Optimization, 5.935826
+
+iggp-dont-touch-next-control, No Index, Serial, No Optimization,3.335598
+iggp-dont-touch-next-control, No Index, Serial, Bellmanford Optimization,3.279187
+iggp-dont-touch-next-control, No Index, Serial, Iterative Optimization,3.241647
+iggp-dont-touch-next-control, No Index, Parallel, No Optimization, 2.297523
+iggp-dont-touch-next-control, No Index, Parallel, BellmanFord Optimization, 2.350434
+iggp-dont-touch-next-control, No Index, Parallel, Iterative Optimization, 1.558512
+iggp-dont-touch-next-control, Roaring Index, Serial, No Optimization, 2.163861
+iggp-dont-touch-next-control, Roaring Index, Serial, BellmanFord Optimization, 2.040589
+iggp-dont-touch-next-control, Roaring Index, Serial, Iterative Optimization, 2.016059
+iggp-dont-touch-next-control, Roaring Index, Parallel, No Optimization, 1.637943
+iggp-dont-touch-next-control, Roaring Index, Parallel, BellmanFord Optimization, 1.256368
+iggp-dont-touch-next-control, Roaring Index, Parallel, Iterative Optimization, 2.08696
+
+iggp-buttons-goal, No Index, Serial, No Optimization,0.288574
+iggp-buttons-goal, No Index, Serial, Bellmanford Optimization,0.285744
+iggp-buttons-goal, No Index, Serial, Iterative Optimization,0.215473
+iggp-buttons-goal, No Index, Parallel, No Optimization, 0.787791
+iggp-buttons-goal, No Index, Parallel, BellmanFord Optimization, 0.853392
+iggp-buttons-goal, No Index, Parallel, Iterative Optimization, 0.649209
+iggp-buttons-goal, Roaring Index, Serial, No Optimization, 0.308964
+iggp-buttons-goal, Roaring Index, Serial, BellmanFord Optimization, 0.304004
+iggp-buttons-goal, Roaring Index, Serial, Iterative Optimization, 0.239604
+iggp-buttons-goal, Roaring Index, Parallel, No Optimization, 0.602429
+iggp-buttons-goal, Roaring Index, Parallel, BellmanFord Optimization, 0.625719
+iggp-buttons-goal, Roaring Index, Parallel, Iterative Optimization, 0.614409
+
+robots-functional, No Index, Serial, No Optimization,1.09539825
+robots-functional, No Index, Serial, BellmanFord Optimization,0.25433875
+robots-functional, No Index, Serial, Iterative Optimization,0.15155225
+robots-functional, No Index, Parallel, No Optimization, 0.38141775
+robots-functional, No Index, Parallel, BellmanFord Optimization, 0.2084055
+robots-functional, No Index, Parallel, Iterative Optimization, 0.18314275
+robots-functional, Roaring Index, Serial, No Optimization, 0.2229005
+robots-functional, Roaring Index, Serial, BellmanFord Optimization, 0.15300975
+robots-functional, Roaring Index, Serial, Iterative Optimization, 0.19631775
+robots-functional, Roaring Index, Parallel, BellmanFord Optimization, 0.1427645
+robots-functional, Roaring Index, Parallel, Iterative Optimization, 0.12090175
+
+robots-linear, No Index, Serial, No Optimization,0.067461
+robots-linear, No Index, Serial, BellmanFord Optimization,0.051371
+robots-linear, No Index, Serial, Iterative Optimization,0.046071
+robots-linear, No Index, Parallel, No Optimization, 0.223084
+robots-linear, No Index, Parallel, BellmanFord Optimization, 0.160882
+robots-linear, No Index, Parallel, Iterative Optimization, 0.207003
+robots-linear, Roaring Index, Serial, No Optimization, 0.216323
+robots-linear, Roaring Index, Serial, BellmanFord Optimization, 0.165283
+robots-linear, Roaring Index, Serial, Iterative Optimization, 0.092951
+robots-linear, Roaring Index, Parallel, BellmanFord Optimization, 0.089302
+robots-linear, Roaring Index, Parallel, Iterative Optimization, 0.122621
 

@@ -1,11 +1,11 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
+import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-class HeUnionFast(engine: Engine) extends TemplateIG(engine) {
+class HeUnionFast(engine: EngineSerial) extends TemplateIG(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
@@ -27,17 +27,13 @@ class HeUnionFast(engine: Engine) extends TemplateIG(engine) {
 
   override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] =
 
-    if currentSource.containsName("piece") && currentSource.containsName("lhs") && currentSource.containsName("green") && currentSource.containsName("coord1") then
-      val de = 0;
-
-    val sourceHead = currentSource.getHead()
-
+    //val sourceHead = currentSource.getHead
     val currentTargets = target()
     var unionHypothesis = currentSource
     var isFound = false
 
     currentTargets.foreach(target => {
-      if unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && unionHypothesis.getHead() != target.getHead() &&
+      if unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && !unionHypothesis.equalByHead(target) &&
         InventionMeta.metaUnionAccept(unionHypothesis, target) then {
         unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target)
         isFound = true

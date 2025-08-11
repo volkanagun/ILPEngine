@@ -1,9 +1,9 @@
 package ilp.tests
 
-import ilp.data.database.{Database, Engine}
+import ilp.data.database.{Database, EngineOLD, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
 import ilp.data.optimization.Plan
+import ilp.data.program.{Hypothesis, Parser, Substitution}
 import ilp.data.variables.{Num, Sym, Variable, VariableList}
-import ilp.data.{Hypothesis, Parser, Substitution}
 import ilp.experiments.{Experiment, Params}
 
 import scala.collection.concurrent.TrieMap
@@ -14,14 +14,14 @@ object DatabaseTest {
     val db = Database("executionTest")
     val g1 = Parser.parsePredicate("g(4).").get
     val r = Parser.parseRule("f(X,Y) :- Y=X+1, g(Y).").get
-    val h = Hypothesis(r.getHead(), r)
+    val h = Hypothesis(r.getHead, r)
     val substitution = Substitution().add(Variable("X"), Num("X", 1.0))
 
     db.add(g1).build()
-    val engine = Engine(db)
+    val engine = EngineParallel(db, 5)
     val plan = Plan(db)
     val o1 = plan.optimizeExperimental(h)
-    val results = engine.joinParallel(o1, substitution)
+    val results = engine.join(o1, substitution)
     println(results.mkString("[",",","]"))
   }
 
@@ -29,18 +29,18 @@ object DatabaseTest {
   def simpleMixCycling(): Unit = {
     val params = Params("synthesis-length")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
-    val hypothesis = experiment.getHypothesis()
-    val positives = experiment.getPositives()
+    val db = experiment.getDatabase
+    val hypothesis = experiment.getHypothesis
+    val positives = experiment.getPositives
 
-    val engine = Engine(db, recursiveDepth = 8)
+    val engine = EngineParallel(db, depth = 8)
     val plan = Plan(db)
 
     val optimizedList = plan.optimizeMinMin(hypothesis)
 
     positives.foreach(positive => {
       val substitution = hypothesis.substitution(positive)
-      val results = engine.joinParallel(optimizedList, substitution)
+      val results = engine.join(optimizedList, substitution)
       println("Has result: " +results.nonEmpty)
       println(results)
     })
@@ -49,9 +49,9 @@ object DatabaseTest {
   def simpleIMDB():Unit= {
     val params = Params("imdb1")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
+    val db = experiment.getDatabase
 
-    val engine = Engine(db, 5)
+    val engine = EngineParallel(db, 5)
     val plan = Plan(db)
     val hypothesis = Parser.parseHypothesis("h95(A1) :- actor(A1).\n" +
       "k516(A2) :- director(A2).\n" +
@@ -61,16 +61,18 @@ object DatabaseTest {
       "l131(D2,A5) :- g757(M1,D2) & c131(M1,A5).").get
 
     val optimizedList = plan.optimizeExperimental(hypothesis)
-    val results = engine.joinParallel(optimizedList, Substitution())
+    val results = engine.join(optimizedList, Substitution())
     println("Result size: " +results.size)
   }
 
   def simpleZendeo():Unit= {
     val params = Params("zendo2")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
+    val db = experiment.getDatabase
 
-    val engine = Engine(db, 5)
+    val engineSerial = EngineSerial(db, 5)
+    val engineRoaringParallel = EngineRoaringParallel(db, 5)
+    val engineParallel = EngineParallel(db, 5)
     val plan = Plan(db)
     val line = "func591418883(V0,V1) :- piece(V0,V1) & green(V1).\n"+
       "func1815986585(V0,V1) :- piece(V0,V1) & red(V1).\n"+
@@ -90,10 +92,10 @@ object DatabaseTest {
     val optimizedList2 = plan.optimizeExperimental(hypothesis)
     val optimizedList3 = plan.optimizeExperimental(hnorm)
 
-    val results1 = engine.joinRoaringParallel(optimizedList1, Substitution())
-    val results2 = engine.joinSerial(optimizedList2, Substitution())
-    val results3 = engine.joinParallel(optimizedList2, Substitution())
-    val results4 = engine.joinSerial(optimizedList3, Substitution())
+    val results1 = engineRoaringParallel.join(optimizedList1, Substitution())
+    val results2 = engineSerial.join(optimizedList2, Substitution())
+    val results3 = engineParallel.join(optimizedList2, Substitution())
+    val results4 = engineSerial.join(optimizedList3, Substitution())
 
     println(hypothesis)
     println(hnorm)
@@ -108,9 +110,11 @@ object DatabaseTest {
   def simpleCyclicIMDB():Unit= {
     val params = Params("imdb1")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
+    val db = experiment.getDatabase
 
-    val engine = Engine(db, 5)
+    val engine = EngineSerial(db, 5)
+    val engineParallel = EngineParallel(db, 5)
+    val engineRoaringParallel = EngineRoaringParallel(db, 5)
     val plan = Plan(db)
     val hypothesis = Parser.parseHypothesis("h95(A1) :- actor(A1).\n" +
       "k516(A2) :- director(A2).\n" +
@@ -120,11 +124,9 @@ object DatabaseTest {
       "l131(D2,A5) :- g757(M1,D2) & c131(M1,A5).").get
 
     val optimizedList = plan.optimizeExperimental(hypothesis)
-    //val resultBottomup = engine.joinCyclicBottomUp(optimizedList,Substitution())
-    val resultParallel = engine.joinParallel(optimizedList,Substitution())
-    val resultRoaring = engine.joinRoaringParallel(optimizedList,Substitution())
+    val resultParallel = engineParallel.join(optimizedList,Substitution())
+    val resultRoaring = engineRoaringParallel.join(optimizedList,Substitution())
 
-    //println("Result bottomup size: " +resultBottomup.size)
     println("Result parallel size: " +resultParallel.size)
     println("Result roaring size: " +resultRoaring.size)
   }
@@ -132,17 +134,19 @@ object DatabaseTest {
   private def simpleParallelTrains():Unit= {
     val params = Params("trains1")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
+    val db = experiment.getDatabase
 
-    val engine = Engine(db, 3)
+    val engine = EngineSerial(db, 3)
+    val engineParallel = EngineParallel(db, 3)
+    val engineRoaringParallel = EngineRoaringParallel(db, 3)
     val plan = Plan(db)
     val hypothesis = Parser.parseHypothesis("f(V0):- has_car(V0,V2),three_wheels(V2),has_car(V0,V1),long(V1),roof_closed(V1).").get
 
     val optimizedList1 = plan.optimizeMinMin(hypothesis)
     val optimizedList2 = plan.optimizeExperimental(hypothesis)
-    val result1 = engine.joinParallel(optimizedList1,Substitution())
+    val result1 = engineParallel.join(optimizedList1,Substitution())
     println(s"Result1: ${result1.size}")
-    val result2 = engine.joinParallel(optimizedList2,Substitution())
+    val result2 = engineParallel.join(optimizedList2,Substitution())
     println(s"Result2: ${result2.size}")
     println("Check: " + (result1.size == result2.size))
   }
@@ -156,19 +160,22 @@ object DatabaseTest {
 
     val params = Params("robots-functional")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
-    val hypothesis = experiment.getHypothesis()
-    val positives = experiment.getPositives()
+    val db = experiment.getDatabase
+    val hypothesis = experiment.getHypothesis
+    val positives = experiment.getPositives
 
-    val engine = Engine(db, recursiveDepth = 5)
+    val engine = EngineSerial(db, recursiveDepth = 5)
+    val engineParallel = EngineParallel(db, 5)
+    val engineRoaringParallel = EngineRoaringParallel(db, 5)
+
     val plan = Plan(db)
 
     for(positive <- positives) {
       val program = plan.optimizeExperimental(hypothesis)
-      val parallelResults = engine.joinParallel(program, positive.toSubstitution(hypothesis.getHead()))
-      val roaringResults = engine.joinRoaringParallel(program, positive.toSubstitution(hypothesis.getHead()))
-      println(s"Predicate: ${positive}, Parallel Has result: "+parallelResults.nonEmpty)
-      println(s"Predicate: ${positive}, Roaring Has result: "+roaringResults.nonEmpty)
+      val parallelResults = engineParallel.join(program, positive.toSubstitution(hypothesis.getHead))
+      val roaringResults = engineRoaringParallel.join(program, positive.toSubstitution(hypothesis.getHead))
+      println(s"Predicate: $positive, Parallel Has result: "+parallelResults.nonEmpty)
+      println(s"Predicate: $positive, Roaring Has result: "+roaringResults.nonEmpty)
     }
   }
 
@@ -181,11 +188,15 @@ object DatabaseTest {
 
     val params = Params("robots-functional")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
-    val hypothesis = experiment.getHypothesis().build()
-    val positives = experiment.getPositives()
+    val db = experiment.getDatabase
+    val hypothesis = experiment.getHypothesis.build()
+    val positives = experiment.getPositives
 
-    val engine = Engine(db, recursiveDepth = 5)
+    val engine = EngineSerial(db, recursiveDepth = 5)
+    val engineParallel = EngineParallel(db, 5)
+    val engineRoaringParallel = EngineRoaringParallel(db, 5)
+
+
     val plan = Plan(db)
     val program = plan.optimizeExperimental(hypothesis)
     var tParallel = 0L
@@ -203,13 +214,13 @@ object DatabaseTest {
       val beginParallel = System.nanoTime()
       //Set input variables
       program.foreach(optimized => optimized.query.setInputVariables(optimized.query.inputVariables.slice(0, 2)))
-      val parallelResults = engine.joinParallel(program, newHead)
+      val parallelResults = engineParallel.join(program, newHead)
       tParallel += System.nanoTime() - beginParallel
       val beginRoaring = System.nanoTime()
-      val roaringResults = engine.joinRoaringParallel(program, newHead)
+      val roaringResults = engineRoaringParallel.join(program, newHead)
       tRoaring += System.nanoTime() - beginRoaring
-      println(s"Predicate: ${positive}, Parallel Has result: "+parallelResults.nonEmpty)
-      println(s"Predicate: ${positive}, Roaring Has result: "+roaringResults.nonEmpty)
+      println(s"Predicate: $positive, Parallel Has result: "+parallelResults.nonEmpty)
+      println(s"Predicate: $positive, Roaring Has result: "+roaringResults.nonEmpty)
     }
 
     println("====================================")
@@ -221,14 +232,14 @@ object DatabaseTest {
   def simpleIGGP(): Unit = {
     val params = Params("iggp-buttons-next")
     val experiment = Experiment(params).load()
-    val db = experiment.getDatabase()
+    val db = experiment.getDatabase
 
     val query = Parser.parseHypothesis(
-      //"next(V0,V1):- my_succ(V2,V1),my_true(V0,V2).\n"+
-      "next(V0,V1):- my_true(V0,V1),c_r(V1),does(V0,V3,V2),c_b(V2).\n"+
-      "next(V0,V1):- my_true(V0,V1),c_r(V1),c_a(V2),does(V0,V3,V2).\n"+
-      "next(V0,V1):- my_true(V0,V1),c_q(V1),c_a(V2),does(V0,V3,V2).\n"+
-      "next(V0,V1):- my_true(V0,V1),c_p(V1),c_c(V2),does(V0,V3,V2).\n"+
+      "next(V0,V1):- my_succ(V2,V1),my_true(V0,V2).\n"+
+      "next(V0,V1):- my_true(V0,V1),c_r(V1),does(V0,V3,V2),c_b(V2).\n" +
+      "next(V0,V1):- my_true(V0,V1),c_r(V1),c_a(V2),does(V0,V3,V2).\n" +
+      "next(V0,V1):- my_true(V0,V1),c_q(V1),c_a(V2),does(V0,V3,V2).\n" +
+      "next(V0,V1):- my_true(V0,V1),c_p(V1),c_c(V2),does(V0,V3,V2).\n" +
       "next(V0,V1):- c_p(V1),not_my_true(V0,V1),c_a(V3),does(V0,V2,V3).\n"+
       "next(V0,V1):- c_p(V1),c_b(V3),does(V0,V2,V3),c_q(V4),my_true(V0,V4).\n"+
       "next(V0,V1):- c_r(V1),does(V0,V4,V3),c_c(V3),c_q(V2),my_true(V0,V2).\n"+
@@ -240,18 +251,18 @@ object DatabaseTest {
     val optimizedNone = plan.optimizeNone(query)
     val optimizedBellmanford = plan.optimizeBellmanFord(query)
 
-    val engine1 = Engine(db)
-    val engine2 = Engine(db)
-    val engine3 = Engine(db)
-    val engine4 = Engine(db)
-    val engine5 = Engine(db)
-    val engine6 = Engine(db)
-    val r1 = engine1.joinSerial(optimizedNone)
-    val r2 = engine2.joinSerial(optimizedBellmanford)
-    val r3 = engine3.joinParallel(optimizedNone)
-    val r4 = engine4.joinParallel(optimizedBellmanford)
-    val r5 = engine5.joinRoaringSerial(optimizedNone)
-    val r6 = engine6.joinRoaringSerial(optimizedBellmanford)
+    val engine1 = EngineSerial(db)
+    val engine2 = EngineSerial(db)
+    val engineParallel = EngineParallel(db, 30)
+    val engine4 = EngineSerial(db)
+    val engineRoaringSerial = EngineRoaringSerial(db, 30)
+    val engine6 = EngineSerial(db)
+    val r1 = engine1.join(optimizedNone)
+    val r2 = engine2.join(optimizedBellmanford)
+    val r3 = engineParallel.join(optimizedNone)
+    val r4 = engineParallel.join(optimizedBellmanford)
+    val r5 = engineRoaringSerial.join(optimizedNone)
+    val r6 = engineRoaringSerial.join(optimizedBellmanford)
 
     println("Result1 size: "+r1.size)
     println("Result2 size: "+r2.size)
@@ -291,7 +302,8 @@ object DatabaseTest {
       .add(g3)
       .build()
 
-    val engine = Engine(db)
+    val engineParallel = EngineParallel(db, 5)
+    val engineRoaringParallel = EngineRoaringParallel(db, 5)
     val plan = Plan(db)
 
     val substitution = Substitution().add(Variable("X"), Num("X", 5))
@@ -300,12 +312,12 @@ object DatabaseTest {
     val r1 = Parser.parseHypothesis("f(X, Y) :- g(X1), X1=X-1, f(X1,Y).").get
     val queries = plan.optimizeExperimental(r1)
 
-    val parallelSubstitutions = engine.joinParallel(queries, substitution)
+    val parallelSubstitutions = engineParallel.join(queries, substitution)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
 
-    val roaringSubstitutions = engine.joinRoaringParallel(queries, substitution)
+    val roaringSubstitutions = engineRoaringParallel.join(queries, substitution)
     println("Roaring result: ")
     roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
@@ -338,7 +350,7 @@ object DatabaseTest {
       .add(g3)
       .build()
 
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val plan = Plan(db)
     val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("h")))
       .add(Variable("V1"), Sym("V1","h"))
@@ -354,7 +366,7 @@ object DatabaseTest {
 
     val queries = plan.optimizeBellmanFord(pr1)
 
-    val parallelSubstitutions = engine.joinSerial(queries, substitution)
+    val parallelSubstitutions = engine.join(queries, substitution)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
@@ -389,7 +401,7 @@ object DatabaseTest {
       .add(g3)
       .build()
 
-    val engine = Engine(db)
+    val engine = EngineRoaringSerial(db, 10)
     val plan = Plan(db)
     val sample = Substitution().add(Variable("V0"),VariableList("V0", "p", Array("x","h")))
       .add(Variable("V1"),Sym("V1","h"))
@@ -406,13 +418,13 @@ object DatabaseTest {
     val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()
 
 
-    val hr1 = Hypothesis(rr6.getHead(), Array(rr1, rr2, rr3, rr4, rr5, rr6))
+    val hr1 = Hypothesis(rr6.getHead, Array(rr1, rr2, rr3, rr4, rr5, rr6))
       .build()
 
     println(hr1)
 
     val queries = plan.optimizeNone(hr1)
-    val parallelSubstitutions = engine.joinRoaringSerial(queries, sample)
+    val parallelSubstitutions = engine.join(queries, sample)
     println("Parallel result: ")
     parallelSubstitutions.foreach(sub=> println(sub))
     println("===========================================")

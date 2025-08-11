@@ -2,7 +2,8 @@ package ilp.tests
 
 import ilp.data.database.Database
 import ilp.data.predicates.{Negative, Predicate}
-import ilp.data.{Operation, variables}
+import ilp.data.program.Operation
+import ilp.data.variables
 import ilp.data.variables.Variable
 
 object OperationTest {

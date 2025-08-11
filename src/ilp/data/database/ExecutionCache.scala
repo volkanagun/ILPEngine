@@ -1,7 +1,7 @@
 package ilp.data.database
 
-import ilp.data.Substitution
 import ilp.data.predicates.Predicate
+import ilp.data.program.Substitution
 import ilp.data.variables.Variable
 
 import scala.collection.concurrent.TrieMap as ConcurrentMap

@@ -1,14 +1,13 @@
-package ilp.data
+package ilp.data.program
 
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
 
-class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_head, rules.head.getBody()):
+class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_head, rules.head.getBody):
 
   var ids = Array[Position]()
   var sorted: Array[Rule] = rules
-
 
   def this(head: Predicate, rule: Rule) = this(head, Array(rule))
 
@@ -16,17 +15,17 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
   def this(head: Predicate, body: Predicate) = this(head, Array(body))
 
-  def this(rule: Rule) = this(rule.getHead(), rule)
+  def this(rule: Rule) = this(rule.getHead, rule)
 
   def this(head: Predicate, rule1: Rule, rule2: Rule) = this(head, Array(rule1, rule2))
 
   def this(head: Predicate, rule1: Rule, rule2: Rule, rule3: Rule) = this(head, Array(rule1, rule2, rule3))
 
-  def this(rule1: Rule, rule2: Rule) = this(rule2.getHead(), Array(rule1, rule2))
+  def this(rule1: Rule, rule2: Rule) = this(rule2.getHead, Array(rule1, rule2))
 
-  def this(rule1: Rule, rule2: Rule, rule3: Rule) = this(rule3.getHead(), Array(rule1, rule2, rule3))
+  def this(rule1: Rule, rule2: Rule, rule3: Rule) = this(rule3.getHead, Array(rule1, rule2, rule3))
 
-  def this(set: Array[Rule]) = this(set.last.getHead(), set)
+  def this(set: Array[Rule]) = this(set.last.getHead, set)
 
   def print(): this.type = {
     println("====Hypothesis====")
@@ -46,26 +45,26 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def normalize(): Hypothesis = {
     var cache = Map[Int, Set[Query]]()
     val headMap = rules.groupBy(_.identifier()).view.mapValues(_.toSet)
-    val genericRules = sorted.map(rule=> rule.toGeneric())
+    val genericRules = sorted.map(rule=> rule.toGeneric)
     genericRules.foreach(rule => {
       val identifier = rule.identifier()
-      val calledRules = rule.getBody().map(predicate => headMap.getOrElse(predicate.identifier(), Set[Rule]())
-        .map(rule => rule.callByVariable(rule.getHead())))
+      val calledRules = rule.getBody.map(predicate => headMap.getOrElse(predicate.identifier(), Set[Rule]())
+        .map(rule => rule.callByVariable(rule.getHead)))
 
       if calledRules.exists(_.isEmpty) then
         cache = cache.updated(identifier, cache.getOrElse(identifier, Set[Query]()) + rule)
       else {
         var bodyList = Array[Array[Predicate]](Array())
-        calledRules.zip(rule.getBody()).foreach{case(crrCall, crrPredicate) => {
+        calledRules.zip(rule.getBody).foreach{case(crrCall, crrPredicate) => {
           val manyExpansions = crrCall.flatMap(query => cache.getOrElse(query.identifier(), Set[Query](query))
             .map(subQuery => subQuery.callByVariable(crrPredicate)))
-          bodyList = bodyList.flatMap(currentBody => manyExpansions.map(currentExpansion => currentBody ++ currentExpansion.getBody()))
+          bodyList = bodyList.flatMap(currentBody => manyExpansions.map(currentExpansion => currentBody ++ currentExpansion.getBody))
         }}
-        bodyList.foreach(bodyElements => cache = cache.updated(identifier, cache.getOrElse(identifier, Set[Query]()) + Rule(rule.getHead(), bodyElements)))
+        bodyList.foreach(bodyElements => cache = cache.updated(identifier, cache.getOrElse(identifier, Set[Query]()) + Rule(rule.getHead, bodyElements)))
       }
     })
-    val lastHead = getRules().last.getHead()
-    val newRules = cache.getOrElse(lastHead.identifier(), Set()).map(_.toRule()).toArray
+    val lastHead = getRules.last.getHead
+    val newRules = cache.getOrElse(lastHead.identifier(), Set()).map(_.toRule).toArray
     val result =Hypothesis(lastHead, newRules)
       .setPositives(positives)
       .setNegatives(negatives)
@@ -77,29 +76,29 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     result
   }
 
-  def getSorted() = sorted
+  def getSorted: Array[Rule] = sorted
 
   def setSorted(array: Array[Rule]): this.type = {
     sorted = array
     this
   }
 
-  def emptyScores() = !tested /*positives.isEmpty && negatives.isEmpty && genfacts.isEmpty*/
+  def emptyScores(): Boolean = !tested /*positives.isEmpty && negatives.isEmpty && genfacts.isEmpty*/
 
   def compact(): Hypothesis = {
     val subs = Substitution()
     val variables = Array[Variable]()
-    val head = getLast().getHead()
-    val reversed = getSorted().reverse
-    var array = reversed.filter(rule => rule.getHead() == head)
+    val head = getLast.getHead
+    val reversed = getSorted.reverse
+    var array = reversed.filter(rule => rule.getHead == head)
     reversed.foreach { rule => {
       val replacement = array.find(storedRule => storedRule.equals(rule))
       val exists = array.exists(storedRule => rule.calledFrom(storedRule))
       if exists && replacement.isEmpty then
         array :+= rule
       else if replacement.isDefined then {
-        val variable = Variable(rule.getHead().getName())
-        val symbol = Variable(replacement.get.getHead().getName())
+        val variable = Variable(rule.getHead.getName)
+        val symbol = Variable(replacement.get.getHead.getName)
         subs.add(variable, symbol)
       }
     }}
@@ -113,9 +112,9 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   }
 
   override def substitution(substitution: Substitution, doRecursion: Boolean): Hypothesis = {
-    //val newRules = rules.map(rule => rule.substitution(substitution)).flatMap(_.getRules()).distinct
+
     val newRules = rules.map(rule => rule.substitution(substitution)).distinct
-    val newHead = newRules.last.getHead()
+    val newHead = newRules.last.getHead
     Hypothesis(newHead, newRules)
       .setRecursive(recursive)
       .setFunctional(functional)
@@ -123,14 +122,14 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   }
 
   def callHead(substitution: Substitution): Predicate =
-    getHead().substitution(substitution).asPredicate()
+    getHead.substitution(substitution).asPredicate()
 
 
   def substitution(predicate: Predicate): Substitution =
-    val head = getHead()
-    val replaces = head.getVariables()
-      .zip(predicate.getVariables())
-      .map { case (variable, sym) => (variable, sym.setName(variable.getName())) }
+    val head = getHead
+    val replaces = head.getVariables
+      .zip(predicate.getVariables)
+      .map { case (variable, sym) => (variable, sym.setName(variable.getName)) }
 
     Substitution(replaces)
 
@@ -139,7 +138,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     this
   }
 
-  def getRules(): Array[Rule] =
+  def getRules: Array[Rule] =
     rules
 
   def addRule(newrules: Array[Rule]): this.type = {
@@ -151,20 +150,17 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     val newRules = rules.take(rules.size - 1) :+ item
     Hypothesis(head, newRules)
 
-  def getLast(): Rule =
+  def getLast: Rule =
     rules.last
 
-  def getSecondLast(): Rule =
-    rules.reverse.tail.head
-
-  def getHeads(): Array[Rule] = {
-    val crrHead = rules.last.getHead()
-    rules.filter(rule => rule.getHead() == crrHead)
+  def getHeads: Array[Rule] = {
+    val crrHead = rules.last.getHead
+    rules.filter(rule => rule.getHead == crrHead)
   }
 
-  def getNonHeads(): Array[Rule] =
-    val crrHead = rules.last.getHead()
-    rules.filter(rule => rule.getHead() != crrHead)
+  def getNonHeads: Array[Rule] =
+    val crrHead = rules.last.getHead
+    rules.filter(rule => rule.getHead != crrHead)
 
 
   override def buildRecursion():this.type = {
@@ -176,17 +172,17 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def buildFunctional():this.type = {
     for (i<-0 until sorted.length - 1){
       val rule = sorted(i)
-      val ruleHead = rule.getHead()
+      val ruleHead = rule.getHead
       val ruleIdentifier = rule.identifier()
-      val headFunctional = rule.isFunctional()
+      val headFunctional = rule.isFunctional
       for(j<-i+1 until sorted.length){
         val ruleNext = sorted(j)
-        val bodyPredicates = ruleNext.getBody()
-        var ruleFunctional = ruleNext.isFunctional()
+        val bodyPredicates = ruleNext.getBody
+        var ruleFunctional = ruleNext.isFunctional
         bodyPredicates.foreach(predicate=>{
 
           if predicate.identifier() == ruleIdentifier then {
-            val predicateFunctional = predicate.isFunctional() || headFunctional
+            val predicateFunctional = predicate.isFunctional || headFunctional
             ruleFunctional = ruleFunctional || predicateFunctional
             predicate.setFunctional(predicateFunctional)
           }
@@ -200,7 +196,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   }
 
   def buildDependency():this.type = {
-    sorted = getRanked()
+    sorted = getRanked
     this
   }
 
@@ -213,9 +209,9 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def buildInputs():this.type = {
 
     sorted.foreach(rule=> {
-      val head = rule.getHead()
-      val headVariables = head.getVariables()
-      val bodyPredicates = rule.getBody()
+      val head = rule.getHead
+      val headVariables = head.getVariables
+      val bodyPredicates = rule.getBody
 
       val input = headVariables.filter(variable =>
         bodyPredicates.filter(predicate=> predicate.contains(variable))
@@ -223,17 +219,17 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
       head.setInput(input)
       rule.setInputVariables(input)
-      val inputIndices = head.getInputIndices()
+      val inputIndices = head.getInputIndices
 
       sorted.foreach(other=> {
-        val callPredicates = other.getBody().filter(element=> element.equalByIdentifier(head))
+        val callPredicates = other.getBody.filter(element=> element.equalByIdentifier(head))
         callPredicates.foreach(element=> element.setInputBy(inputIndices))
       })
     })
     this
   }
 
-  def getRanked(): Array[Rule] = {
+  def getRanked: Array[Rule] = {
     val damping = 0.85
     val numIterations = 10
     val N = rules.size
@@ -253,7 +249,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
       for (r <- rules) {
         val id = r.identifier()
         val outbound = outLinks.getOrElse(r.identifier(), Set.empty)
-        val rankSum = outbound.map(p => ranks(p.identifier()) / p.getNonRecursiveSize()).sum
+        val rankSum = outbound.map(p => ranks(p.identifier()) / p.getNonRecursiveSize).sum
         newRanks = newRanks.updated(id, add + damping * rankSum)
       }
       ranks = newRanks
@@ -263,61 +259,60 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     result
   }
 
-  def getLastHead(): Predicate =
-    getRanked().last.getHead()
+  inline def getLastHead: Predicate = getRanked.last.getHead
 
   def equalByHead(other: Hypothesis): Boolean = {
-    sorted.last.getHead().getName() == other.sorted.last.getHead().getName()
+    sorted.last.getHeadName == other.sorted.last.getHeadName
   }
 
   override def hashCode(): Int =
-    rules.map(_.getHead().getName()).sorted.foldRight[Int](1){case(name, main)=> name.hashCode() + 7 * main}
+    rules.map(_.getHeadName).sorted.foldRight[Int](1){case(name, main)=> name.hashCode() + 7 * main}
 
-  override def getRuleSize(): Int =
+  override def getRuleSize: Int =
     sorted.length
 
   override def equals(obj: Any): Boolean =
     obj match {
       case other: Hypothesis =>
-        val test = rules.forall(rule => other.contains(rule)) && other.getRuleSize() == getRuleSize()
+        val test = rules.forall(rule => other.contains(rule)) && other.getRuleSize == getRuleSize
         test
       case crr: Rule =>
         rules.size == 1 && rules.contains(crr)
       case _ => false
     }
 
-  def contains(rule:Rule) =
+  def contains(rule:Rule): Boolean =
     rules.contains(rule)
 
-  def containsAll(rule:Hypothesis) =
-    rule.getRules().forall(r => contains(r))
+/*  def containsAll(rule:Hypothesis): Any =
+    rule.getRules.forall(r => contains(r))*/
 
-
-  def containsName(predicate:String) =
-    rules.exists(rule=> rule.getBody().exists(p=> p.getName() == predicate))
+/*
+  def containsName(predicate:String): Boolean =
+    rules.exists(rule=> rule.getBody.exists(p=> p.getName == predicate))*/
 
   def similarity(targetHypothesis: Hypothesis, window: Int): Double =
-    val currentRules = rules.map(_.getHead().getName())
-    val otherWindows = targetHypothesis.getRules().map(rule => rule.getHead().getName()).sliding(window, 1).toSet
+    val currentRules = rules.map(_.getHeadName)
+    val otherWindows = targetHypothesis.getRules.map(rule => rule.getHeadName).sliding(window, 1).toSet
     val otherSize = math.max(otherWindows.size, currentRules.length)
     val resembleSize = otherWindows.count(array => array.forall(name => currentRules.contains(name)))
     val matchScore = resembleSize.toDouble / otherSize
     matchScore
 
   def containsLast(targetHypothesis: Hypothesis): Boolean =
-    val currentLast = rules.last.getHead().getName()
-    val otherRules = targetHypothesis.getRules().map(rule => rule.getHead().getName())
+    val currentLast = rules.last.getHeadName
+    val otherRules = targetHypothesis.getRules.map(rule => rule.getHeadName)
     val resembleSize = otherRules.count(otherRule => otherRule == currentLast)
     resembleSize > 0
 
   def equalArity(targetHypothesis:Hypothesis):Boolean =
-    getAritry() == targetHypothesis.getAritry()
+    getAritry == targetHypothesis.getAritry
 
   def equalArity(headPredicate:Predicate):Boolean =
-    getAritry() == headPredicate.getArity()
+    getAritry == headPredicate.getArity
 
   def isImproved(crrHypothesis:Hypothesis) : Boolean = {
-    val crrScore = crrHypothesis.getScore()
+    val crrScore = crrHypothesis.getScore
     score > crrScore
   }
 
@@ -325,9 +320,9 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     sorted.map(_.toString).mkString("\n")
 
 
-  override def isRecursive(): Boolean = recursive
+  override def isRecursive: Boolean = recursive
 
-  override def isComplete(): Boolean = rules.forall(item => item.isComplete()) && rules.nonEmpty
+  override def isComplete: Boolean = rules.forall(item => item.isComplete) && rules.nonEmpty
 
 object Hypothesis {
 
@@ -339,7 +334,7 @@ object Hypothesis {
     val rA = Parser.parseRule("a(X) :- p(turkiye).").get
     val set = Array[Rule](rE, rD, rC, rA, rB)
     val h = Hypothesis(rE.head, set)
-    h.getRanked().foreach(r => {
+    h.getRanked.foreach(r => {
       println(r)
     })
   }

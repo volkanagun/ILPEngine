@@ -1,15 +1,15 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.{Database, EngineSerial}
 import ilp.data.predicates.Predicate
+import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 import scala.util.control.Breaks
 
-class Execution(var engine: Engine):
+class Execution(var engine: EngineSerial):
   var maxRules = 20
-  var filterSize = Int.MaxValue
+  var filterSize: Int = Int.MaxValue
   var shingleSize = 3
   var scoreThreshold = 0.9
 
@@ -22,7 +22,7 @@ class Execution(var engine: Engine):
   var negatives = Set[Predicate]()
   var pruneMap = Map[Int, Double]()
 
-  val db = engine.getDatabase()
+  val db: Database = engine.getDatabase
 
   var targetWindow = 3
   var iteration = 1
@@ -73,7 +73,7 @@ class Execution(var engine: Engine):
 
 
   def shingles(hypothesis: Hypothesis): Array[Int] =
-    hypothesis.getHeads().flatMap(rule => rule.getSortedBody().sliding(shingleSize, 1)
+    hypothesis.getHeads.flatMap(rule => rule.getSortedBody.sliding(shingleSize, 1)
       .map(items => items.map(_.identifier()).foldRight[Int](1) { case (id, main) => id + 7 * main }))
 
   def shinglesRank(hypothesis: Hypothesis): Double =
@@ -88,7 +88,7 @@ class Execution(var engine: Engine):
 
   def compile(): this.type =
     val head = positives.head
-    candidates = db.getTemplate3().flatMap(predicate => {
+    candidates = db.getTemplate3.flatMap(predicate => {
       val generic = predicate.copy().asPredicate()
       val newName = InventionMeta.canonicalize(generic)
       val newHeads = InventionMeta.combinations(head, generic.array)
@@ -107,15 +107,6 @@ class Execution(var engine: Engine):
 
     this
 
-  /*def reusable(newHypothesis:Set[Hypothesis], previousHypothesis:Array[Hypothesis]):Array[Hypothesis] = {
-
-    previousHypothesis.foreach(previous => {
-      val includeList = newHypothesis.filter(pred=> pred.containsLast(previous))
-      val allTested = includeList.forall(_.tested)
-      previous.setTested(allTested)
-    })
-    previousHypothesis
-  }*/
 
 
   def induction(): Set[Hypothesis] =
@@ -124,7 +115,7 @@ class Execution(var engine: Engine):
     var sourceHypothesis = templates
       .flatMap(template => {
         template.reset().invent()
-      }).toArray.toSet
+      }).toSet
 
     sourceHypothesis ++= primitives
     var previousCandidates = Array(sourceHypothesis)

@@ -1,4 +1,4 @@
-package ilp.data
+package ilp.data.program
 
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
@@ -6,23 +6,26 @@ import ilp.data.variables.Variable
 class Query(var head: Predicate, var body: Array[Predicate]) extends Serializable:
 
   var recursive = false
-  var functional = body.exists(_.isFunctional())
-  var inputVariables = body.flatMap(predicate=> predicate.getInput())
+  var functional: Boolean = body.exists(_.isFunctional)
+  var inputVariables: Array[Variable] = body.flatMap(predicate=> predicate.getInput)
 
 
   var positions = Map[Position, Set[Position]]()
   var positionsJoin = Array[(String, Array[Position])]()
 
-  def getAttributes(): Set[Variable] =
-    body.flatMap(predicate => predicate.getVariables())
+  def getAttributes: Set[Variable] =
+    body.flatMap(predicate => predicate.getVariables)
       .toSet
 
-  def getAttributeArray(): Array[Variable] =
-    body.flatMap(predicate => predicate.getVariables()).distinct
+  def getAttributeArray: Array[Variable] =
+    body.flatMap(predicate => predicate.getVariables).distinct
 
 
-  def getNonRecursive(): Query =
+  def getNonRecursive: Query =
     Query(head, body.filter(predicate => !predicate.equalByIdentifier(head)))
+
+  def getNonRecursiveBody: Array[Predicate] =
+    body.filter(predicate => !predicate.equalByIdentifier(head))
 
 
   def setInputVariables(variables:Array[Variable]):this.type = {
@@ -30,7 +33,7 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
     this
   }
 
-  def getInputVariables():Array[Variable] = {
+  def getInputVariables:Array[Variable] = {
     this.inputVariables
   }
 
@@ -54,27 +57,26 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
     this
 
   def doRecursion(item: Predicate): Boolean =
-    item.identifier() == head.identifier() && !item.isEmpty()
+    item.identifier() == head.identifier() && !item.isEmpty
 
-  def isAtom(): Boolean = body.isEmpty
+  def isAtom: Boolean = body.isEmpty
+  def isDefinite: Boolean = head.isDefinite
 
-  def isDefinite(): Boolean = head.isDefinite()
+  def getBody: Array[Predicate] = body
+  def getSortedBody: Array[Predicate] = body.sortBy(_.getName)
 
-  def getBody(): Array[Predicate] = body
-  def getSortedBody(): Array[Predicate] = body.sortBy(_.getName())
+  def getBodyId: Int = getSortedBody.foldRight[Int](1){case(p, main) => main * 7 + p.hashCode()}
 
-  def getBodyId() = getSortedBody().foldRight[Int](1){case(p, main) => main * 7 + p.hashCode()}
+  def isRecursive: Boolean = recursive
+  def isFunctional: Boolean = functional
 
-  def isRecursive(): Boolean = recursive
-  def isFunctional(): Boolean = functional
-
-  def isComplete(): Boolean =
+  def isComplete: Boolean =
     val set = Set(head) ++ body
     val zipped = set.zipWithIndex
     !zipped.exists { case (predicate, index) => {
       val others = zipped.filter(other => other._2 != index)
-        .flatMap(pair => pair._1.getVariables())
-      predicate.getVariables().exists(variable => !others.contains(variable))
+        .flatMap(pair => pair._1.getVariables)
+      predicate.getVariables.exists(variable => !others.contains(variable))
     }
     }
 
@@ -83,26 +85,26 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
   def asRule(): Rule =
     asInstanceOf[Rule]
 
-  def toRule(): Rule =
+  def toRule: Rule =
     Rule(head, body)
 
 
   def callByVariable(predicate: Predicate): Query = {
-    val variables = head.getVariables()
-    val symbols = predicate.getVariables()
+    val variables = head.getVariables
+    val symbols = predicate.getVariables
     val substitution = Substitution(variables,symbols)
     call(substitution)
   }
 
 
   def callBySymbol(predicate: Predicate): Query = {
-    val new_variables = predicate.getVariables()
-    val crr_variables = head.getVariables()
+    val new_variables = predicate.getVariables
+    val crr_variables = head.getVariables
     val substitution = Substitution()
     for i <- new_variables.indices do
       val variable = crr_variables(i)
       val symbol = new_variables(i)
-        .copy(variable.getName())
+        .copy(variable.getName)
       substitution.add(variable, symbol)
 
     call(substitution)
@@ -123,31 +125,37 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
 
 
   def calledFrom(otherRule: Query): Boolean =
-    otherRule.getBody().exists(otherPredicate => otherPredicate.identifier() == identifier())
+    otherRule.getBody.exists(otherPredicate => otherPredicate.identifier() == identifier())
 
   def calls(otherRule: Query): Boolean = {
-    val predicate = otherRule.getHead()
+    val predicate = otherRule.getHead
     body.exists(bodyPredicate => predicate.equalByIdentifier(bodyPredicate))
   }
 
-  def getAritry(): Int =
-    head.getArity()
+  def getAritry: Int =
+    head.getArity
 
 
-  def getHead(): Predicate =
+  def getHead: Predicate =
     head
 
-  def getHeadIdentifier(): Int =
+  def getHeadName: String =
+    head.getName
+
+  def getHeadIdentifier: Int =
     head.identifier()
 
   override def hashCode(): Int =
-    getSortedBody().foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
+    getSortedBody.foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
+
+  def equalByHead(query: Query):Boolean =
+    getHeadIdentifier == query.getHeadIdentifier
 
   override def equals(obj: Any): Boolean =
     obj match {
       case other: Query =>
-        other.head.equals(head) && other.getBody().forall(predicate => contains(predicate)) &&
-          getBody().forall(predicate => other.contains(predicate))
+        other.head.equals(head) && other.getBody.forall(predicate => contains(predicate)) &&
+          getBody.forall(predicate => other.contains(predicate))
       case _ => false
     }
 

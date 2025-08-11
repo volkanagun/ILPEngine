@@ -1,10 +1,10 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
+import ilp.data.program.Hypothesis
 
 
-class HeBinaryFunctional(engine: Engine) extends TemplateFunc(engine) {
+class HeBinaryFunctional(engine: EngineSerial) extends TemplateFunc(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => item.emptyScores() || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))

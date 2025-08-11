@@ -1,6 +1,6 @@
 package ilp.tests
 
-import ilp.data.{Hypothesis, Parser}
+import ilp.data.program.{Hypothesis, Parser}
 
 object CompactionTest {
 
@@ -11,8 +11,8 @@ object CompactionTest {
       "func975389211(V0,V1) :- func3198432(V0,V2), func975389211(V2,V1).\n"+
       "func151141526(V0,V1) :- func3552336(V0,V2), func151141526(V2,V1).").get
 
-    val r = p.buildDependency().getSorted()
-    println(p.getRules().mkString("\n"))
+    val r = p.buildDependency().getSorted
+    println(p.getRules.mkString("\n"))
     println("+++++++++++++++++++++++++++")
     println(r.mkString("\n"))
   }
@@ -23,7 +23,7 @@ object CompactionTest {
     val r3 = Parser.parseRule("r3(A, B) :- r1(A,K), r2(K, B).").get
     val r4 = Parser.parseRule("r4(A, B) :- f(X,K), r1(K, B).").get
     val r5 = Parser.parseRule("r5(A, B) :- f(X,K), r2(K, B).").get
-    val h = Hypothesis(r5.getHead(), Array(r1,r2,r3,r4,r5))
+    val h = Hypothesis(r5.getHead, Array(r1,r2,r3,r4,r5))
 
     println("=====Original=====")
     println(h)
@@ -37,7 +37,7 @@ object CompactionTest {
     val r3 = Parser.parseRule("r3(A, B) :- f(A,K), r1(K, B).").get
     val r4 = Parser.parseRule("r4(A, B) :- f(A,K), r2(K, B).").get
     val r5 = Parser.parseRule("r5(A, B) :- r4(A,K), r3(K, B).").get
-    val h = Hypothesis(r5.getHead(), Array(r1,r2,r3,r4,r5))
+    val h = Hypothesis(r5.getHead, Array(r1,r2,r3,r4,r5))
 
     println("=====Original=====")
     println(h)
@@ -52,7 +52,7 @@ object CompactionTest {
     val r4 = Parser.parseRule("r4(A, B) :- f(A,K), r2(K, B).").get
     val r5 = Parser.parseRule("r5(A, B) :- r4(A,K), r3(K, B).").get
     val r6 = Parser.parseRule("r6(A, B) :- r4(A,K), r3(K, B).").get
-    val h = Hypothesis(r5.getHead(), Array(r1,r2,r3,r4,r5, r6))
+    val h = Hypothesis(r5.getHead, Array(r1,r2,r3,r4,r5, r6))
 
     println("=====Original=====")
     println(h)

@@ -1,7 +1,7 @@
 package ilp.data.database
 
-import ilp.data.{Hypothesis, Parser, Rule}
 import ilp.data.predicates.Predicate
+import ilp.data.program.{Hypothesis, Parser, Rule}
 import ilp.data.variables.Variable
 
 import java.io.File
@@ -32,6 +32,7 @@ class Bias extends Serializable{
   var map: Map[Position, Position] = Map[Position, Position]()
 
 
+  //noinspection SourceNotClosed
   def build(filename: String): this.type = {
     if File(filename).exists() then
       val definitions = Source.fromFile(filename).getLines().filter(line => !line.startsWith("%") || line.trim.isEmpty)
@@ -52,14 +53,14 @@ class Bias extends Serializable{
   }
 
   def getPositions(predicate: Predicate): Array[Position] =
-    predicate.getVariables().zipWithIndex.map { case (variable, index) =>
-      Position(predicate.getName(), variable.getName(), index)
+    predicate.getVariables.zipWithIndex.map { case (variable, index) =>
+      Position(predicate.getName, variable.getName, index)
     }
 
   def getRule(rule: Rule, map:Map[Position, Position] = map): Option[Function] = {
     var result = Map[String, String]()
 
-    rule.getBody().flatMap(predicate => {
+    rule.getBody.flatMap(predicate => {
       getPositions(predicate)
     }).foreach { position => {
       val positionName = position.name
@@ -76,29 +77,29 @@ class Bias extends Serializable{
     }
     }
 
-    val predicate = rule.getHead()
+    val predicate = rule.getHead
     val finalResult = predicate
-      .getVariables().zipWithIndex
+      .getVariables.zipWithIndex
       .map { case (variable, index) => //noinspection RedundantBlock
       {
-        val position = if result.contains(variable.getName()) then {
-          val category = result(variable.getName())
-          Position(predicate.getName(), category, index)
+        val position = if result.contains(variable.getName) then {
+          val category = result(variable.getName)
+          Position(predicate.getName, category, index)
         }
         else {
-          Position(predicate.getName(), variable.getName(), index)
+          Position(predicate.getName, variable.getName, index)
         }
 
         position
       }
       }
 
-    Some(Function(predicate.getName(), finalResult))
+    Some(Function(predicate.getName, finalResult))
   }
 
   def getHypothesis(hypothesis: Hypothesis): Option[Map[Position, Position]] = {
     var crrMap = map
-    hypothesis.getSorted().foreach(rule => {
+    hypothesis.getSorted.foreach(rule => {
       val functionOpt = getRule(rule, crrMap)
       if functionOpt.isEmpty then return None
       else{

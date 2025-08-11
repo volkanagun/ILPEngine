@@ -2,13 +2,11 @@ package ilp.data.variables
 
 final class Sym(n: String, var value: String) extends Variable(n):
 
-  override inline def getComplexity(): Double = 0
+  override inline def isSymbol = true
 
-  override inline def isSymbol() = true
+  override inline def isPredicate = false
 
-  override inline def isPredicate() = false
-
-  override inline def isVariable() = false
+  override inline def isVariable = false
 
   override inline def copy(): Variable = new Sym(name, value)
 
@@ -25,10 +23,10 @@ final class Sym(n: String, var value: String) extends Variable(n):
   override def equals(obj: Any): Boolean =
     obj match {
       case other: Sym =>
-        other.value.equals(value)
+        other.name == name && other.value.equals(value)
       case other: Num => false
       case other: VariableList => false
-      case other: Variable => name.equals(obj.asInstanceOf[Variable].name)
+      case other: Variable => name.equals(other.name)
     }
 
 

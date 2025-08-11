@@ -1,6 +1,5 @@
-package ilp.data.optimization
+package ilp.data.database
 
-import ilp.data.database.Database
 import ilp.experiments.{Experiment, Params}
 
 import java.io.{File, PrintWriter}
@@ -19,29 +18,29 @@ class DatabaseStatistics(val name: String, val database: Database) extends Seria
   var densityRatio = 0d
 
   def build(): this.type =
-    val arities = database.getTemplates().map(pair => pair._2.size.toDouble / pair._2.head.getArity())
-    numPredicates = database.getPredicates().size.toDouble
+    val arities = database.getTemplates.map(pair => pair._2.size.toDouble / pair._2.head.getArity)
+    numPredicates = database.getPredicates.size.toDouble
     numArityDensity = arities.toArray.sum / numPredicates
-    maxArity = database.getTemplates().flatMap(_._2.map(_.getArity())).max
-    minArity = database.getTemplates().flatMap(_._2.map(_.getArity())).min
-    numPredicateTypes = database.getTemplates().size
+    maxArity = database.getTemplates.flatMap(_._2.map(_.getArity)).max
+    minArity = database.getTemplates.flatMap(_._2.map(_.getArity)).min
+    numPredicateTypes = database.getTemplates.size
     numPredicateDensity = numPredicates / numPredicateTypes
 
-    duplicateRation = database.getStatistics().map{ pair=> {
-      pair._2.getDuplicateRatio()
-    }}.sum / database.getStatistics().size
+    duplicateRation = database.getStatistics.map{ pair=> {
+      pair._2.getDuplicateRatio
+    }}.sum / database.getStatistics.size
 
-    maxDuplicateRatio = database.getStatistics().map{ pair=> {
-      pair._2.getDuplicateRatio()
+    maxDuplicateRatio = database.getStatistics.map{ pair=> {
+      pair._2.getDuplicateRatio
     }}.max
 
-    minDuplicateRatio = database.getStatistics().map{ pair=> {
-      pair._2.getDuplicateRatio()
+    minDuplicateRatio = database.getStatistics.map{ pair=> {
+      pair._2.getDuplicateRatio
     }}.min
 
     this
 
-  override def toString(): String = {
+  override def toString: String = {
     name + "," + numPredicates.toString + ", "+ numPredicateTypes + "," + numPredicateDensity.toString + ", "+numArityDensity+ "," +  maxArity + "," + minArity + "," +
       duplicateRation + "," + maxDuplicateRatio + "," + minDuplicateRatio
   }
@@ -60,7 +59,7 @@ object DatabaseStatistics {
     new PrintWriter(filename){
       println("Database,Number of Entries,Number of Predicates,Predicate Density,Variable Predicate Ratio, Max Variable Size, Min Variable Size, Duplicate Ratio,Max Duplicate Ratio, Min Duplicate Ratio")
       joinFilenames.foreach(name=>{
-        val db = Experiment(Params(name)).loadDatabase().getDatabase()
+        val db = Experiment(Params(name)).loadDatabase().getDatabase
         println(DatabaseStatistics(name, db).build().toString())
       })
     }.close()

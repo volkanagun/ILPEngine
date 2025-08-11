@@ -1,8 +1,9 @@
+//noinspection SourceNotClosed
 package ilp.experiments
 
 import ilp.data.database.{Bias, Database}
 import ilp.data.predicates.Predicate
-import ilp.data.{Hypothesis, Parser}
+import ilp.data.program.{Hypothesis, Parser}
 
 import java.io.File
 import java.util.regex.Pattern
@@ -18,13 +19,13 @@ class Experiment(params: Params):
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
 
-  def getDatabase() = database
+  def getDatabase = database
 
-  def getHypothesis() = hypothesis
+  def getHypothesis = hypothesis
 
-  def getPositives() = positives
+  def getPositives = positives
 
-  def getNegatives() = negatives
+  def getNegatives = negatives
 
   def load(): this.type =
     loadDatabase()
@@ -44,7 +45,7 @@ class Experiment(params: Params):
           val negative = matching.group(2).equals("neg")
           val item = matching.group(3) + "."
           val predicate = Parser.parsePredicate(item).get
-          if negative then negatives += predicate.toNegative() else positives += predicate
+          if negative then negatives += predicate.toNegative else positives += predicate
       })
 
     println("Loading samples finished.")

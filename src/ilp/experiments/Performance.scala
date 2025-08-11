@@ -1,9 +1,10 @@
+//noinspection SourceNotClosed
 package ilp.experiments
 
-import ilp.data.database.{Database, Engine}
+import ilp.data.database.{Database, EngineOLD, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
 import ilp.data.optimization.Plan
 import ilp.data.predicates.Predicate
-import ilp.data.{Hypothesis, Parser, Substitution}
+import ilp.data.program.{Hypothesis, Parser, Substitution}
 
 import java.io.{File, PrintWriter}
 import java.util.regex.Pattern
@@ -13,7 +14,7 @@ import scala.io.Source
 object Performance {
   val folder = "examples/"
   //val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
-  val joinExperiments = Array("iggp")
+  val joinExperiments = Array("iggp", "uwcs","zendo","webkb","dunnhumby1")
   //val joinExperiments = Array("yeast")
   val functionalExperiments = Array("robots-functional","robots-linear")
   val resultFilename = "resources/experiments/performance.csv"
@@ -139,7 +140,7 @@ object Performance {
   def test(foundSet: Set[Substitution], instances: Set[Predicate]): Boolean = {
     val unMatched = instances.filter(predicate => {
 
-      val substitution = predicate.toSubstitution()
+      val substitution = predicate.toSubstitution
       val contains = foundSet.exists(found => found.contains(substitution))
       !contains
     })
@@ -151,107 +152,99 @@ object Performance {
   def experiment(database: Database, query: Hypothesis, name: String): String =
     var text = ""
 
-    val engine1 = Engine(database)
+
     val plan = Plan(database)
     val hypothesis = query
     val optimizedNone = plan.optimizeNone(hypothesis)
     val optimizedBellman = plan.optimizeBellmanFord(hypothesis)
     val optimizedExperimental = plan.optimizeExperimental(hypothesis)
-
+    val engineSerial = EngineSerial(database)
     val (result1, crrTime1)  = measureMultipleTime({
-      engine1.joinSerial(optimizedNone, Substitution())
+      engineSerial.join(optimizedNone, Substitution())
     })
 
     println("No Index, Serial, No Optimization, Count:"+result1.size)
     text = text + s"${name}, No Index, Serial, No Optimization," + crrTime1.toString + "\n"
-    val engine2 = Engine(database)
+
     val (result2, crrTime2) = measureMultipleTime({
-      engine2.joinSerial(optimizedBellman, Substitution())
+      engineSerial.join(optimizedBellman, Substitution())
     })
 
     println("No Index, Serial, Bellmanford Optimization, Count:" + result2.size)
     text = text + s"${name}, No Index, Serial, Bellmanford Optimization," + crrTime2.toString + "\n"
 
-    val engine3 = Engine(database)
     val (result3, crrTime3) = measureMultipleTime({
-      engine3.joinSerial(optimizedExperimental, Substitution())
+      engineSerial.join(optimizedExperimental, Substitution())
     })
 
     println("No Index, Serial, Iterative Optimization, Count:" + result3.size)
     text = text + s"${name}, No Index, Serial, Iterative Optimization," + crrTime3.toString + "\n"
 
-    val engine4 = Engine(database)
+    val engineParallel = EngineParallel(database, 10)
     val (result4, crrTime4) = measureMultipleTime({
-      engine4.joinParallel(optimizedNone, Substitution())
+      engineParallel.join(optimizedNone, Substitution())
     })
 
     println("No Index, Parallel, No Optimization, Count:" + result4.size)
     text = text + s"${name}, No Index, Parallel, No Optimization, " + crrTime4.toString + "\n"
 
-    val engine5 = Engine(database)
+
     val (result5, crrTime5) = measureMultipleTime({
-      engine1.joinParallel(optimizedBellman, Substitution())
+      engineParallel.join(optimizedBellman, Substitution())
     })
 
     println("No Index, Parallel, Bellmanford Optimization, Count:" + result5.size)
     text = text + s"${name}, No Index, Parallel, BellmanFord Optimization, " + crrTime5.toString + "\n"
 
-    val engine6 = Engine(database)
-
     val (result6, crrTime6) = measureMultipleTime({
-      engine6.joinParallel(optimizedExperimental, Substitution())
+      engineParallel.join(optimizedExperimental, Substitution())
     })
 
     println("No Index, Parallel, Iterative Optimization, Count:" + result6.size)
     text = text + s"${name}, No Index, Parallel, Iterative Optimization, " + crrTime6.toString + "\n"
 
-    val engine7 = Engine(database)
+    val engineRoaring = EngineOLD(database, 50)
 
     val (result7, crrTime7) = measureMultipleTime({
-      engine7.joinRoaringSerial(optimizedNone, Substitution())
+      engineRoaring.joinRoaringSerial(optimizedNone, Substitution())
     })
 
     println("Roaring Index, Serial, No Optimization, Count:" + result7.size)
     text = text + s"${name}, Roaring Index, Serial, No Optimization, " + crrTime7.toString + "\n"
 
-
-    val engine8 = Engine(database)
     val (result8, crrTime8) = measureMultipleTime({
-      engine8.joinRoaringSerial(optimizedBellman, Substitution())
+      engineRoaring.joinRoaringSerial(optimizedBellman, Substitution())
     })
 
     println("Roaring Index, Serial, Bellmanford Optimization, Count:" + result8.size)
     text = text + s"${name}, Roaring Index, Serial, BellmanFord Optimization, " + crrTime8.toString + "\n"
 
-
-    val engine9 = Engine(database)
     val (result9, crrTime9) = measureMultipleTime({
-      engine9.joinRoaringSerial(optimizedExperimental, Substitution())
+      engineRoaring.joinRoaringSerial(optimizedExperimental, Substitution())
     })
 
     println("Roaring Index, Serial, Iterative Optimization, Count:" + result9.size)
     text = text + s"${name}, Roaring Index, Serial, Iterative Optimization, " + crrTime9.toString + "\n"
 
 
-    val engine10 = Engine(database)
+    val engineRoaringParallel = EngineRoaringParallel(database, 10)
     val (result10, crrTime10) = measureMultipleTime({
-      engine10.joinRoaringParallel(optimizedNone, Substitution())
+      engineRoaringParallel.join(optimizedNone, Substitution())
     })
 
     println("Roaring Index, Parallel, No Optimization, Count:" + result10.size)
     text = text + s"${name}, Roaring Index, Parallel, No Optimization, " + crrTime10.toString + "\n"
 
-    val engine11 = Engine(database)
     val (result11, crrTime11) = measureMultipleTime({
-      engine11.joinRoaringParallel(optimizedBellman, Substitution())
+      engineRoaringParallel.join(optimizedBellman, Substitution())
     })
 
     println("Roaring Index, Parallel, Bellmanford Optimization, Count:" + result11.size)
     text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime11.toString + "\n"
 
-    val engine12 = Engine(database)
+
     val (result12, crrTime12) = measureMultipleTime({
-      engine12.joinRoaringParallel(optimizedExperimental, Substitution())
+      engineRoaringParallel.join(optimizedExperimental, Substitution())
     })
 
     println("Roaring Index, Parallel, Iterative Optimization, Count:" + result12.size)
@@ -262,97 +255,118 @@ object Performance {
   def experimentFunctional(database: Database, query: Hypothesis, predicates:Set[Predicate], name: String): String =
     var text = ""
 
-    val engine1 = Engine(database)
+
     val plan = Plan(database)
     val hypothesis = query
 
     val optimizedNone = plan.optimizeNone(hypothesis)
     val optimizedRel = plan.optimizeBellmanFord(hypothesis)
     val optimizedExperimental = plan.optimizeExperimental(hypothesis)
-    val hypothesisHead = optimizedNone.last.getHead()
+    val hypothesisHead = optimizedNone.last.getHead
 
+    val engineSerial = EngineSerial(database)
     var (result1, crrTime1) = measureMultipleTime({
       predicates.foreach(predicate=>{
-        engine1.joinSerial(optimizedNone, predicate.toSubstitution(hypothesisHead))
+        engineSerial.join(optimizedNone, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime1 = crrTime1 / predicates.size
     text = text + s"${name}, No Index, Serial, No Optimization," + crrTime1.toString + "\n"
 
-    val engine2 = Engine(database)
+
     var (result2, crrTime2) = measureMultipleTime({
       predicates.foreach(predicate => {
-        engine2.joinSerial(optimizedRel, predicate.toSubstitution(hypothesisHead))
+        engineSerial.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime2 = crrTime2 / predicates.size
     text = text + s"${name}, No Index, Serial, BellmanFord Optimization," + crrTime2.toString + "\n"
-    val engine3 = Engine(database)
+
     var (result3, crrTime3) = measureMultipleTime({
       predicates.foreach(predicate => {
-        engine3.joinSerial(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+        engineSerial.join(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime3 = crrTime3 / predicates.size
     text = text + s"${name}, No Index, Serial, Iterative Optimization," + crrTime3.toString + "\n"
 
-    val engine4 = Engine(database)
+    val engineParallel = EngineParallel(database, 10)
     var(result4, crrTime4) = measureMultipleTime({
       predicates.par.foreach(predicate=>{
-        engine4.joinParallel(optimizedNone, predicate.toSubstitution(hypothesisHead))
+        engineParallel.join(optimizedNone, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime4 = crrTime4 / predicates.size
     text = text + s"${name}, No Index, Parallel, No Optimization, " + crrTime4.toString + "\n"
-    val engine5 = Engine(database)
+
     var (result5, crrTime5) = measureMultipleTime({
       predicates.par.foreach(predicate=> {
-        engine5.joinParallel(optimizedRel, predicate.toSubstitution(hypothesisHead))
+        engineParallel.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime5 = crrTime5 / predicates.size
     text = text + s"${name}, No Index, Parallel, BellmanFord Optimization, " + crrTime5.toString + "\n"
-    val engine6 = Engine(database)
+
     var (result6, crrTime6) = measureMultipleTime({
       predicates.par.foreach(predicate=> {
-        engine6.joinParallel(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+        engineParallel.join(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime6 = crrTime6 / predicates.size
     text = text + s"${name}, No Index, Parallel, Iterative Optimization, " + crrTime6.toString + "\n"
-    val engine7 = Engine(database)
+
+    val engineRoaring = EngineRoaringSerial(database, 10)
     var (result7, crrTime7) = measureMultipleTime({
       predicates.par.foreach(predicate=>{
-        engine7.joinRoaringParallel(optimizedNone, predicate.toSubstitution(hypothesisHead))
+        engineRoaring.join(optimizedNone, predicate.toSubstitution(hypothesisHead))
       })
     })
-
     crrTime7 = crrTime7 / predicates.size
-    text = text + s"${name}, Roaring Index, Parallel, No Optimization, " + crrTime7.toString + "\n"
-    val engine8 = Engine(database)
+    text = text + s"${name}, Roaring Index, Serial, No Optimization, " + crrTime7.toString + "\n"
+
     var (result8, crrTime8) = measureMultipleTime({
-      predicates.par.foreach(predicate=> {
-        engine8.joinRoaringParallel(optimizedRel, predicate.toSubstitution(hypothesisHead))
+      predicates.par.foreach(predicate=>{
+        engineRoaring.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
       })
     })
-
     crrTime8 = crrTime8 / predicates.size
-    text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime8.toString + "\n"
-    val engine9 = Engine(database)
+    text = text + s"${name}, Roaring Index, Serial, BellmanFord Optimization, " + crrTime8.toString + "\n"
+
+
     var (result9, crrTime9) = measureMultipleTime({
+      predicates.par.foreach(predicate=>{
+        engineRoaring.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
+      })
+    })
+    crrTime9 = crrTime9 / predicates.size
+    text = text + s"${name}, Roaring Index, Serial, Iterative Optimization, " + crrTime9.toString + "\n"
+
+
+    val engineRoaringParallel = EngineRoaringParallel(database, 10)
+    var (result10, crrTime10) = measureMultipleTime({
       predicates.par.foreach(predicate=> {
-        engine9.joinRoaringParallel(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+        engineRoaringParallel.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
       })
     })
 
-    crrTime9 = crrTime9 / predicates.size
-    text = text + s"${name}, Roaring Index, Parallel, Iterative Optimization, " + crrTime9.toString + "\n"
+    crrTime10 = crrTime10 / predicates.size
+    text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime10.toString + "\n"
+
+
+    var (result11, crrTime11) = measureMultipleTime({
+      predicates.par.foreach(predicate=> {
+        engineRoaringParallel.join(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
+      })
+    })
+
+    crrTime11 = crrTime11 / predicates.size
+    text = text + s"${name}, Roaring Index, Parallel, Iterative Optimization, " + crrTime11.toString + "\n"
     text
 
 

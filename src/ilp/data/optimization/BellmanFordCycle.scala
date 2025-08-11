@@ -17,8 +17,8 @@ object BellmanFordCycle extends Serializable {
     val variables = Range(0, n).toSet
     var map = Map[Int, Double]()
     for (i <- 0 until n) {
-      val sorted = bellmanFord(variables, edges.toList, i).toArray.sortBy(_._2)
-        .filter(_._2 != Double.PositiveInfinity)
+      val sorted = bellmanFord(variables, edges.toList, i).toArray
+        .filter(_._2 != Double.PositiveInfinity).sortBy(_._2)
       val avg = sorted.map(_._2).min
       //val avg = sorted.map(_._2).sum / sorted.size
       map = map.updated(i, avg)
@@ -40,9 +40,9 @@ object BellmanFordCycle extends Serializable {
     val variables = Range(0, n).toSet
     var map = Map[Int, Double]()
     for (i <- 0 until n) {
-      val sorted = bellmanFord(variables, edges.toList, i).toArray.sortBy(_._2)
-        .filter(_._2 != Double.PositiveInfinity)
-      val avg = sorted.map(_._2).sum / sorted.size
+      val sorted = bellmanFord(variables, edges.toList, i).toArray
+        .filter(_._2 != Double.PositiveInfinity).sortBy(_._2)
+      val avg = sorted.map(_._2).sum / sorted.length
       map = map.updated(i, avg)
     }
 
@@ -75,8 +75,8 @@ object BellmanFordCycle extends Serializable {
       considered = considered.filter(item => item != start._1)
 
       while considered.nonEmpty do {
-        val sorted = bellmanFord(variables, edges.toList, start._1).toArray.sortBy(_._2)
-          .filter(item => item._2 != Double.PositiveInfinity && !takenSet.contains(item._1))
+        val sorted = bellmanFord(variables, edges.toList, start._1).toArray
+          .filter(item => item._2 != Double.PositiveInfinity && !takenSet.contains(item._1)).sortBy(_._2)
         if sorted.nonEmpty then
           start = sorted.head
         else
@@ -91,7 +91,7 @@ object BellmanFordCycle extends Serializable {
       finalset :+= taken
     }
 
-    val results = finalset.sortBy(items=> items.map(_._2).sum).last
+    val results = finalset.maxBy(items => items.map(_._2).sum)
     (results.map(_._2),results.map(_._1))
 
 

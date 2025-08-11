@@ -1,8 +1,8 @@
 package ilp.experiments
 
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
+import ilp.data.program.{Hypothesis, Parser, Substitution}
 import ilp.data.variables.Variable
-import ilp.data.{Hypothesis, Parser, Substitution}
 import ilp.invent.*
 
 object Invention:
@@ -11,7 +11,7 @@ object Invention:
   def experiment(): Unit = {
     println("==================================")
     println("Kinship-ancestor")
-    testKinshipAnchestor()
+    //testKinshipAnchestor()
     println("==================================")
     println("imdb3")
     testIMDB3()
@@ -59,7 +59,7 @@ object Invention:
     testZendo2()
 
   }
-
+/*
   def testKinshipAnchestor(): Unit = {
     val experiment = new Experiment(Params("kinship-ancestor"))
     experiment.load()
@@ -86,14 +86,14 @@ object Invention:
       .induction()
 
     results.foreach(h => h.print())
-  }
+  }*/
 
   def testIMDB3(): Unit = {
     val experiment = new Experiment(Params("imdb1"))
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -101,7 +101,7 @@ object Invention:
     val metaTransition2 = Parser.parseRule("r1(A,B) :- f(B), g(A,B).").get
     val metaTransition3 = Parser.parseRule("tilda(A,B) :- d(Z, B), a(Z,A).").get
     val q = Parser.parseRule("f(V0,V1):- director(V1),actor(V0),movie(V2,V0),movie(V2,V1).").get
-    var h = Hypothesis(q.getHead(), q)
+    var h = Hypothesis(q.getHead, q)
 
     val t2 = Parser.parseHypothesis("k516(A) :- director(A).\n" +
       "h95(A) :- actor(A).\n" +
@@ -133,7 +133,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -184,7 +184,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -224,7 +224,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -291,7 +291,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -349,7 +349,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -406,7 +406,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -456,7 +456,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -514,7 +514,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -573,7 +573,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -636,7 +636,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -702,7 +702,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -776,7 +776,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -833,7 +833,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -892,7 +892,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
     val windowSize = 3
@@ -957,7 +957,7 @@ object Invention:
     experiment.load()
 
     val db = experiment.database
-    val engine = Engine(db)
+    val engine = EngineSerial(db)
     val pos = experiment.positives
     val neg = experiment.negatives
     val windowSize = 5
@@ -972,7 +972,7 @@ object Invention:
     val p2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
       .buildRecursion()
 
-    val q = Hypothesis(p2.getHead(), Array(p1,p2))
+    val q = Hypothesis(p2.getHead, Array(p1,p2))
       .build()
 
     val scoreThreshold = 0.94
@@ -1017,6 +1017,7 @@ object Invention:
 
     results.foreach(h => h.normalize().print())
   }
+/*
 
   def testHeRecursive(): Unit = {
     val experiment = new Experiment(Params("kinship-ancestor"))
@@ -1044,6 +1045,7 @@ object Invention:
 
     results.foreach(h => h.print())
   }
+*/
 
 
   def main(args: Array[String]): Unit = {

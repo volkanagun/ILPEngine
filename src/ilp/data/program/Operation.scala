@@ -1,7 +1,6 @@
-package ilp.data
+package ilp.data.program
 
-import ilp.data.database.Database
-import ilp.data.predicates.{Negative, Predicate}
+import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 
 class Operation(crrHead: Predicate, crrBody: Array[Predicate], var items: Array[Variable]) extends Query(crrHead, crrBody):
@@ -40,12 +39,12 @@ class Operation(crrHead: Predicate, crrBody: Array[Predicate], var items: Array[
       (None, Operation(head, body, items))
 
   def execute(headSubstitution: Option[Substitution], substitutions: Set[Substitution]): Operation =
-    val applications = if headSubstitution.isDefined && !isAtom() then
+    val applications = if headSubstitution.isDefined && !isAtom then
       val main = headSubstitution.get
       val newItems = items.map(item => item.substitution(main)  /*head.get.of(item)*/)
       newItems.flatMap(item => substitutions
         .map(crrSubstitution => item.substitution(crrSubstitution) /*substitution.of(item)*/))
-    else if headSubstitution.isDefined && isAtom() then
+    else if headSubstitution.isDefined && isAtom then
       val main = headSubstitution.get
       items.map(item => item.substitution(main) /*head.get.of(item)*/)
     else

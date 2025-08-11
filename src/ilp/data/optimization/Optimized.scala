@@ -2,7 +2,7 @@ package ilp.data.optimization
 
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
-import ilp.data.{Query, Substitution}
+import ilp.data.program.{Query, Substitution}
 import org.roaringbitmap.RoaringBitmap
 
 final class Optimized(val query: Query, var variables: Array[Variable] = Array(), var predicates: Array[Predicate] = Array()) extends Serializable{
@@ -10,8 +10,8 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
   var rows: Map[Int, Set[Int]] = Map()
   var roaringBitmap: Map[Int, RoaringBitmap] = Map()
   var dataMap: Map[Int, Array[Predicate]] = Map()
-  val queryId = query.hashCode()
-  val headId = query.getHead().identifier()
+  val queryId: Int = query.hashCode()
+  val headId: Int = query.getHeadIdentifier
   var isTarget:Boolean = false
 
   def identifier():Int =
@@ -26,52 +26,46 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
     this
   }
 
-  def getTarget():Boolean = isTarget
+  def getTarget:Boolean = isTarget
 
-  def newData(map: Map[Int, Array[Predicate]]): Optimized = {
+/*  def newData(map: Map[Int, Array[Predicate]]): Optimized = {
     Optimized(query, variables, predicates)
       .setData(map)
-  }
-
+  }*/
+/*
   def hasRecursion(predicate: Predicate):Boolean =
-    query.getHead().identifier() == predicate.identifier()
+    query.getHead.identifier() == predicate.identifier()*/
 
-  def getQuery(): Query =
+  def getQuery: Query =
     query
 
-  def getHead(): Predicate =
-    query.getHead()
+  def getHead: Predicate =
+    query.getHead
 
-  def getHeadCopy(): Predicate =
-    query.getHead().copy().asPredicate()
-/*
+  def getHeadCopy: Predicate =
+    query.getHead.copy().asPredicate()
 
-  def getVariables(): Array[Variable] =
-    variables.filter(variable=> !variable.isSymbol())
-*/
-
-  def getVariables(): Array[Variable] =
-    variables //.filter(variable=> variable.isVariable())
-
-  def getRelations(): Array[Predicate] =
+  def getVariables: Array[Variable] =
+    variables
+  def getRelations: Array[Predicate] =
     predicates
 
-  def getDataMap(): Map[Int, Array[Predicate]] =
+  def getDataMap: Map[Int, Array[Predicate]] =
     dataMap
 
-  def getDataArrayMap(): Map[Int, Array[Predicate]] =
+  def getDataArrayMap: Map[Int, Array[Predicate]] =
     dataMap
 
-  def getRoaringMap(): Map[Int, RoaringBitmap] =
+  def getRoaringMap: Map[Int, RoaringBitmap] =
     roaringBitmap
 
-  def isRecursive(): Boolean =
-    query.isRecursive()
+  def isRecursive: Boolean =
+    query.isRecursive
 
-  def isFunctional():Boolean =
-    query.isFunctional()
+  def isFunctional:Boolean =
+    query.isFunctional
 
-  def getQueryId(): Int =
+  def getQueryId: Int =
     queryId
 
   def setRows(map: Map[Int, Set[Int]]): this.type =
@@ -87,24 +81,24 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
     this
   }
 
-  def substitution(predicate: Predicate): Substitution =
-    val head = getHead()
-    val replaces = head.getVariables()
-      .zip(predicate.getVariables())
-      .map { case (variable, sym) => (variable, sym.setName(variable.getName())) }
+/*  def substitution(predicate: Predicate): Substitution =
+    val head = getHead
+    val replaces = head.getVariables
+      .zip(predicate.getVariables)
+      .map { case (variable, sym) => (variable, sym.setName(variable.getName)) }
 
-    Substitution(replaces)
+    Substitution(replaces)*/
 
-  def substitution(substitution: Substitution): Optimized = {
+/*  def substitution(substitution: Substitution): Optimized = {
     variables = variables.map(variable => {
       if substitution.hasVariable(variable) then {
         val newvariable = substitution.valueByVariable(variable).get
-        newvariable.setName(variable.getName())
+        newvariable.setName(variable.getName)
       }
       else variable
     })
     this
-  }
+  }*/
 
   def setVariables(variables: Array[Variable]): this.type = {
     this.variables = variables
@@ -143,5 +137,5 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
   }
 
 
-  override def toString = predicates.map(_.name).mkString(" & ") + "=>" + variables.mkString("[", ",", "]")
+  override def toString: String = predicates.map(_.name).mkString(" & ") + "=>" + variables.mkString("[", ",", "]")
 }

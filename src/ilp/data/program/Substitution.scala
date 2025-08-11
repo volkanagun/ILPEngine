@@ -1,10 +1,7 @@
-package ilp.data
+package ilp.data.program
 
-import ilp.data
 import ilp.data.predicates.Predicate
-import ilp.data.variables.{Sym, Variable}
-
-import scala.collection.immutable.HashSet
+import ilp.data.variables.Variable
 
 
 final class Substitution(var variables: Array[Variable], var symbols: Array[Variable]) extends Serializable{
@@ -26,27 +23,36 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     this
   }
 
-  inline def getVariables() = variables
-  inline def getVariable(index: Int) = variables(index)
-  inline def getSymbols() = symbols
-  inline def getSymbol(index: Int) = symbols(index)
+  inline def getVariables: Array[Variable] = variables
+  inline def getVariable(index: Int): Variable = variables(index)
+  inline def getSymbols: Array[Variable] = symbols
+  inline def getSymbol(index: Int): Variable = symbols(index)
 
   def getSymbol(variable: Variable): Option[Variable] = {
     for (index <- 0 until variables.length) {
-      if variables(index).getName() == variable.getName() then
+      if variables(index).getName == variable.getName then
         return Some(symbols(index))
     }
     None
   }
 
-  def contains(variable: Variable) = variables.exists(item => item.getName() == variable.getName())
+  def contains(variable: Variable): Boolean = variables.exists(item => item.getName == variable.getName)
 
-  def containsAll(variables: Array[Variable]) = variables.forall(variable => contains(variable))
+  def containsAll(variables: Array[Variable]): Boolean = variables.forall(variable => contains(variable))
 
   inline def copy(): Substitution =
     Substitution(variables, symbols)
 
-  def get(variables: Array[Variable]) = {
+  inline def get(predicate: Predicate):Predicate =
+    val items = predicate.getInput.map(variable=> {
+      val index = indexVariable(variable)
+      if index.nonEmpty then symbols(index.get)
+      else variable
+    })
+
+    Predicate(predicate.getName, items)
+
+  def get(variables: Array[Variable]): Substitution = {
     var newVariables = Array[Variable]()
     var newSymbols = Array[Variable]()
     for (index <- 0 until length()) {
@@ -64,14 +70,14 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   inline def length(): Int =
     variables.length
 
-  inline def isEmpty(): Boolean =
+  inline def isEmpty: Boolean =
     variables.isEmpty
 
   inline def nonEmpty(): Boolean =
     variables.nonEmpty
 
   def id(): Int =
-    variables.zip(symbols).sortBy { case (variable, _) => variable.getName() }
+    variables.zip(symbols).sortBy { case (variable, _) => variable.getName }
       .map { case (variable, symbol) => variable.id() * 7 + symbol.id() }
       .foldRight(7) { case (crr, main) => main * 7 + crr }
 
@@ -82,7 +88,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
 
   def filterReplace(predicate: Predicate): Substitution = {
     val newSet = variables.zip(symbols).filter(pair => predicate.contains(pair._1))
-      .map(pair => (pair._2, predicate.findVariable(pair._1).setName(pair._2.getName())))
+      .map(pair => (pair._2, predicate.findVariable(pair._1).setName(pair._2.getName)))
     Substitution(newSet)
   }
 
@@ -91,7 +97,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     var newSymbols = Array[Variable]()
     for (v <- 0 until variables.length) {
       val symbol = symbols(v)
-      if symbol.isSymbol() then {
+      if symbol.isSymbol then {
         newVariables :+= variables(v)
         newSymbols :+= symbols(v)
       }
@@ -110,9 +116,9 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     false
   }
 
-  def hasConflict(): Boolean = {
+  def hasConflict: Boolean = {
     val conflict = variables.zip(symbols)
-      .groupBy(pair => pair._1.getName())
+      .groupBy(pair => pair._1.getName)
       .view
       .mapValues(values =>
         values.map(_._2).distinct)
@@ -140,12 +146,12 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     else
       None
 
-  def add(variable: Variable, symbol: Variable): this.type =
+  def add(variable: Variable, symbol: Variable): Substitution =
     variables = variables :+ variable
     symbols = symbols :+ symbol
     this
 
-  def append(substitution: Substitution): this.type =
+  def append(substitution: Substitution): Substitution =
     substitution.variables.zipWithIndex.foreach(pair => {
       if (!hasVariable(pair._1)) then
         variables :+= pair._1
@@ -181,17 +187,17 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
       Substitution(variables, newsyms)
 
   def hasVariable(variable: Variable): Boolean =
-    this.variables.exists(crrVariable => crrVariable.getName() == variable.getName())
+    this.variables.exists(crrVariable => crrVariable.getName == variable.getName)
 
 
   def hasValue(variable: Variable): Boolean =
     this.symbols.exists(crrSymbol => crrSymbol.equals(variable))
 
   def hasInputs(predicate: Predicate):Boolean =
-    predicate.getInput().forall(inputVariable => contains(inputVariable))
+    predicate.getInput.forall(inputVariable => contains(inputVariable))
 
   def sameValue(variable: Variable): Boolean =
-    this.variables.zip(symbols).exists{case(crr, symbol)=> crr.getName() == variable.getName() && symbol.equalValue(variable)}
+    this.variables.zip(symbols).exists{case(crr, symbol)=> crr.getName == variable.getName && symbol.equalValue(variable)}
 
   def variableByValue(variable: Variable): Option[Variable] = {
     val find = symbols.zipWithIndex.find(pair => pair._1.equals(variable))
@@ -203,11 +209,9 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   }
 
   def valueByVariable(variable: Variable): Option[Variable] = {
-    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName == variable.getName }
     if find.isDefined then {
-      //Some(symbols(find.get._2).copy())
       if find.get._2 >= symbols.length then
-        val error = 0;
         Some(symbols.last)
       else
         Some(symbols(find.get._2))
@@ -216,7 +220,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   }
 
   def indexVariable(variable: Variable): Option[Int] = {
-    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName == variable.getName }
     if find.isDefined then
       Some(find.get._2)
     else
@@ -224,7 +228,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   }
 
   def valueByVariable(variable: Variable, newName: String): Option[Variable] = {
-    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName() == variable.getName() }
+    val find = variables.zipWithIndex.find { case (crrVariable, index) => crrVariable.getName == variable.getName }
 
     if find.isDefined then
       Some(symbols(find.get._2).copy(newName))
@@ -239,13 +243,13 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     Substitution(symbols, variables)
 
   def compose(attribute: Variable): Variable =
-    if hasVariable(attribute) then valueByVariable(attribute).get.setName(attribute.getName())
+    if hasVariable(attribute) then valueByVariable(attribute).get.setName(attribute.getName)
     else attribute
 
   def compose(attributes: Array[Variable]): Array[Variable] =
     attributes.map(variable => {
       if hasVariable(variable) then {
-        valueByVariable(variable).get.copy(variable.getName())
+        valueByVariable(variable).get.copy(variable.getName)
       }
       else variable
     })
@@ -255,7 +259,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     composition(substitution)
 
   def composition(variable: Variable, attribute: Variable): Substitution =
-    val substitution = Substitution(variable, attribute.copy(variable.getName()))
+    val substitution = Substitution(variable, attribute.copy(variable.getName))
     composition(substitution)
 
   def composition(substitution: Substitution): Substitution =
@@ -265,7 +269,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     val leftDifference = variables.filter(variable => !substitution.hasVariable(variable))
       .map(variable => (variable, valueByVariable(variable).get))
 
-    val rightDifference = substitution.getVariables().filter(variable => !hasVariable(variable))
+    val rightDifference = substitution.getVariables.filter(variable => !hasVariable(variable))
       .map(variable => (variable, substitution.valueByVariable(variable).get))
 
     val union = leftDifference ++ rightDifference ++ leftShared
@@ -276,24 +280,6 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
       val error = 0
 
     Substitution(unionVar, unionSym)
-  /*
-
-    def composition(substitution: Substitution): Substitution =
-      val left = symbols.filter(variable => !substitution.hasVariable(variable))
-        .map(symbol => (variableByValue(symbol).get, symbol))
-      val right = substitution.variables.filter(variable => !hasVariable(variable))
-        .map(variable => (variable, substitution.valueByVariable(variable).get))
-      val assignLeft = symbols.filter(variable => variable.isVariable() && substitution.hasVariable(variable))
-        .map(variable => (variableByValue(variable).get, substitution.valueByVariable(variable).get))
-      val assignRight = substitution.symbols.filter(variable => variable.isVariable() && hasVariable(variable))
-        .map(variable => (substitution.variableByValue(variable).get, valueByVariable(variable).get))
-      val union = left ++ assignLeft ++ assignRight ++ right
-
-      val unionVar = union.map(_._1)
-      val unionSym = union.map(_._2)
-
-      Substitution(unionVar, unionSym)
-  */
 
   def merge(substitution: Substitution): Substitution =
     val composed = composition(substitution)
@@ -307,7 +293,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
 
   def of(pattern: Variable, instance: Variable): Option[Substitution] =
 
-    if (pattern.isList() && instance.isList() && pattern.getSize() == instance.getSize()) {
+    if (pattern.isList && instance.isList && pattern.getSize == instance.getSize) {
       val variables = pattern.asArray()
       val symbols = instance.asArray()
       val valid = variables.values.zip(symbols.values).map { case (p_item, i_item) => {
@@ -318,21 +304,21 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
       if (valid) Some(this)
       else None
     }
-    else if (pattern.isNumberList() && instance.isNumberList() && pattern.getSize() == instance.getSize()) {
+    else if (pattern.isNumberList && instance.isNumberList && pattern.getSize == instance.getSize) {
       Some(add(pattern, instance))
     }
-    else if (pattern.isSymbol() && instance.isSymbol() && pattern.asSymbol().value == instance.asSymbol().value) {
+    else if (pattern.isSymbol && instance.isSymbol && pattern.asSymbol().value == instance.asSymbol().value) {
       Some(this)
     }
-    else if (pattern.isVariable() && hasVariable(pattern)
-      && instance.isSymbol()) {
+    else if (pattern.isVariable && hasVariable(pattern)
+      && instance.isSymbol) {
       val Some(test) = valueByVariable(pattern)
       if test.equals(instance) then Some(this) else None
     }
-    else if (pattern.isVariable() && !hasVariable(pattern)) {
+    else if (pattern.isVariable && !hasVariable(pattern)) {
       Some(add(pattern, instance))
     }
-    else if (pattern.isPredicate() && instance.isPredicate() &&
+    else if (pattern.isPredicate && instance.isPredicate &&
       pattern.asInstanceOf[Predicate].length() == instance.asInstanceOf[Predicate].length()) {
       val p = pattern.asInstanceOf[Predicate]
       val i = instance.asInstanceOf[Predicate]
@@ -350,7 +336,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
 
   override def toString: String =
     variables.zip(symbols).map { case (variable, assignment) => {
-      if (assignment.isSymbol()) variable.name + " <- " + assignment.toString
+      if (assignment.isSymbol) variable.name + " <- " + assignment.toString
       else variable.name + " <- " + assignment.name
     }
     }.mkString("{", ", ", "}")
@@ -366,8 +352,8 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     case _ => false
 
   def contains(substitution: Substitution): Boolean =
-    substitution.getVariables().forall(variable => hasVariable(variable)) &&
-      substitution.getVariables().forall(variable => valueByVariable(variable).get.equalValue(substitution.valueByVariable(variable).get))
+    substitution.getVariables.forall(variable => hasVariable(variable)) &&
+      substitution.getVariables.forall(variable => valueByVariable(variable).get.equalValue(substitution.valueByVariable(variable).get))
 
   def conflicts(substitution: Substitution): Boolean = {
     for (i <- 0 until substitution.length()) {
@@ -384,9 +370,14 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   }
 
   override def hashCode(): Int =
-    val state = variables ++ symbols
-    val id = state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-    id
+    var sum = 0
+    for (i<-0 until variables.length){
+      val variableHash = variables(i).hashCode()
+      val symbolHash = symbols(i).hashCode()
+      sum += variableHash * symbolHash
+    }
+    sum
+
 }
 
 object Substitution {

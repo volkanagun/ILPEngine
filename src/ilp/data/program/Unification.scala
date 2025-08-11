@@ -1,6 +1,7 @@
-package ilp.data
+package ilp.data.program
 
 import ilp.data.predicates.{Predicate, Sum}
+import ilp.data.variables
 import ilp.data.variables.{Num, Variable, VariableList}
 
 import scala.util.control.Breaks
@@ -60,7 +61,7 @@ class Unification extends Serializable:
   }
 
   def of(substitution: Substitution, x: VariableList, y: VariableList): Option[Substitution] = {
-    if (x.getSize() == y.getSize()) {
+    if (x.getSize == y.getSize) {
       var substitutions = Array[Substitution]()
       var isNone = false
       Breaks.breakable {
@@ -85,46 +86,46 @@ class Unification extends Serializable:
     val xNew = x.substitution(substitution)
     val yNew = y.substitution(substitution)
 
-    if xNew.isList() && yNew.isList() then
+    if xNew.isList && yNew.isList then
       val xVariable = xNew.asInstanceOf[VariableList]
       val ySymbol = yNew.asInstanceOf[VariableList]
       of(substitution, xVariable, ySymbol)
 
-    else if xNew.isSymbol() && yNew.isSymbol() && xNew.equals(yNew) then
+    else if xNew.isSymbol && yNew.isSymbol && xNew.equals(yNew) then
       Some(substitution)
-    else if xNew.isSymbol() && !yNew.isVariable() then
+    else if xNew.isSymbol && !yNew.isVariable then
       None
-    else if !xNew.isVariable() && yNew.isSymbol() then
+    else if !xNew.isVariable && yNew.isSymbol then
       None
-    else if xNew.isVariable() && yNew.isVariable() && xNew.equals(yNew) then
+    else if xNew.isVariable && yNew.isVariable && xNew.equals(yNew) then
       Some(substitution)
-    else if xNew.isVariable() && yNew.isPredicate() && yNew.contains(xNew) then
+    else if xNew.isVariable && yNew.isPredicate && yNew.contains(xNew) then
       None
-    else if xNew.isPredicate() && yNew.isVariable() && xNew.contains(yNew) then
+    else if xNew.isPredicate && yNew.isVariable && xNew.contains(yNew) then
       None
 
-    else if xNew.isPredicate() && yNew.isVariable() && !xNew.contains(yNew) then
+    else if xNew.isPredicate && yNew.isVariable && !xNew.contains(yNew) then
       val newSubstitution = Substitution().of(yNew, xNew).get
       Some(substitution.composition(newSubstitution))
-    else if xNew.isVariable() && yNew.isPredicate() && !yNew.contains(xNew) then
+    else if xNew.isVariable && yNew.isPredicate && !yNew.contains(xNew) then
       val newSubstitution = Substitution().of(xNew, yNew).get
       val crrSubstitution = substitution
       Some(crrSubstitution.composition(newSubstitution))
-    else if xNew.isPredicate() && yNew.isPredicate() then
+    else if xNew.isPredicate && yNew.isPredicate then
       val xPredicate = xNew.asInstanceOf[Predicate]
       val yPredicate = yNew.asInstanceOf[Predicate]
       of(substitution, xPredicate, yPredicate)
 
-    else if xNew.isVariable() && yNew.isSymbol() then
+    else if xNew.isVariable && yNew.isSymbol then
       val newSubstitution = Substitution().of(xNew, yNew).get
       Some(substitution.merge(newSubstitution))
-    else if xNew.isSymbol() && yNew.isVariable() then
+    else if xNew.isSymbol && yNew.isVariable then
       val newSubstitution = Substitution().of(yNew, xNew).get
       Some(substitution.merge(newSubstitution))
-    else if xNew.isVariable() then
+    else if xNew.isVariable then
       val newSubstitution = Substitution(yNew, xNew)
       Some(substitution.merge(newSubstitution))
-    else if yNew.isVariable() then
+    else if yNew.isVariable then
       val newSubstitution = Substitution(x, yNew)
       Some(substitution.merge(newSubstitution))
     else
@@ -181,7 +182,7 @@ object Unification {
 
   def test5(): Unit = {
     val nums = VariableList("X", 1, Array[Double](2, 3, 4, 5))
-    val sum = Sum(nums, nums.toVariable())
+    val sum = Sum(nums, nums.toVariable)
     val target = Predicate("f", Variable("Z"))
     val result = Unification().of(sum, target).get
     println("Result : " + result)

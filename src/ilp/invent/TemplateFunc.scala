@@ -1,20 +1,20 @@
 package ilp.invent
 
-import ilp.data.Hypothesis
-import ilp.data.database.Engine
+import ilp.data.database.EngineSerial
 import ilp.data.predicates.Predicate
+import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-abstract class TemplateFunc(engine: Engine) extends Template(engine) {
+abstract class TemplateFunc(engine: EngineSerial) extends Template(engine) {
 
   def compute(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
     val crrResults = inventNext(source, targets)
-    val recursiveResults = crrResults.filter(_.isTested())
-    val validResults = crrResults.filter(h=> !h.isTested()).par.map(hypothesis => {
+    val recursiveResults = crrResults.filter(_.isTested)
+    val validResults = crrResults.filter(h=> !h.isTested).par.map(hypothesis => {
         hypothesis.buildDependency().compact()
           .buildOperational()
-      }).filter(hypothesis => hypothesis.getRules().length < maxRules)
+      }).filter(hypothesis => hypothesis.getRules.length < maxRules)
       .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
 
     val scoredResults = recursiveResults ++ validResults.filter(_.validAritry(targetPredicate))
@@ -40,8 +40,7 @@ abstract class TemplateFunc(engine: Engine) extends Template(engine) {
     var newResults = Set[Hypothesis]()
     val targets = target()
 
-    val tasks = sources.map(source=> compute(source, targets, targetHead.copy().asPredicate()))
-      .toArray
+    val tasks = sources.map(source => compute(source, targets, targetHead.copy().asPredicate()))
       .iterator
 
 

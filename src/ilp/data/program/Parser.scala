@@ -1,7 +1,8 @@
-package ilp.data
+package ilp.data.program
 
 import ilp.data.database.Type
 import ilp.data.predicates.*
+import ilp.data.variables
 import ilp.data.variables.*
 
 import scala.util.Random
@@ -15,12 +16,12 @@ object Parser extends JavaTokenParsers {
 
   def argumentNames(args: Array[Variable]): Array[Variable] =
     args.zipWithIndex.map { case (variable, index) => {
-      if variable.isSymbol() then variable.setName(symbolVariableNames(index))
+      if variable.isSymbol then variable.setName(symbolVariableNames(index))
       else variable
     }
     }
 
-  def getRandomName(): String =
+  def getRandomName: String =
     val index = random.nextInt(symbolVariableNames.length)
     val num = random.nextInt(100)
     symbolVariableNames(index) + num
@@ -30,7 +31,7 @@ object Parser extends JavaTokenParsers {
 
   def doublestr: Parser[String] = "([+-]?(\\d+(\\.\\d+)?)([eE][+-]?\\d+)?)".r
 
-  def itemstr = doublestr | symstr
+  def itemstr: Parser[String] = doublestr | symstr
 
   def clause: Parser[String] = "max\\_[clauses,body, vars]".r
 
@@ -54,30 +55,22 @@ object Parser extends JavaTokenParsers {
   def keywordIs: Parser[String] = "is".r
 
   def variable: Parser[Variable] =
-    "[A-Z]([A-Za-z0-9\\_]*)".r ^^ {
-      case item => Variable(item)
-    }
+    "[A-Z]([A-Za-z0-9\\_]*)".r ^^ (item => Variable(item))
 
 
 
   /** Parser for a variable (starts with an lowercase letter) */
   def symbol: Parser[variables.Sym] =
-    "[a-z\\_\\d]+([A-Z][a-z\\_\\d]+)*".r ^^ {
-      case symbol => new variables.Sym("X", symbol)
-    }
+    "[a-z\\_\\d]+([A-Z][a-z\\_\\d]+)*".r ^^ (symbol => new variables.Sym("X", symbol))
 
   def variableOrSym: Parser[Variable] =
     variable | symbol
 
   def number: Parser[variables.Num] =
-    doublestr ^^ {
-      case num => new variables.Num(getRandomName(), num.toDouble)
-    }
+    doublestr ^^ (num => new variables.Num(getRandomName, num.toDouble))
 
   def number_int: Parser[variables.Num] =
-    "\\d+".r ^^ {
-      case num => new variables.Num(getRandomName(), num.toDouble)
-    }
+    "\\d+".r ^^ (num => new variables.Num(getRandomName, num.toDouble))
 
   def variableList: Parser[VariableList] =
     "[" ~ repsep(numVar, ",") ~ "]" ^^ {
@@ -101,7 +94,7 @@ object Parser extends JavaTokenParsers {
   def tailNameArgument: Parser[Tail] =
     identifier ~ "([" ~ anystr ~ "|" ~ variable ~ "]," ~ variable ~ ")" ^^ {
       case name ~ "([" ~ item ~ "|" ~ tail ~ "]," ~ myvar ~ ")" => {
-        Tail(name, VariableList(myvar.getName()), VariableList(tail.getName()))
+        Tail(name, VariableList(myvar.getName), VariableList(tail.getName))
       }
     }
 
@@ -109,7 +102,7 @@ object Parser extends JavaTokenParsers {
   def tailArgument1: Parser[Tail] =
     "[" ~ anystr ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ item ~ "|" ~ tail ~ "]" => {
-        Tail("tail", VariableList("LIST"), VariableList(tail.getName()))
+        Tail("tail", VariableList("LIST"), VariableList(tail.getName))
       }
     }
 
@@ -124,7 +117,7 @@ object Parser extends JavaTokenParsers {
   def headTailArgument: Parser[HeadTail] =
     "[" ~ variable ~ "|" ~ variable ~ "]" ^^ {
       case "[" ~ head ~ "|" ~ tail ~ "]" => {
-        HeadTail("headTail", head, VariableList(tail.getName()), VariableList("L"))
+        HeadTail("headTail", head, VariableList(tail.getName), VariableList("L"))
       }
     }
 
@@ -179,14 +172,14 @@ object Parser extends JavaTokenParsers {
 
   def modModCall: Parser[Predicate] =
     variable ~ keywordMod ~ argument_int ^^ {
-      case myvar ~ "mod" ~ myargument => Mod(myvar.getName(), myvar, myargument)
+      case myvar ~ "mod" ~ myargument => Mod(myvar.getName, myvar, myargument)
     }
 
 
   def sumCall: Parser[Variable] =
     "sum(" ~ variableList ~ ")" ^^ {
       case "sum(" ~ array ~ ")" => {
-        Sum(array, Variable(array.getName()))
+        Sum(array, Variable(array.getName))
       }
     }
 
@@ -202,7 +195,7 @@ object Parser extends JavaTokenParsers {
 
   def equalIsCall: Parser[Predicate] =
     (symbol <~ keywordIs) ~ argument ^^ {
-      case (sym ~ (myargument)) => Equal(myargument.getName(), sym, myargument)
+      case (sym ~ (myargument)) => Equal(myargument.getName, sym, myargument)
     }
 
   /** Parser for an argument, which can be a variable or a function call */
@@ -252,7 +245,7 @@ object Parser extends JavaTokenParsers {
 
   def negativePlusCall: Parser[Predicate] =
     "\\+" ~ argument ^^ {
-      case "\\+" ~ predicate => Negative(predicate.getName(), predicate.asPredicate().getVariables())
+      case "\\+" ~ predicate => Negative(predicate.getName, predicate.asPredicate().getVariables)
     }
 
   def negativeCall: Parser[Predicate] =
@@ -277,7 +270,7 @@ object Parser extends JavaTokenParsers {
 
   def expansionArgument: Parser[Predicate] =
     varstr ~ "=[" ~ symbol ~ "," ~ repsep(variable, ",") ~ "]" ^^ {
-      case name ~ "=[" ~ func ~ "," ~ varlist ~ "]" => Expansion(name, Variable(func.value), varlist.toArray)
+      case name ~ "=[" ~ func ~ "," ~ varlist ~ "]" => Expansion(name, Variable(func.getName), varlist.toArray)
     }
 
   def minusArgument: Parser[Predicate] =
@@ -310,7 +303,7 @@ object Parser extends JavaTokenParsers {
 
   def greaterEqualArgument: Parser[Predicate] =
     argument ~ ">=" ~ argument ^^ {
-      case var1 ~ ">=" ~ var2 => GreaterEqual("G", var1, var2)
+      case var1 ~ ">=" ~ var2 => GreaterEqual("G", var1.asNumber(), var2.asNumber())
     }
 
   def lowerArgument: Parser[Predicate] =
@@ -320,7 +313,7 @@ object Parser extends JavaTokenParsers {
 
   def lowerEqualArgument: Parser[Predicate] =
     argument ~ "<=" ~ argument ^^ {
-      case var1 ~ "<=" ~ var2 => LowerEqual("L", var1, var2)
+      case var1 ~ "<=" ~ var2 => LowerEqual("L", var1.asNumber(), var2.asNumber())
     }
 
   /** Parser for a predicate (e.g., parent(X, func(y))) */
@@ -445,7 +438,7 @@ object Parser extends JavaTokenParsers {
   def ruleByAnd: Parser[Rule] =
     head ~ ":-" ~ repsep(predicate_input, "&") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
-        val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
+        val isRecursive = body.map(_.getName).contains(headPredicate.getName)
         Rule(headPredicate, body.toArray)
           .setRecursion(isRecursive)
       }
@@ -454,7 +447,7 @@ object Parser extends JavaTokenParsers {
   def ruleByCut: Parser[Rule] =
     head ~ ":-" ~ repsep(predicate_input, "&") ~ "!." ^^ {
       case headPredicate ~ ":-" ~ body ~ "!." => {
-        val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
+        val isRecursive = body.map(_.getName).contains(headPredicate.getName)
         Rule(headPredicate, body.toArray)
           .setRecursion(isRecursive)
       }
@@ -463,16 +456,14 @@ object Parser extends JavaTokenParsers {
   def ruleByComma: Parser[Rule] =
     head ~ ":-" ~ repsep(predicate_input, ",") ~ "." ^^ {
       case headPredicate ~ ":-" ~ body ~ "." => {
-        val isRecursive = body.map(_.getName()).contains(headPredicate.getName())
+        val isRecursive = body.map(_.getName).contains(headPredicate.getName)
         Rule(headPredicate, body.map(_.asPredicate()).toArray)
           .setRecursion(isRecursive)
       }
     }
 
   def predicate: Parser[Predicate] =
-    argument <~ "." ^^ {
-      case item => item.asPredicate()
-    }
+    argument <~ "." ^^ (item => item.asPredicate())
 
   def parsePredicate(input: String): Option[Predicate] = {
     parseAll(predicate, input) match {
@@ -502,7 +493,7 @@ object Parser extends JavaTokenParsers {
     val inputSplit = input.split("\n")
     val rules = inputSplit.flatMap(line=> parseRule(line))
     if rules.isEmpty then None
-    else Some(Hypothesis(rules.last.getHead(), rules))
+    else Some(Hypothesis(rules.last.getHead, rules))
   }
 
   def main(args: Array[String]): Unit = {
@@ -540,7 +531,7 @@ object Parser extends JavaTokenParsers {
     println("=======================")
     executePredicates.foreach(input => {
       val p = parsePredicate(input)
-      if p.isDefined then println(s"Executing predicate: '$input' ==> ${p.get.getValue()}")
+      if p.isDefined then println(s"Executing predicate: '$input' ==> ${p.get.getValue}")
     })
 
 

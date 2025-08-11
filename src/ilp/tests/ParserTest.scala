@@ -1,6 +1,6 @@
 package ilp.tests
 
-import ilp.data.Parser
+import ilp.data.program.Parser
 
 object ParserTest {
 

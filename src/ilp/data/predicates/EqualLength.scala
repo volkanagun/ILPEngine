@@ -1,23 +1,23 @@
 package ilp.data.predicates
 
-import ilp.data.Substitution
+import ilp.data.program.Substitution
 import ilp.data.variables.{Num, Sym, Variable, VariableList}
 
 final class EqualLength(result:String, e1:VariableList, e2:VariableList) extends Functional("equal_length", Array(e1,e2, Variable(result))) {
 
-  override inline def isExecutable(): Boolean =
-    isDefinite() && e1.getSize() == e2.getSize()
+  override inline def isExecutable: Boolean =
+    isDefinite && e1.getSize == e2.getSize
 
-  override inline def isDefinite(): Boolean = {
-    e1.isNumberList() == e2.isNumberList()
+  override inline def isDefinite: Boolean = {
+    e1.isNumberList == e2.isNumberList
   }
 
-  override inline def getValue(): Variable =
-    val r = e1.getSize() == e2.getSize()
+  override inline def getValue: Variable =
+    val r = e1.getSize == e2.getSize
     new Sym(result, r.toString)
 
   override inline def execute(): Option[Substitution] =
-    val r = e1.getSize() == e2.getSize()
+    val r = e1.getSize == e2.getSize
     if r then Some(Substitution().add(array.last, Sym(result, r.toString)))
     else None
 
@@ -34,19 +34,19 @@ final class EqualLength(result:String, e1:VariableList, e2:VariableList) extends
 
 final class Length(result:String, e1:VariableList) extends Predicate("equal_length", e1, Variable(result)) {
 
-  override inline def isExecutable(): Boolean =
-    isDefinite()
+  override inline def isExecutable: Boolean =
+    isDefinite
 
-  override inline def isDefinite(): Boolean = {
-    e1.isNumberList()
+  override inline def isDefinite: Boolean = {
+    e1.isNumberList
   }
 
-  override inline def getValue(): Variable =
-    val r = e1.getSize()
+  override inline def getValue: Variable =
+    val r = e1.getSize
     new Num(result, r)
 
   override inline def execute(): Option[Substitution] =
-    Some(Substitution().add(array.last, getValue()))
+    Some(Substitution().add(array.last, getValue))
 
   override inline def toString: String =  s"length(${e1})"
 
