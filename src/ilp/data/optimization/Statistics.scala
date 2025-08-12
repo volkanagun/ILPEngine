@@ -18,10 +18,13 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
   inline def identifier(): Int =
     predicate.identifier()
 
+  inline def identifier(index:Int): Int =
+    predicate.identifier(index)
+
   inline def getData: Array[Predicate] =
     data
 
-  inline def getDataSize: Int =
+  private inline def getDataSize: Int =
     data.length
 
   inline def getAttributes: Array[Variable] = predicate.getVariables
@@ -145,7 +148,7 @@ final class Statistics(var predicate: Predicate, val data: Array[Predicate]) ext
     relativeMap.getOrElse(pair, default)
   }
 
-  def getActiveSizeLookup(predicate: Predicate, current: Variable):Double = {
+  private def getActiveSizeLookup(predicate: Predicate, current: Variable):Double = {
     if predicate.contains(current) then {
       val p1 = predicate.getPosition(current)
       activeMap(p1)

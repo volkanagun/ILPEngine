@@ -20,13 +20,12 @@ abstract class Template(val engine: Engine) extends Serializable:
   var scoreThreshold = 0.8
   var shingleSize = 3
 
-
-  val database: Database = engine.getDatabase
-  val plan = Plan(database)
-  var positives = Set[Predicate]()
-  var negatives = Set[Predicate]()
-  var metaRules = Array[Rule]()
-  var metaRecursives = Array[Rule]()
+  protected val database: Database = engine.getDatabase
+  protected val plan = Plan(database)
+  protected var positives = Set[Predicate]()
+  protected var negatives = Set[Predicate]()
+  protected var metaRules = Array[Rule]()
+  protected var metaRecursives = Array[Rule]()
 
   //Can be sorted by score
   var candidates = Array[Hypothesis]()
@@ -210,10 +209,9 @@ abstract class Template(val engine: Engine) extends Serializable:
     val substitution = Substitution(lastHead.asVariable(), targetHead.asVariable())
     val newHypothesis = hypothesis.substitution(substitution)
 
-    val optimization = plan.optimizeExperimental(newHypothesis)
+    val optimization = plan.optimizeNone(newHypothesis)
     val crrSubstitutions = engine.join(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
-
 
     hypothesis.ig(crrFacts, positives, negatives)
     hypothesis.accuracy()
@@ -223,9 +221,9 @@ abstract class Template(val engine: Engine) extends Serializable:
 
     val items = positives ++ negatives
     val ruleHead = hypothesis.getLastHead
+    val optimization = plan.optimizeNone(hypothesis)
     val crrFacts = items.flatMap(targetHead=>{
       val substitution = targetHead.toSubstitution(ruleHead)
-      val optimization = plan.optimizeExperimental(hypothesis)
       val crrSubstitutions = engine.join(optimization, substitution)
       crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
     })

@@ -159,7 +159,7 @@ object Unification {
     println("Result : " + result.get)
   }
 
-  def test4(): Unit = {
+  private def test4(): Unit = {
 
     val f = Parser.parsePredicate("f(X,Y).").get
     val g = Parser.parsePredicate("f(Z,Z).").get

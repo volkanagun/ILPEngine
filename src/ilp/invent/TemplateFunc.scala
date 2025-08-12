@@ -1,12 +1,12 @@
 package ilp.invent
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.predicates.Predicate
 import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-abstract class TemplateFunc(engine: EngineSerial) extends Template(engine) {
+abstract class TemplateFunc(engine: Engine) extends Template(engine) {
 
   def compute(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
     val crrResults = inventNext(source, targets)

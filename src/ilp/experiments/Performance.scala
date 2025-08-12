@@ -1,7 +1,7 @@
 //noinspection SourceNotClosed
 package ilp.experiments
 
-import ilp.data.database.{Database, EngineOLD, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
+import ilp.data.database.{Database, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
 import ilp.data.optimization.Plan
 import ilp.data.predicates.Predicate
 import ilp.data.program.{Hypothesis, Parser, Substitution}
@@ -12,12 +12,12 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 import scala.io.Source
 
 object Performance {
-  val folder = "examples/"
+  private val folder = "examples/"
   //val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
-  val joinExperiments = Array("iggp", "uwcs","zendo","webkb","dunnhumby1")
+  private val joinExperiments = Array("iggp", "uwcs","zendo","webkb","dunnhumby1")
   //val joinExperiments = Array("yeast")
-  val functionalExperiments = Array("robots-functional","robots-linear")
-  val resultFilename = "resources/experiments/performance.csv"
+  private val functionalExperiments = Array("robots-functional","robots-linear")
+  private val resultFilename = "resources/experiments/performance.csv"
 
   def measureMultipleTime[T](block: => T, count: Int = 1): (T, Double) = {
 
@@ -137,17 +137,6 @@ object Performance {
     database.build()
   }*/
 
-  def test(foundSet: Set[Substitution], instances: Set[Predicate]): Boolean = {
-    val unMatched = instances.filter(predicate => {
-
-      val substitution = predicate.toSubstitution
-      val contains = foundSet.exists(found => found.contains(substitution))
-      !contains
-    })
-
-    unMatched.nonEmpty
-  }
-
 
   def experiment(database: Database, query: Hypothesis, name: String): String =
     var text = ""
@@ -203,24 +192,24 @@ object Performance {
     println("No Index, Parallel, Iterative Optimization, Count:" + result6.size)
     text = text + s"${name}, No Index, Parallel, Iterative Optimization, " + crrTime6.toString + "\n"
 
-    val engineRoaring = EngineOLD(database, 50)
+    val engineRoaring = EngineRoaringSerial(database, 50)
 
     val (result7, crrTime7) = measureMultipleTime({
-      engineRoaring.joinRoaringSerial(optimizedNone, Substitution())
+      engineRoaring.join(optimizedNone, Substitution())
     })
 
     println("Roaring Index, Serial, No Optimization, Count:" + result7.size)
     text = text + s"${name}, Roaring Index, Serial, No Optimization, " + crrTime7.toString + "\n"
 
     val (result8, crrTime8) = measureMultipleTime({
-      engineRoaring.joinRoaringSerial(optimizedBellman, Substitution())
+      engineRoaring.join(optimizedBellman, Substitution())
     })
 
     println("Roaring Index, Serial, Bellmanford Optimization, Count:" + result8.size)
     text = text + s"${name}, Roaring Index, Serial, BellmanFord Optimization, " + crrTime8.toString + "\n"
 
     val (result9, crrTime9) = measureMultipleTime({
-      engineRoaring.joinRoaringSerial(optimizedExperimental, Substitution())
+      engineRoaring.join(optimizedExperimental, Substitution())
     })
 
     println("Roaring Index, Serial, Iterative Optimization, Count:" + result9.size)

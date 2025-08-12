@@ -14,59 +14,28 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
   val headId: Int = query.getHeadIdentifier
   var isTarget:Boolean = false
 
-  def identifier():Int =
+  inline def identifier():Int =
     headId
 
-  def newData(): Optimized = {
+  inline def newData(): Optimized = {
     Optimized(query, variables, predicates)
   }
 
-  def setTarget(isTarget:Boolean):this.type = {
+  inline def setTarget(isTarget:Boolean):this.type = {
     this.isTarget = isTarget
     this
   }
 
-  def getTarget:Boolean = isTarget
-
-/*  def newData(map: Map[Int, Array[Predicate]]): Optimized = {
-    Optimized(query, variables, predicates)
-      .setData(map)
-  }*/
-/*
-  def hasRecursion(predicate: Predicate):Boolean =
-    query.getHead.identifier() == predicate.identifier()*/
-
-  def getQuery: Query =
-    query
-
-  def getHead: Predicate =
-    query.getHead
-
-  def getHeadCopy: Predicate =
-    query.getHead.copy().asPredicate()
-
-  def getVariables: Array[Variable] =
-    variables
-  def getRelations: Array[Predicate] =
-    predicates
-
-  def getDataMap: Map[Int, Array[Predicate]] =
-    dataMap
-
-  def getDataArrayMap: Map[Int, Array[Predicate]] =
-    dataMap
-
-  def getRoaringMap: Map[Int, RoaringBitmap] =
-    roaringBitmap
-
-  def isRecursive: Boolean =
-    query.isRecursive
-
-  def isFunctional:Boolean =
-    query.isFunctional
-
-  def getQueryId: Int =
-    queryId
+  inline def getTarget:Boolean = isTarget
+  inline def getQuery: Query = query
+  inline def getHead: Predicate = query.getHead
+  inline def getVariables: Array[Variable] = variables
+  inline def getRelations: Array[Predicate] = predicates
+  inline def getDataMap: Map[Int, Array[Predicate]] =  dataMap
+  inline def getRoaringMap: Map[Int, RoaringBitmap] = roaringBitmap
+  inline def isRecursive: Boolean = query.isRecursive
+  inline def isFunctional:Boolean = query.isFunctional
+  inline def getQueryId: Int = queryId
 
   def setRows(map: Map[Int, Set[Int]]): this.type =
     rows = map
@@ -80,26 +49,6 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
     this.dataMap = map
     this
   }
-
-/*  def substitution(predicate: Predicate): Substitution =
-    val head = getHead
-    val replaces = head.getVariables
-      .zip(predicate.getVariables)
-      .map { case (variable, sym) => (variable, sym.setName(variable.getName)) }
-
-    Substitution(replaces)*/
-
-/*  def substitution(substitution: Substitution): Optimized = {
-    variables = variables.map(variable => {
-      if substitution.hasVariable(variable) then {
-        val newvariable = substitution.valueByVariable(variable).get
-        newvariable.setName(variable.getName)
-      }
-      else variable
-    })
-    this
-  }*/
-
   def setVariables(variables: Array[Variable]): this.type = {
     this.variables = variables
     this
@@ -112,19 +61,6 @@ final class Optimized(val query: Query, var variables: Array[Variable] = Array()
 
   def initRows(map: Map[Int, Int]): this.type = {
     map.foreach { case (id, row) => initRows(id, row) }
-    this
-  }
-
-  def filterRows(map: Map[Int, Set[Int]]): this.type = {
-    map.foreach { case (id, rows) => filterRows(id, rows) }
-    this
-  }
-
-  private def filterRows(id: Int, rowSet: Set[Int]): this.type = {
-    rows = rows.updated(id, rows(id).intersect(rowSet))
-    val roaring = RoaringBitmap()
-    roaring.add(rowSet.toArray: _*)
-    roaringBitmap = roaringBitmap.updated(id, roaring)
     this
   }
 

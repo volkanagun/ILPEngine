@@ -34,7 +34,7 @@ final class Tail(val nm: String, val list: VariableList, val tail: VariableList)
     "tail(" + list.getName + "," + tail.getName + ")"
   }
 
-  override inline def getInput: Array[Variable] = Array(list)
+  override def getInput: Array[Variable] = Array(list)
 
 
 

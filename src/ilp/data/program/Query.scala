@@ -9,137 +9,103 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
   var functional: Boolean = body.exists(_.isFunctional)
   var inputVariables: Array[Variable] = body.flatMap(predicate=> predicate.getInput)
 
+  head.setFunctional(functional)
 
-  var positions = Map[Position, Set[Position]]()
-  var positionsJoin = Array[(String, Array[Position])]()
-
-  def getAttributes: Set[Variable] =
+  inline def getAttributes: Set[Variable] =
     body.flatMap(predicate => predicate.getVariables)
       .toSet
 
-  def getAttributeArray: Array[Variable] =
+  inline def getAttributeArray: Array[Variable] =
     body.flatMap(predicate => predicate.getVariables).distinct
 
-
-  def getNonRecursive: Query =
+  inline def getNonRecursive: Query =
     Query(head, body.filter(predicate => !predicate.equalByIdentifier(head)))
 
-  def getNonRecursiveBody: Array[Predicate] =
+  inline def getNonRecursiveBody: Array[Predicate] =
     body.filter(predicate => !predicate.equalByIdentifier(head))
 
-
-  def setInputVariables(variables:Array[Variable]):this.type = {
+  inline def setInputVariables(variables:Array[Variable]):this.type = {
     this.inputVariables = variables
     this
   }
 
-  def getInputVariables:Array[Variable] = {
+  inline def getInputVariables:Array[Variable] = {
     this.inputVariables
   }
 
-  def renameHead(name: String): Query = {
+  inline def renameHead(name: String): Query = {
     val newQuery = Query(head.copy(name), body)
     newQuery
   }
 
-  def setHead(head: Predicate): this.type = {
+  inline def setHead(head: Predicate): this.type = {
     this.head = head
     this
   }
 
-  def setRecursive(recursive: Boolean): this.type =
+  inline def setRecursive(recursive: Boolean): this.type =
     this.recursive = recursive
     this
 
-  def setFunctional(functional: Boolean): this.type =
+  inline def setFunctional(functional: Boolean): this.type =
     this.functional = functional
     this.head.setFunctional(functional)
     this
 
-  def doRecursion(item: Predicate): Boolean =
+  inline def doRecursion(item: Predicate): Boolean =
     item.identifier() == head.identifier() && !item.isEmpty
 
-  def isAtom: Boolean = body.isEmpty
-  def isDefinite: Boolean = head.isDefinite
+  inline def isAtom: Boolean = body.isEmpty
+  inline def isDefinite: Boolean = head.isDefinite
+  inline def getBody: Array[Predicate] = body
+  inline def getSortedBody: Array[Predicate] = body.sortBy(_.getName)
 
-  def getBody: Array[Predicate] = body
-  def getSortedBody: Array[Predicate] = body.sortBy(_.getName)
+  inline def isRecursive: Boolean = recursive
+  inline def isFunctional: Boolean = functional
+  inline def identifier(): Int = head.identifier()
 
-  def getBodyId: Int = getSortedBody.foldRight[Int](1){case(p, main) => main * 7 + p.hashCode()}
-
-  def isRecursive: Boolean = recursive
-  def isFunctional: Boolean = functional
-
-  def isComplete: Boolean =
-    val set = Set(head) ++ body
-    val zipped = set.zipWithIndex
-    !zipped.exists { case (predicate, index) => {
-      val others = zipped.filter(other => other._2 != index)
-        .flatMap(pair => pair._1.getVariables)
-      predicate.getVariables.exists(variable => !others.contains(variable))
-    }
-    }
-
-  def identifier(): Int = head.identifier()
-
-  def asRule(): Rule =
+  inline def asRule(): Rule =
     asInstanceOf[Rule]
 
-  def toRule: Rule =
+  inline def toRule: Rule =
     Rule(head, body)
 
 
-  def callByVariable(predicate: Predicate): Query = {
+  inline def callByVariable(predicate: Predicate): Query = {
     val variables = head.getVariables
     val symbols = predicate.getVariables
     val substitution = Substitution(variables,symbols)
     call(substitution)
   }
 
-
-  def callBySymbol(predicate: Predicate): Query = {
-    val new_variables = predicate.getVariables
-    val crr_variables = head.getVariables
-    val substitution = Substitution()
-    for i <- new_variables.indices do
-      val variable = crr_variables(i)
-      val symbol = new_variables(i)
-        .copy(variable.getName)
-      substitution.add(variable, symbol)
-
-    call(substitution)
-  }
-
-  def call(substitution: Substitution): Query =
+  inline def call(substitution: Substitution): Query =
     val newHead = head.substitution(substitution).asPredicate()
     val newBody = body.map(item => item.substitution(substitution).asPredicate())
     Query(newHead, newBody)
       .setRecursive(recursive)
 
 
-  def contains(predicate: Predicate): Boolean =
+  inline def contains(predicate: Predicate): Boolean =
     body.contains(predicate)
 
-  def containsByIdentifier(predicate: Predicate): Boolean =
-    body.exists(p => p.equalByIdentifier(predicate))
+  inline def calledFrom(otherRule: Query): Boolean = {
+    val head = getHead
+    otherRule.getBody.exists(otherPredicate => head.equalByIdentifier(otherPredicate))
+  }
 
-
-  def calledFrom(otherRule: Query): Boolean =
-    otherRule.getBody.exists(otherPredicate => otherPredicate.identifier() == identifier())
-
-  def calls(otherRule: Query): Boolean = {
+  inline def calls(otherRule: Query): Boolean = {
     val predicate = otherRule.getHead
     body.exists(bodyPredicate => predicate.equalByIdentifier(bodyPredicate))
   }
 
-  def getAritry: Int =
+  inline def getAritry: Int =
     head.getArity
 
 
-  def getHead: Predicate =
+  inline def getHead: Predicate =
     head
 
-  def getHeadName: String =
+  inline def getHeadName: String =
     head.getName
 
   def getHeadIdentifier: Int =
@@ -147,9 +113,6 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
 
   override def hashCode(): Int =
     getSortedBody.foldRight(head.hashCode()) { case (a, m) => a.hashCode() + 7 * m }
-
-  def equalByHead(query: Query):Boolean =
-    getHeadIdentifier == query.getHeadIdentifier
 
   override def equals(obj: Any): Boolean =
     obj match {

@@ -5,16 +5,16 @@ import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-class HeBinaryFast(engine: EngineSerial) extends TemplateIG(engine) {
+class HeBinaryFast(engine: EngineSerial) extends TemplateFast(engine) {
 
   override def source(): Array[Hypothesis] = {
-    val results = sources.filter(item => item.emptyScores() || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = sources.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
       .distinct
     results
   }
 
   override def target(): Array[Hypothesis] = {
-    val results = candidates.filter(item => item.emptyScores() || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = candidates.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
       .distinct
     results
   }

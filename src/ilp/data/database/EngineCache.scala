@@ -14,7 +14,7 @@ class EngineCache(db:Database, depth:Int) extends EngineParallel(db, depth) {
     var substitutions = Set[Substitution]()
     contextProgram.foreach(context => {
       val headPredicate = context.getHead
-      val contextId = context.getRuleId(substitution)
+      val contextId = context.getContextId(substitution)
       if context.isTarget then context.setSubstitution(substitution)
 
       if programCache.contains(contextId) then

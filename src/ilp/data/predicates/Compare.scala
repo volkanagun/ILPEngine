@@ -95,12 +95,12 @@ final class GreaterEqual(result:String, e1: Variable, e2: Variable) extends Pred
 
 final class Lower(result:String, e1: Variable, e2: Variable) extends Predicate("lower", Array[Variable](e1, e2, Variable(result))):
 
-  override inline def isFunctional: Boolean = true
+  override def isFunctional: Boolean = true
 
-  override inline def isExecutable: Boolean =
+  override def isExecutable: Boolean =
     isDefinite && e1.asNumber().lower(e2.asNumber())
 
-  override inline def isDefinite: Boolean = {
+  override def isDefinite: Boolean = {
     e1.isNumber && e2.isNumber
   }
 

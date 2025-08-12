@@ -12,8 +12,8 @@ import scala.util.Random
 
 object InventionMeta:
 
-  val rnd = new Random(17)
-  var uppercases = Array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L")
+  private val rnd = new Random(17)
+  private var uppercases = Array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L")
 
   def combinations(elements: Array[Variable], arity: Int): Array[Set[Variable]] =
     if (arity == 0) Array(Set())
@@ -69,8 +69,8 @@ object InventionMeta:
 
     val ig = igScore(source.positives, source.negatives, posItems, negItems)
 
-    source.emptyScores() || ig > source.score
-  //posItems.size > source.positives.size || negItems.size < source.negatives.size
+    !source.isTested || ig > source.score
+
 
   def genericName(): String =
     val index = rnd.nextInt(uppercases.length)

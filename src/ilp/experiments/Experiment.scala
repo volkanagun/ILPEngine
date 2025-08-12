@@ -32,7 +32,7 @@ class Experiment(params: Params):
     loadSamples()
     loadQueries()
 
-  protected def loadSamples(): this.type =
+  private def loadSamples(): this.type =
     println("Loading samples")
     val rSamples = "((pos|neg)\\((.*?)\\)\\.)"
     val pSamples = Pattern.compile(rSamples)

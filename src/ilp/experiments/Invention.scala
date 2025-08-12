@@ -1,6 +1,6 @@
 package ilp.experiments
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineCache, EngineParallel, EngineRoaringSerial, EngineSerial}
 import ilp.data.program.{Hypothesis, Parser, Substitution}
 import ilp.data.variables.Variable
 import ilp.invent.*
@@ -88,7 +88,7 @@ object Invention:
     results.foreach(h => h.print())
   }*/
 
-  def testIMDB3(): Unit = {
+  private def testIMDB3(): Unit = {
     val experiment = new Experiment(Params("imdb1"))
     experiment.load()
 
@@ -287,7 +287,9 @@ object Invention:
   }
 
   def testIGGPAttritionNextScore(): Unit = {
-    val experiment = new Experiment(Params("iggp-attrition-next-score"))
+    val params = Params("iggp-attrition-next-score")
+
+    val experiment = new Experiment(params)
     experiment.load()
 
     val db = experiment.database
@@ -560,7 +562,7 @@ object Invention:
     results.foreach(h => h.normalize().print())
   }
 
-  def testPTE(): Unit = {
+  private def testPTE(): Unit = {
 
     /*
     label(V0):- zn(V2),atom(V1,V0,V2).
@@ -715,11 +717,6 @@ object Invention:
     val metaTransition5 = Parser.parseRule("r(V0, V1, V2, V4) :- t(V4, V1), k(V0, V1, V2, V4).").get
     val metaTransition6 = Parser.parseRule("r(V0, V1) :- t(V5, V0, V3), a(V5, V1, V3), k(V0, V1, V2, V4).").get
 
-    //advisedBy(V0,V1):- ta(V3,V0,V4),taughtBy(V3,V1,V4),taughtBy(V5,V0,V2).
-    //val q = Parser.parseHypothesis("func1701369958(F855,B544) :- ta(A942,F855,L768) & taughtBy(A942,B544,L768) & tempAdvisedBy(H39,B544) & publication(I932,F855) & publication(I932,B544) & publication(I932,H39).").get
-    val q = Parser.parseHypothesis("    advisedBy(V0,V1):- student(V0),tempAdvisedBy(V3,V1),taughtBy(V4,V0,V5),taughtBy(V4,V1,V2).\n" +
-      "advisedBy(V0,V1):- ta(V5,V0,V3),taughtBy(V5,V1,V3),tempAdvisedBy(V4,V1),publication(V2,V0),publication(V2,V1),publication(V2,V4).").get
-
 
     val scoreThreshold = 0.14
     val resembleThreshold = 1.0
@@ -757,20 +754,12 @@ object Invention:
       .addTemplate(heBinary)
       .compile()
 
-    heBinary.igCache(q).print()
-
-
     val results = execution.induction()
 
     results.foreach(h => h.normalize().print())
   }
 
   def testWebkb(): Unit = {
-
-    /*
-    faculty(V0):- courseprof(V1,V0),project(V4,V0),project(V4,V3),courseta(V2,V3).
-    faculty(V0):- courseprof(V5,V0),courseta(V5,V3),courseta(V4,V3),courseprof(V4,V2),project(V1,V2).
-    */
 
     val experiment = new Experiment(Params("webkb"))
     experiment.load()
@@ -783,10 +772,6 @@ object Invention:
 
     val metaTransition1 = Parser.parseRule("r(V0, V4) :- co(V1, V0), pr(V4, V0).").get
     val metaTransition2 = Parser.parseRule("r(V0) :- t(V0, V4), a(V3, V4).").get
-    val q = Parser.parseHypothesis("faculty(V0):- courseprof(V1,V0),project(V4,V0),project(V4,V3),courseta(V2,V3).\n" +
-      "faculty(V0):- courseprof(V5,V0),courseta(V5,V3),courseta(V4,V3),courseprof(V4,V2),project(V1,V2).").get
-
-
     val scoreThreshold = 0.14
     val resembleThreshold = 1.0
     val filterSize = 1000
@@ -819,9 +804,6 @@ object Invention:
       .addTemplate(heBinary)
       .compile()
 
-    heBinary.igCache(q).print()
-
-
     val results = execution.induction()
 
     results.foreach(h => h.normalize().print())
@@ -842,9 +824,6 @@ object Invention:
     val metaTransition2 = Parser.parseRule("r(V2, V3) :- t(V2, V3), a(V3).").get
     val metaTransition3 = Parser.parseRule("r(V0, V1, V2) :- r1(V0, V1, V2), a(V1).").get
     val metaTransition4 = Parser.parseRule("r(V0) :- r1(V0, V1, V2), r2(V2, V3).").get
-
-    //val q = Parser.parseHypothesis("zendo(V0):- small(V1),piece(V0,V2),size(V2,V1),contact(V2,V3),red(V3).").get
-
 
     val scoreThreshold = 0.997
     val resembleThreshold = 1.0
@@ -903,11 +882,6 @@ object Invention:
     val metaTransition5 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V1, V2, V3).").get
 
 
-    val q = Parser.parseHypothesis("zendo(V0) :- piece(V0,V1),green(V1),coord1(V1,V3),piece(V0,V2),lhs(V2),coord1(V2,V3).\n" +
-        "zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).").get
-      .build()
-      .compact()
-
     val scoreThreshold = 0.94
     val resembleThreshold = 1.0
     val filterSize = 200
@@ -944,40 +918,36 @@ object Invention:
       .addTemplate(heBinary)
       .compile()
 
-    heBinary.igCache(q).print()
-
     val results = execution.induction()
 
     results.foreach(h => h.normalize().print())
   }
 
-  def testSynthesis(): Unit = {
+  private def testSynthesis(): Unit = {
 
     val experiment = new Experiment(Params("synthesis-next"))
     experiment.load()
 
     val db = experiment.database
-    val engine = EngineSerial(db)
+    val engine:Engine = EngineParallel(db, 7)
     val pos = experiment.positives
     val neg = experiment.negatives
-    val windowSize = 5
+    val windowSize = 3
 
     val metaRecursion = Parser.parseRule("re(V0, V1) :- pi(V0, V2), re(V2,V1).").get
       .buildRecursion()
     val metaRest1 = Parser.parseRule("re(V0, V1, V2) :- t(V0, V2), c(V1, V2).").get
     val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V3, V0), alpha(V3).").get
 
-
     val p1 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),head(V1,V2), head(V3,V0), x(V3).").get
     val p2 = Parser.parseRule("next_list(V0,V1):- tail(V0,V2),next_list(V2,V1).").get
       .buildRecursion()
 
-    val q = Hypothesis(p2.getHead, Array(p1,p2))
-      .build()
+    val hypothesis = Hypothesis(Array(p1, p2)).build()
 
     val scoreThreshold = 0.94
     val resembleThreshold = 1.0
-    val filterSize = 200
+    val filterSize = 100
 
     val heBinary = new HeBinaryFunctional(engine)
       .addMetaRule(metaRecursion)
@@ -992,7 +962,7 @@ object Invention:
 
     val heUnion = new HeUnionFunctional(engine)
       .setNegativeThreshold(0.0)
-      .setPositiveThreshold(0.0)
+      .setPositiveThreshold(0.05)
       .setScoreThreshold(scoreThreshold)
       .setFilterSize(filterSize)
       .setResembleThreshold(resembleThreshold)
@@ -1010,43 +980,12 @@ object Invention:
       .addTemplate(heBinary)
       .compile()
 
-    heBinary.igFunctional(q).print()
-
+    heBinary.igFunctional(hypothesis).print()
 
     val results = execution.induction()
-
-    results.foreach(h => h.normalize().print())
+    val best = results.toArray.minBy(h=> h.getRuleSize)
+    best.print()
   }
-/*
-
-  def testHeRecursive(): Unit = {
-    val experiment = new Experiment(Params("kinship-ancestor"))
-    experiment.load()
-
-    val db = experiment.database
-    val engine = Engine(db)
-    val pos = experiment.positives
-    val neg = experiment.negatives
-
-    val metaRule1 = Parser.parseRule("gamma(A, B) :- alpha(A,Z) & alpha(Z, B).").get
-    val metaRule2 = Parser.parseRule("gamma(A, B) :- alpha(A, Z) & mama(Z, B).").get
-    val heIII = new HeIII(engine)
-      .setPositives(pos)
-      .setNegatives(neg)
-      .addMetaRule(metaRule1)
-      .addMetaRule(metaRule2)
-
-
-    val results = Execution(engine)
-      .setIter(5)
-      .addTemplate(heIII)
-      .compile()
-      .induction()
-
-    results.foreach(h => h.print())
-  }
-*/
-
 
   def main(args: Array[String]): Unit = {
     testSynthesis()

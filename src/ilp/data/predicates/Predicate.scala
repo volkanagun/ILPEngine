@@ -17,10 +17,10 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   def this(name: String, item1: Variable, item2: Variable, item3: Variable) = this(name, Array(item1, item2, item3))
 
-  def getArray: Array[Variable] =
+  inline def getArray: Array[Variable] =
     this.array
 
-  def getArity: Int =
+  inline def getArity: Int =
     this.array.length
 
   def rename(name: String): Predicate =
@@ -28,27 +28,16 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   override def getValue: Variable = this
 
-  def substitutionBy(predicate: Predicate): Substitution =
-    val variables = predicate.getVariables
-    val symbols = array
-    Substitution(variables, symbols)
-
   def execute(): Option[Substitution] = None
   def reverseExecute(substitution: Substitution): Option[Substitution] = None
 
   def getVariable(index: Int): Variable =
     array(index)
 
-  def findVariable(target: Variable): Variable =
-    array.find(variable=> variable.getName == target.getName).get
-
   def getPosition(variable: Variable): Int = {
     val name = variable.getName
     array.indexWhere(item => item.getName == name)
   }
-
-  def getSymbol(index: Int): variables.Sym =
-    array(index).asSymbol()
 
   def getVariables: Array[Variable] =
     array.map(_.asVariable())
@@ -58,13 +47,6 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
       if item.isPredicate then item.asPredicate().getRecursive
       else Array(item)
     })
-
-  def getSymbols: Array[variables.Sym] =
-    array.filter(_.isSymbol).map(_.asSymbol())
-
-  def getPositions(predicateIndex: Int): Array[Position] =
-    (0 until length()).map(index => Position(this, predicateIndex, index))
-      .toArray
 
   def getPosition(position: Int, variable: Variable): Position =
     val index = getPosition(variable)
@@ -125,75 +107,37 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
     Substitution(pairs)
 
-  def toSubstitution: Substitution =
-    val variables = array.map(variable => variable.toVariable)
-    val symbols = array
-    Substitution(variables, symbols)
-
   def toSubstitution(callPredicate: Predicate): Substitution =
     val variables = callPredicate.getVariables
     val symbols = array.zip(variables).map{case(symbol, variable) => symbol.copy(variable.getName)}
     Substitution(variables, symbols)
 
-  def toPredicate(newName: String): Predicate =
-    Predicate(newName, array.map(_.copy()))
-      .setFunctional(functional)
-      .setInput(inputVariables)
-
-
-  def toGeneric: Predicate =
-    Predicate(name, array.map(item => Variable(item.name)))
-
-  def toGeneric(rename: String): Predicate =
-    Predicate(rename, array.map(item => Variable(item.name)))
-
 
   def toNegative: Negative =
     Negative(name, array)
 
-  def asCount(): Count =
-    this.asInstanceOf[Count]
-
-  def asNegative(): Negative =
-    this.asInstanceOf[Negative]
-
-
-  def toGeneric(names: Array[String]): Predicate =
-    Predicate(name, names.take(getArity).map(item => Variable(item)))
 
   def isDefinite = false
-
-  def isNegative = false
-
-  def isCount = false
-
   def isExecutable = false
 
+  def isNegative = false
+  def isCount = false
   def isFunctional: Boolean = functional
   def isRecursive: Boolean = recursive
 
-
   override def isPredicate = true
-
   override def isVariable = false
-
   override def isEmpty: Boolean = array.forall(_.isEmpty)
-
-  def length(): Int = array.length
+  inline def length(): Int = array.length
 
   override def contains(variable: Variable): Boolean =
     array.exists(item => item.getName.equals(variable.getName))
-
-  inline def containsInput(variable:Variable):Boolean=
+  def containsInput(variable:Variable):Boolean=
     inputVariables.contains(variable)
-
-  inline def containsInput(index:Int):Boolean=
+  def containsInput(index:Int):Boolean=
     inputVariables.contains(array(index))
-
-  inline def containsExact(variable:Variable):Boolean=
+  def containsExact(variable:Variable):Boolean=
     array.contains(variable)
-
-
   def contains(variables: Array[Variable]): Boolean =
     variables.forall(variable => contains(variable))
 
@@ -209,23 +153,6 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     (name.hashCode * 7 + length()) * 7 + index
 
 
-  def combinations(elements: Array[String], length: Int): Array[Array[String]] =
-    if (length == 1) elements.map(Array(_))
-    else for {
-      x <- elements
-      xs <- combinations(elements, length - 1)
-    } yield x +: xs
-
-
-  def candidates(original: Array[String], names: Array[String]): Array[Predicate] =
-    val crr = names ++ original
-    combinations(crr, array.length)
-      .filter(names => names.exists(name => original.contains(name)))
-      .flatMap(items => {
-        val variables = items.map(item => Variable(item))
-        Array(Predicate(name, variables), Negative(name, variables))
-      })
-
   override def hashCode(): Int =
     array.foldRight(name.hashCode) { case (a, m) => a.hashCode() + 7 * m }
 
@@ -236,18 +163,10 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     else if predicate.isPredicate && isPredicate then true
     else false
 
-  override def equalGeneric(variable: Variable): Boolean =
-    if variable.isPredicate then
-      val predicate = variable.asPredicate()
-      if predicate.getArity == getArity && equalType(predicate) then
-        return predicate.getArray.zip(array).forall { case (v1, v2) => v1.equalGeneric(v2) }
-
-    false
-
-  def equalByIdentifier(predicate: Predicate): Boolean =
+  inline def equalByIdentifier(predicate: Predicate): Boolean =
     predicate.identifier() == identifier()
 
-  def equalByArity(predicate: Predicate): Boolean =
+  inline def equalByArity(predicate: Predicate): Boolean =
     predicate.getArity == getArity
 
   override def equals(obj: Any): Boolean =

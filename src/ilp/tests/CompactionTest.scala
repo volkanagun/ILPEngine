@@ -4,7 +4,7 @@ import ilp.data.program.{Hypothesis, Parser}
 
 object CompactionTest {
 
-  def testRecursive(): Unit = {
+  private def testRecursive(): Unit = {
     val p = Parser.parseHypothesis("func3198432(H,L) :- head(H,L).\n"+
       "func3552336(L,T) :- tail(L,T).\n"+
       "func1669201693(V0,V1,V2) :- func151141526(V1,V2), func975389211(V0,V2).\n"+

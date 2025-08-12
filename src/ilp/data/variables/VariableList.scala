@@ -5,10 +5,10 @@ import ilp.data.program.Substitution
 
 final class VariableList(nm: String, var values: Array[Variable]) extends Variable(nm):
 
-  val empty: Boolean = values.isEmpty
-  val containsNumber: Boolean = nonEmpty && values.head.isNumber
-  val containsSymbol: Boolean = nonEmpty && values.head.isSymbol
-  val size: Int = values.length
+  private val empty: Boolean = values.isEmpty
+  private val containsNumber: Boolean = nonEmpty && values.head.isNumber
+  private val containsSymbol: Boolean = nonEmpty && values.head.isSymbol
+  private val size: Int = values.length
 
 
   def this(name: String) = this(name, Array[Variable]())

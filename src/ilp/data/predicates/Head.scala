@@ -17,7 +17,7 @@ final class Head(val nm:String, val head: Variable, val list: VariableList) exte
     list.getHead.copy(head.getName)
   }
 
-  override inline def getInput: Array[Variable] = Array(list)
+  override def getInput: Array[Variable] = Array(list)
 
   override inline def copy(): Variable =
     Head(nm, head.copy(), list.copy().asVariableList())

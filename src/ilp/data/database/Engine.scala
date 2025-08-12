@@ -230,20 +230,22 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
   def filterRoaring(rowMap: Map[Int, RoaringBitmap], relations: Array[Predicate], attribute: Variable, value: Variable): Map[Int, RoaringBitmap] =
     val indexMap = database.getIndex
     val valueHash = value.hashCode()
-    val newMap = relations.filter(predicate => !predicate.isFunctional && !predicate.isRecursive).zipWithIndex
+    val newMap = relations.zipWithIndex
       .flatMap { case (predicate, position) => {
         val pid = predicate.identifier(position)
         if rowMap.contains(pid) then
           val crrRows = rowMap(pid)
-          if predicate.contains(attribute) then
-            val predicateId = predicate.identifier()
+          val predicateId = predicate.identifier()
+          if indexMap.contains(predicateId) && predicate.contains(attribute) then
             val crrIndex = indexMap(predicateId)
             val indice = predicate.getPosition(attribute)
             val newRows = crrIndex.getHavingRows(crrRows, valueHash, indice)
             Some(pid -> newRows)
           else
             Some(pid -> crrRows)
-        else
+        /*else if predicate.isFunctional || predicate.isRecursive then
+            Some(pid -> crrRows)
+        */else
           None
       }
       }.toMap

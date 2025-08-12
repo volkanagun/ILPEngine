@@ -16,7 +16,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.jdk.CollectionConverters.IterableHasAsJava
 
-abstract class TemplateIG(engine: EngineSerial) extends Template(engine) {
+abstract class TemplateFast(engine: EngineSerial) extends Template(engine) {
 
   def compute(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
     val crrResults = inventNext(source, targets)

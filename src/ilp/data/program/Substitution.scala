@@ -86,11 +86,11 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     Substitution(newSet)
   }
 
-  def filterReplace(predicate: Predicate): Substitution = {
+ /* def filterReplace(predicate: Predicate): Substitution = {
     val newSet = variables.zip(symbols).filter(pair => predicate.contains(pair._1))
       .map(pair => (pair._2, predicate.findVariable(pair._1).setName(pair._2.getName)))
     Substitution(newSet)
-  }
+  }*/
 
   def normalize(): Substitution = {
     var newVariables = Array[Variable]()

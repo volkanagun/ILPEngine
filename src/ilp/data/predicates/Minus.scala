@@ -20,19 +20,20 @@ final class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional(
     val lastNumber = e2.getValue.asNumber().getNumber
     variables.Num(result.getName, headNumber - lastNumber)
 
-  inline def getReverse(substitution: Substitution):Variable =
+/*  inline def getReverse(substitution: Substitution):Variable =
     val computedResult = result.substitution(substitution)
     val computedNumber = computedResult.getValue.asNumber().getNumber
     val lastNumber = e2.getValue.asNumber().getNumber
-    variables.Num(e1.getName, computedNumber + lastNumber)
+    variables.Num(e1.getName, computedNumber + lastNumber)*/
 
 
-  override inline def contains(variable: Variable): Boolean = e1 == variable
+  override def contains(variable: Variable): Boolean = e1 == variable
 
   override inline def execute(): Option[Substitution] =
     Some(Substitution().add(result.asVariable(), getValue))
 
-  override inline def reverseExecute(substitution: Substitution): Option[Substitution] = {
+  //May be supported in the future.
+/*  override inline def reverseExecute(substitution: Substitution): Option[Substitution] = {
     if substitution.contains(result) then {
       val reverseNumber = getReverse(substitution)
       val newSubstitution = substitution.appendNew(reverseNumber, reverseNumber)
@@ -41,6 +42,6 @@ final class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional(
     else{
       Some(substitution)
     }
-  }
+  }*/
 
   override inline def toString: String = e1.toString + "-" + e2.toString

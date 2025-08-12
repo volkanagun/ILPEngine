@@ -95,8 +95,7 @@ object BellmanFordCycle extends Serializable {
     (results.map(_._2),results.map(_._1))
 
 
-
-  def bellmanFord(variables: Set[Int], edges: List[Edge], source: Int): Map[Int, Double] = {
+  private def bellmanFord(variables: Set[Int], edges: List[Edge], source: Int): Map[Int, Double] = {
     val dist = collection.mutable.Map[Int, Double](variables.toSeq.map(_ -> Double.PositiveInfinity): _*)
     dist(source) = 0.0
 

@@ -1,6 +1,6 @@
 package ilp.tests
 
-import ilp.data.database.{Database, EngineOLD, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
+import ilp.data.database.{Database, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
 import ilp.data.optimization.Plan
 import ilp.data.program.{Hypothesis, Parser, Substitution}
 import ilp.data.variables.{Num, Sym, Variable, VariableList}
@@ -210,7 +210,7 @@ object DatabaseTest {
 
 
     for(positive <- positives) {
-      val newHead = filterSubstitution.filterReplace(positive)
+      val newHead = filterSubstitution.get(positive).toSubstitution(positive)
       val beginParallel = System.nanoTime()
       //Set input variables
       program.foreach(optimized => optimized.query.setInputVariables(optimized.query.inputVariables.slice(0, 2)))
@@ -229,7 +229,7 @@ object DatabaseTest {
 
   }
 
-  def simpleIGGP(): Unit = {
+  private def simpleIGGP(): Unit = {
     val params = Params("iggp-buttons-next")
     val experiment = Experiment(params).load()
     val db = experiment.getDatabase
@@ -352,7 +352,7 @@ object DatabaseTest {
 
     val engine = EngineSerial(db)
     val plan = Plan(db)
-    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "x", Array("h")))
+    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "a", Array("x","h")))
       .add(Variable("V1"), Sym("V1","h"))
 
     val pr1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
@@ -401,13 +401,13 @@ object DatabaseTest {
       .add(g3)
       .build()
 
-    val engine = EngineRoaringSerial(db, 10)
+    val engine = EngineRoaringSerial(db, 20)
     val plan = Plan(db)
     val sample = Substitution().add(Variable("V0"),VariableList("V0", "p", Array("x","h")))
       .add(Variable("V1"),Sym("V1","h"))
 
 
-    val m1 = Parser.parseRule("next_list(V0,V1) :- head(V3,V0) & head(V1,V2) & x(V3) & tail(V0, V2).").get
+    val m1 = Parser.parseRule("next_list(V0,V1) :- x(V3) & head(V3,V0) & head(V1,V2) & tail(V0, V2).").get
     val m2 = Parser.parseRule("next_list(V0,V1) :- tail(V0, V2) & next_list(V2, V1).").get.buildRecursion()
 
     val rr1 = Parser.parseRule("func3552336(V0,V2) :- tail(V0,V2).").get
@@ -417,11 +417,11 @@ object DatabaseTest {
     val rr5 = Parser.parseRule("next_list(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get
     val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()
 
-
     val hr1 = Hypothesis(rr6.getHead, Array(rr1, rr2, rr3, rr4, rr5, rr6))
       .build()
 
-    println(hr1)
+    val mr1 = Hypothesis(rr6.getHead, Array(m1, m2))
+      .build()
 
     val queries = plan.optimizeNone(hr1)
     val parallelSubstitutions = engine.join(queries, sample)
@@ -431,7 +431,7 @@ object DatabaseTest {
   }
 
   def main(args: Array[String]): Unit = {
-    simpleIGGP()
+    simpleList()
   }
 
 }

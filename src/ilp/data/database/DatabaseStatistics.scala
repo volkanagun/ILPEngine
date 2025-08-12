@@ -6,16 +6,16 @@ import java.io.{File, PrintWriter}
 
 class DatabaseStatistics(val name: String, val database: Database) extends Serializable{
 
-  var numPredicates = 0d
-  var numPredicateTypes = 0d
-  var numArityDensity = 0d
-  var numPredicateDensity = 0d
-  var duplicateRation = 0d
-  var maxArity = 0d
-  var maxDuplicateRatio = 0d
-  var minArity = 0d
-  var minDuplicateRatio = 0d
-  var densityRatio = 0d
+  protected var numPredicates = 0d
+  protected var numPredicateTypes = 0d
+  protected var numArityDensity = 0d
+  protected var numPredicateDensity = 0d
+  protected var duplicateRation = 0d
+  protected var maxArity = 0d
+  protected var maxDuplicateRatio = 0d
+  protected var minArity = 0d
+  protected var minDuplicateRatio = 0d
+  protected var densityRatio = 0d
 
   def build(): this.type =
     val arities = database.getTemplates.map(pair => pair._2.size.toDouble / pair._2.head.getArity)

@@ -28,7 +28,7 @@ final class Plus(result:Variable, var1: Variable, var2:Variable) extends Functio
     Num(result.getName, total)
   }
 
-  override inline def getInput: Array[Variable] = Array(var1, var2)
+  override def getInput: Array[Variable] = Array(var1, var2)
 
   override inline def substitution(substitution: Substitution): Variable = {
     val var1new = var1.substitution(substitution)

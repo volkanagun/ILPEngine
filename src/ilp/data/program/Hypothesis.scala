@@ -6,7 +6,6 @@ import ilp.data.variables.Variable
 
 class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_head, rules.head.getBody):
 
-  var ids = Array[Position]()
   var sorted: Array[Rule] = rules
 
   def this(head: Predicate, rule: Rule) = this(head, Array(rule))
@@ -82,8 +81,6 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     sorted = array
     this
   }
-
-  def emptyScores(): Boolean = !tested /*positives.isEmpty && negatives.isEmpty && genfacts.isEmpty*/
 
   def compact(): Hypothesis = {
     val subs = Substitution()
@@ -169,12 +166,14 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     this
   }
 
-  def buildFunctional():this.type = {
+  private def buildFunctional():this.type = {
     for (i<-0 until sorted.length - 1){
       val rule = sorted(i)
       val ruleHead = rule.getHead
       val ruleIdentifier = rule.identifier()
       val headFunctional = rule.isFunctional
+
+
       for(j<-i+1 until sorted.length){
         val ruleNext = sorted(j)
         val bodyPredicates = ruleNext.getBody
@@ -206,7 +205,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     buildRecursion()
   }
 
-  def buildInputs():this.type = {
+  private def buildInputs():this.type = {
 
     sorted.foreach(rule=> {
       val head = rule.getHead
@@ -284,13 +283,6 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def contains(rule:Rule): Boolean =
     rules.contains(rule)
 
-/*  def containsAll(rule:Hypothesis): Any =
-    rule.getRules.forall(r => contains(r))*/
-
-/*
-  def containsName(predicate:String): Boolean =
-    rules.exists(rule=> rule.getBody.exists(p=> p.getName == predicate))*/
-
   def similarity(targetHypothesis: Hypothesis, window: Int): Double =
     val currentRules = rules.map(_.getHeadName)
     val otherWindows = targetHypothesis.getRules.map(rule => rule.getHeadName).sliding(window, 1).toSet
@@ -318,24 +310,3 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
   override def toString: String =
     sorted.map(_.toString).mkString("\n")
-
-
-  override def isRecursive: Boolean = recursive
-
-  override def isComplete: Boolean = rules.forall(item => item.isComplete) && rules.nonEmpty
-
-object Hypothesis {
-
-  def main(args: Array[String]): Unit = {
-    val rE = Parser.parseRule("e(X) :- d(X) & c(X).").get
-    val rD = Parser.parseRule("d(X) :- b(X).").get
-    val rC = Parser.parseRule("c(X) :- b(X) & a(X).").get
-    val rB = Parser.parseRule("b(X) :- a(X).").get
-    val rA = Parser.parseRule("a(X) :- p(turkiye).").get
-    val set = Array[Rule](rE, rD, rC, rA, rB)
-    val h = Hypothesis(rE.head, set)
-    h.getRanked.foreach(r => {
-      println(r)
-    })
-  }
-}

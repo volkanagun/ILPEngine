@@ -1,19 +1,19 @@
 package ilp.invent
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.program.Hypothesis
 
 
-class HeBinaryFunctional(engine: EngineSerial) extends TemplateFunc(engine) {
+class HeBinaryFunctional(engine: Engine) extends TemplateFunc(engine) {
 
   override def source(): Array[Hypothesis] = {
-    val results = sources.filter(item => item.emptyScores() || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = sources.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
       .distinct
     results
   }
 
   override def target(): Array[Hypothesis] = {
-    val results = candidates.filter(item => item.emptyScores() || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = candidates.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
       .distinct
     results
   }

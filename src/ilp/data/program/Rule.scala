@@ -9,15 +9,15 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
   var posRate: Double = 0
   var negRate: Double = 0
-  var posSize: Int = 0
-  var negSize: Int = 0
+  private var posSize: Int = 0
+  private var negSize: Int = 0
 
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
   var genfacts = Set[Predicate]()
   var tested = false
   var score = 0.0
-  var acc = 0.0
+  private var acc = 0.0
   var id: Set[Set[Position]] = idset()
 
   def this(crr_head: Predicate) = this(crr_head, Array[Predicate]())
@@ -247,7 +247,6 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     val nom = tp + tn
     val denom = nom + fn + fp
     acc = nom.toDouble / denom
-
     acc
 
   def ig(posSize: Int, negSize: Int): this.type = {

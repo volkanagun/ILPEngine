@@ -1,13 +1,13 @@
 package ilp.invent
 
-import ilp.data.database.{Database, EngineSerial}
+import ilp.data.database.{Database, Engine, EngineSerial}
 import ilp.data.predicates.Predicate
 import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 import scala.util.control.Breaks
 
-class Execution(var engine: EngineSerial):
+class Execution(var engine: Engine):
   var maxRules = 20
   var filterSize: Int = Int.MaxValue
   var shingleSize = 3

@@ -5,7 +5,7 @@ import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-class HeUnionFast(engine: EngineSerial) extends TemplateIG(engine) {
+class HeUnionFast(engine: EngineSerial) extends TemplateFast(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))

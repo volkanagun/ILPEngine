@@ -18,20 +18,7 @@ final class Index(val predicate: Predicate, var data: Array[Predicate], val bits
   }).toMap
 
 
-/*  def addIndex(predicates: Array[Predicate]): this.type = {
-    predicates.zipWithIndex.foreach{case(predicate, index) => {
-      addData(predicate)
-      addIndex (predicate, index)
-    }}
-    this
-  }*/
-/*
-  def addData(predicate: Predicate): this.type = {
-    data = data :+ predicate
-    this
-  }*/
-
-  def addIndex(predicate: Predicate, index: Int): this.type = {
+  private def addIndex(predicate: Predicate, index: Int): this.type = {
 
     predicate.getPositions.foreach(position => {
       val i = position.getIndex
@@ -61,31 +48,6 @@ final class Index(val predicate: Predicate, var data: Array[Predicate], val bits
     }}
     this
   }
-
-/*  def getValues(rows: Set[Int], position: Int): Set[Variable] =
-    rows.map(index => data(index)).map(predicate => predicate.getVariable(position))*/
-
-
-/*  def getValues(rows: RoaringBitmap, position: Int): Set[Variable] =
-    rows.toArray.map(indice => data(indice))
-      .map(predicate => predicate.getVariable(position))
-      .toSet*/
-/*  def getRows(value: Variable, position: Int): Set[Int] =
-    val trie = rowMap(position)
-    if trie.containsKey(value) then trie.get(value)
-    else Set()*/
-/*
-
-  def getRows(rows: Set[Int], value: Variable, position: Int): Set[Int] =
-    val trie = rowMap(position)
-    val newRows = trie(value)
-    newRows
-*/
-
-/*  def getRows(rows: RoaringBitmap, value: Variable, position: Int): RoaringBitmap =
-    val trie = roaringBitmap(position)
-    val existingRows = trie.get(value)
-    RoaringBitmap.and(rows, existingRows)*/
 
   def getHavingRows(rows: RoaringBitmap, valueHash: Int, position: Int): RoaringBitmap =
     val trie = roaringBitmap(position)

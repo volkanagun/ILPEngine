@@ -134,11 +134,8 @@ final class ExecutionContext(private var rule: Optimized,
 
   inline def emptyAttributes = attributes.isEmpty
 
-  inline def getRuleId(substitution: Substitution): Int =
+  inline def getContextId(substitution: Substitution): Int =
     rule.getQueryId * 7 + substitution.id()
-
-/*  inline def relevant(substitution: Substitution):Boolean=
-    rule.getHead.getInput.forall(variable=> substitution.contains(variable))*/
 
   inline def getQuery: Query = rule.getQuery
   inline def getHead: Predicate = rule.getQuery.getHead
@@ -187,20 +184,6 @@ final class ExecutionContext(private var rule: Optimized,
 }
 
 object ExecutionContext {
-
-  def apply(newRule: Optimized, relation: Predicate,
-            substitution: Substitution,
-            attribute: Variable,
-            position: Int, depth: Int): ExecutionContext =
-    val newHead = newRule.getHead
-    val newVariable = newHead.getVariable(position)
-    val newSubstitution = relation.call(newHead, substitution)
-      .composition(newVariable, attribute)
-    val newAttributes = newRule.getVariables
-    val newRelations = newRule.getRelations
-    val newMap = newRule.getDataMap
-    val rowMap = newRule.getRoaringMap
-    new ExecutionContext(newRule, newMap, newMap, rowMap, rowMap, newSubstitution, newVariable, newRelations, newAttributes, depth)
 
   def apply(mainRule: Optimized, substitution: Substitution): ExecutionContext =
     val dataMap = mainRule.getDataMap

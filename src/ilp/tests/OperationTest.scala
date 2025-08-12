@@ -48,7 +48,7 @@ object OperationTest {
     //println(d.execute(Set(), ops, call))
   }
 
-  def test3(): Unit = {
+  private def test3(): Unit = {
     val d = new Database("test7")
     val p1 = Predicate("edge", Array[Variable](new variables.Sym("X", "a"), new variables.Sym("Y", "b")))
     val p2 = Predicate("edge", Array[Variable](new variables.Sym("X", "b"), new variables.Sym("Y", "d")))
