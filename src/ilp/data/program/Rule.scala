@@ -82,7 +82,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     val variables = getAllVariables.toSet
     val subs = Substitution()
     variables.foreach(variable => {
-      val symbol = InventionMeta.genericVariable()
+      val symbol = InventionMeta.genericVariable
       subs.add(variable, symbol)
     })
     substitution(subs)

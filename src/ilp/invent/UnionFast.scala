@@ -1,20 +1,20 @@
 package ilp.invent
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-class HeUnionFast(engine: EngineSerial) extends TemplateFast(engine) {
+class UnionFast(engine: Engine) extends TemplateFast(engine) {
 
   override def source(): Array[Hypothesis] = {
-    val results = sources.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = sources.filter(item => !item.isTested || (item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold)))
       .distinct
     results
   }
 
   override def target(): Array[Hypothesis] = {
-    val results = candidates.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = candidates.filter(item => !item.isTested || (item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold)))
       .distinct
     results
   }
@@ -28,14 +28,15 @@ class HeUnionFast(engine: EngineSerial) extends TemplateFast(engine) {
   override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] =
 
     //val sourceHead = currentSource.getHead
-    val currentTargets = target()
+    val currentTargets = targets
     var unionHypothesis = currentSource
     var isFound = false
 
     currentTargets.foreach(target => {
-      if unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && !unionHypothesis.equalByHead(target) &&
+      if target.equalArity(unionHypothesis) &&
+        unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && !unionHypothesis.containsLast(target) &&
         InventionMeta.metaUnionAccept(unionHypothesis, target) then {
-        unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target)
+        unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target, getPositiveSize, getNegativeSize)
         isFound = true
       }
     })

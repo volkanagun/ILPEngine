@@ -99,16 +99,19 @@ class Bias extends Serializable{
 
   def getHypothesis(hypothesis: Hypothesis): Option[Map[Position, Position]] = {
     var crrMap = map
-    hypothesis.getSorted.foreach(rule => {
-      val functionOpt = getRule(rule, crrMap)
-      if functionOpt.isEmpty then return None
-      else{
-        val function = functionOpt.get
-        val newMap = function.variables.map(position=> position -> position)
-        crrMap = crrMap ++ newMap
-      }
-    })
+    if map.isEmpty then Some(map)
+    else {
+      hypothesis.getSorted.foreach(rule => {
+        val functionOpt = getRule(rule, crrMap)
+        if functionOpt.isEmpty then return None
+        else {
+          val function = functionOpt.get
+          val newMap = function.variables.map(position => position -> position)
+          crrMap = crrMap ++ newMap
+        }
+      })
 
-    Some(crrMap)
+      Some(crrMap)
+    }
   }
 }

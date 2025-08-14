@@ -1,12 +1,12 @@
 package ilp.invent
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 import scala.util.control.Breaks
 
-class HeBinary(engine: EngineSerial) extends Template(engine):
+class Binary(engine: Engine) extends Template(engine):
 
   override def source(): Array[Hypothesis] =
     val selectedSet = sources.sortBy(_.posRate)
@@ -43,34 +43,4 @@ class HeBinary(engine: EngineSerial) extends Template(engine):
     val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
     fresults
 
-
-/*
-
-    val result = sourceHypotheses.flatMap(sourceHypothesis => {
-
-      val crrHypotheses = targetHypotheses.filter(targetHypothesis => {
-        sourceHypothesis.similarity(targetHypothesis, resembleWindow) < resembleThreshold
-      }).toArray
-
-      val crrResults = metaApply(sourceHypothesis, crrHypotheses)
-      crrResults
-        .flatMap(targetHypothesis => {
-        val targetRule = targetHypothesis.getLast()
-        val r2 = targetRule/*.renameHead(destinationName)*/.asRule()
-        val newQueries = metaApply(r1.getHead(), r2.getHead())
-
-        val resultHypotheses = newQueries.map(query => {
-          val newName = Invention.genericLower()
-          val newPredicate = query.getHead().setName(newName).asPredicate()
-          val ruleSet = sourceHypothesis.getFirst() ++ targetHypothesis.getFirst() ++
-            Array(r1, r2) ++ Array(query.asRule())
-          Hypothesis(newPredicate, ruleSet)
-        })
-
-        resultHypotheses
-      })
-      crrHypotheses
-
-    })
-    result*/
 

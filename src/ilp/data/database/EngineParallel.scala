@@ -25,7 +25,7 @@ class EngineParallel(db:Database, depth:Int) extends Engine(db, depth) {
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateUnion(headPredicate, crrPredicates.toArray))
       }
 
     })

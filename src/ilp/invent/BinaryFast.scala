@@ -1,11 +1,11 @@
 package ilp.invent
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.program.Hypothesis
 
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
-class HeBinaryFast(engine: EngineSerial) extends TemplateFast(engine) {
+class BinaryFast(engine: Engine) extends TemplateFast(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))

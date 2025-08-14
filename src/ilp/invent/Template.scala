@@ -26,6 +26,8 @@ abstract class Template(val engine: Engine) extends Serializable:
   protected var negatives = Set[Predicate]()
   protected var metaRules = Array[Rule]()
   protected var metaRecursives = Array[Rule]()
+  private var positiveSize :Int = 0
+  private var negativeSize :Int = 0
 
   //Can be sorted by score
   var candidates = Array[Hypothesis]()
@@ -34,7 +36,8 @@ abstract class Template(val engine: Engine) extends Serializable:
 
   var sourceIterator: Iterator[Hypothesis] = sources.iterator
 
-
+  def getPositiveSize = positiveSize
+  def getNegativeSize = negativeSize
   def getHead:Predicate =
     positives.head
 
@@ -49,14 +52,17 @@ abstract class Template(val engine: Engine) extends Serializable:
     while hasSource && !doStop do
 
       val crrResults = inventNext(targets)
-      val validResults = crrResults.par.map(hypothesis => {
+      val recursiveResults = crrResults.filter(_.isTested)
+
+      val validResults = crrResults.filter(h => !h.isTested).par.map(hypothesis => {
           hypothesis.buildDependency().compact()
             .buildOperational()
         }).filter(hypothesis => hypothesis.getRules.length < maxRules)
-        .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
+        .filter(hypothesis => engine.validHypothesis(hypothesis)).toSet.toArray
 
-      val scoredResults = validResults.filter(_.validAritry(targetHead))
-        .map(hypothesis => igCache(hypothesis))
+
+      val scoredResults = recursiveResults ++ validResults.filter(_.validAritry(targetHead))
+        .map(hypothesis => igParallel(hypothesis))
         .filter(hypothesis => hypothesis.acceptNegRate(negThreshold) && hypothesis.acceptPosRate(posThreshold))
 
       val combineSet = scoredResults.toSet ++
@@ -164,16 +170,23 @@ abstract class Template(val engine: Engine) extends Serializable:
 
     this
 
+  def addMetaRule(metaRules:Array[Rule]):this.type = {
+    metaRules.foreach(metaRule => addMetaRule(metaRule))
+    this
+  }
+
   def setMetaRules(metaRules: Array[Rule]): this.type =
     this.metaRules = metaRules
     this
 
   def setPositives(positives: Set[Predicate]): this.type =
     this.positives = positives
+    this.positiveSize = positives.size
     this
 
   def setNegatives(negatives: Set[Predicate]): this.type =
     this.negatives = negatives
+    this.negativeSize = negatives.size
     this
 
   def source(): Array[Hypothesis]
@@ -183,17 +196,13 @@ abstract class Template(val engine: Engine) extends Serializable:
   def inventNext(targets: Array[Hypothesis]): Array[Hypothesis]
   def inventNext(source:Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis]
 
-
-  def igIncremental(hypothesis: Hypothesis):Hypothesis=
-    igCache(hypothesis)
-
-  def igParallel(set: Set[Predicate], hypothesis: Hypothesis): Hypothesis =
+  def igParallel(hypothesis: Hypothesis): Hypothesis =
     val targetHead = positives.head
     val lastHead = hypothesis.getHead
-    val substitution = Substitution(lastHead.asVariable(), targetHead.asVariable())
+    val substitution = Substitution(lastHead.toVariable, targetHead.toVariable)
     val newHypothesis = hypothesis.substitution(substitution)
 
-    val optimization = plan.optimizeExperimental(newHypothesis)
+    val optimization = plan.optimizeBellmanFord(newHypothesis)
     val crrSubstitutions = engine.join(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
 
@@ -202,7 +211,7 @@ abstract class Template(val engine: Engine) extends Serializable:
     hypothesis.accuracy()
     hypothesis
 
-  def igCache(hypothesis: Hypothesis): Hypothesis =
+  /*def igCache(hypothesis: Hypothesis): Hypothesis =
     val targetHead = positives.head
     val lastRule = hypothesis.getLast
     val lastHead = lastRule.getHead
@@ -215,7 +224,7 @@ abstract class Template(val engine: Engine) extends Serializable:
 
     hypothesis.ig(crrFacts, positives, negatives)
     hypothesis.accuracy()
-    hypothesis
+    hypothesis*/
 
   def igFunctional(hypothesis: Hypothesis): Hypothesis =
 

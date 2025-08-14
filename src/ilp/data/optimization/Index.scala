@@ -17,6 +17,12 @@ final class Index(val predicate: Predicate, var data: Array[Predicate], val bits
     position.getIndex -> new util.HashMap[Int, RoaringBitmap]()
   }).toMap
 
+  def addIndex(predicate: Predicate):this.type =
+    if !data.contains(predicate) then {
+      addIndex(predicate, data.length)
+      data = data:+ predicate
+    }
+    this
 
   private def addIndex(predicate: Predicate, index: Int): this.type = {
 
@@ -56,6 +62,6 @@ final class Index(val predicate: Predicate, var data: Array[Predicate], val bits
       val existingRows = trie.get(valueHash)
       RoaringBitmap.and(rows, existingRows)
     else
-      rows
+      RoaringBitmap()
 
 }

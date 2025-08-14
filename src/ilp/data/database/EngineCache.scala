@@ -18,18 +18,20 @@ class EngineCache(db:Database, depth:Int) extends EngineParallel(db, depth) {
       if context.isTarget then context.setSubstitution(substitution)
 
       if programCache.contains(contextId) then
+        println("Hit...")
         val crrSubstitutions = programCache.get(contextId)
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateUnion(headPredicate, crrPredicates.toArray))
       else if !context.isFunctional || context.isTarget then {
+        println("Miss...")
         val crrSubstitutions = join(contextMap, context, context)
           .map(substitution => substitution.get(headPredicate.getVariables)) //++ atomSubstitutions(headPredicate, substitution)
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateUnion(headPredicate, crrPredicates.toArray))
         programCache.update(contextId, crrSubstitutions)
       }
 

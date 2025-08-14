@@ -4,7 +4,7 @@ import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.program.Hypothesis
 
 
-class HeBinaryFunctional(engine: Engine) extends TemplateFunc(engine) {
+class BinaryFunctional(engine: Engine) extends TemplateFunctional(engine) {
 
   override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))

@@ -1,6 +1,6 @@
 package ilp.data.database
 
-import ilp.data.optimization.Optimized
+import ilp.data.optimization.{Index, Optimized}
 import ilp.data.predicates.Predicate
 import ilp.data.program.{Hypothesis, Substitution}
 import ilp.data.variables.Variable
@@ -12,12 +12,22 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
   val executionCache = ExecutionCache()
   val programCache = ProgramCache()
 
-
   def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution]
   def join(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution]
 
 
   def getDatabase: Database = database
+  def updateIndex(predicate:Predicate, results:Set[Predicate]):this.type =
+    val predicateID = predicate.identifier()
+    var crrIndex = database.getIndex
+    if crrIndex.contains(predicateID) then
+      val existingIndex = crrIndex(predicateID)
+      results.foreach(predicate=> existingIndex.addIndex(predicate))
+    else {
+      database.addIndex(predicate, results)
+    }
+    this
+
 
   def validHypothesis(hypothesis: Hypothesis): Boolean =
     database.valid(hypothesis)

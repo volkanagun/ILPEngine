@@ -36,7 +36,7 @@ object DatabaseTest {
     val engine = EngineParallel(db, depth = 8)
     val plan = Plan(db)
 
-    val optimizedList = plan.optimizeMinMin(hypothesis)
+    val optimizedList = plan.optimizeExperimental(hypothesis)
 
     positives.foreach(positive => {
       val substitution = hypothesis.substitution(positive)
@@ -131,6 +131,28 @@ object DatabaseTest {
     println("Result roaring size: " +resultRoaring.size)
   }
 
+  private def simpleTrains3():Unit= {
+    val params = Params("trains3-toy")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase
+
+    val engine = EngineSerial(db, 3)
+    val engineParallel = EngineParallel(db, 3)
+    val engineRoaringParallel = EngineRoaringParallel(db, 3)
+    val plan = Plan(db)
+    val hypothesis = Parser.parseHypothesis("f(V0):- has_car(V0,V2),roof_open(V2),has_car(V0,V1),roof_closed(V1).\n"+
+      "f(V0):- has_car(V0,V1),roof_open(V1),has_load(V1,V2),three_load(V2).\n"+
+      "f(V0):- has_car(V0,V4),has_load(V4,V2),rectangle(V2),has_car(V0,V1),has_load(V1,V3),triangle(V3).").get
+
+    val optimizedList1 = plan.optimizeNone(hypothesis)
+    val optimizedList2 = plan.optimizeExperimental(hypothesis)
+    val result1 = engineParallel.join(optimizedList1,Substitution())
+    println(s"Result1: ${result1.size}")
+    val result2 = engineParallel.join(optimizedList2,Substitution())
+    println(s"Result2: ${result2.size}")
+    println("Check: " + (result1.size == result2.size))
+  }
+
   private def simpleParallelTrains():Unit= {
     val params = Params("trains1")
     val experiment = Experiment(params).load()
@@ -142,7 +164,7 @@ object DatabaseTest {
     val plan = Plan(db)
     val hypothesis = Parser.parseHypothesis("f(V0):- has_car(V0,V2),three_wheels(V2),has_car(V0,V1),long(V1),roof_closed(V1).").get
 
-    val optimizedList1 = plan.optimizeMinMin(hypothesis)
+    val optimizedList1 = plan.optimizeNone(hypothesis)
     val optimizedList2 = plan.optimizeExperimental(hypothesis)
     val result1 = engineParallel.join(optimizedList1,Substitution())
     println(s"Result1: ${result1.size}")
@@ -278,6 +300,46 @@ object DatabaseTest {
     println("r5==r6 : "+ (r5.size==r6.size).toString)
   }
 
+  private def simpleIGGPSokoban(): Unit = {
+    val params = Params("iggp-sokoban-goal")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase
+
+    val query = Parser.parseHypothesis("goal(V0,V1,V2):- agent_black(V1),score_100(V2),obj_obj1(V5),obj_obj2(V3),true_target(V0,V6,V4),true_at(V0,V6,V4,V3),true_at(V0,V4,V6,V5).").get
+
+
+    val plan = Plan(db)
+    val optimizedNone = plan.optimizeNone(query)
+    val optimizedBellmanford = plan.optimizeBellmanFord(query)
+
+    val engine1 = EngineSerial(db)
+    val engine2 = EngineSerial(db)
+    val engineParallel = EngineParallel(db, 30)
+    val engine4 = EngineSerial(db)
+    val engineRoaringSerial = EngineRoaringSerial(db, 30)
+    val engine6 = EngineSerial(db)
+    val r1 = engine1.join(optimizedNone)
+    val r2 = engine2.join(optimizedBellmanford)
+    val r3 = engineParallel.join(optimizedNone)
+    val r4 = engineParallel.join(optimizedBellmanford)
+    val r5 = engineRoaringSerial.join(optimizedNone)
+    val r6 = engineRoaringSerial.join(optimizedBellmanford)
+
+    println("Result1 size: "+r1.size)
+    println("Result2 size: "+r2.size)
+    println("Result3 size: "+r3.size)
+    println("Result4 size: "+r4.size)
+    println("Result5 size: "+r5.size)
+    println("Result6 size: "+r6.size)
+    println("r1==r2 : "+ (r1.size==r2.size).toString)
+    println("r1==r3 : "+ (r1.size==r3.size).toString)
+    println("r3==r4 : "+ (r3.size==r4.size).toString)
+    println("r1==r4 : "+ (r1.size==r4.size).toString)
+    println("r1==r5 : "+ (r1.size==r5.size).toString)
+    println("r5==r6 : "+ (r5.size==r6.size).toString)
+  }
+
+
   def simpleRecursive(): Unit = {
 
     val db = Database("recursiveTest")
@@ -318,6 +380,31 @@ object DatabaseTest {
     println("===========================================")
 
     val roaringSubstitutions = engineRoaringParallel.join(queries, substitution)
+    println("Roaring result: ")
+    roaringSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+  }
+
+  def simpleKinship(): Unit = {
+
+    val params = Params("kinship-pi")
+    val db = Experiment(params).load().getDatabase
+
+    val engineParallel = EngineParallel(db, 5)
+    val engineRoaringParallel = EngineRoaringParallel(db, 5)
+    val plan = Plan(db)
+
+    val r1 = Parser.parseHypothesis("inv1(V0,V1):- mother(V0,V1).\n" +
+      "inv1(V0,V1):- father(V0,V1).\n"+
+      "grandparent(V0,V1):- inv1(V0,V2), inv1(V2,V1).").get
+    val queries = plan.optimizeNone(r1)
+
+    val parallelSubstitutions = engineParallel.join(queries, Substitution())
+    println("Parallel result: ")
+    parallelSubstitutions.foreach(sub=> println(sub))
+    println("===========================================")
+
+    val roaringSubstitutions = engineRoaringParallel.join(queries, Substitution())
     println("Roaring result: ")
     roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
@@ -431,7 +518,7 @@ object DatabaseTest {
   }
 
   def main(args: Array[String]): Unit = {
-    simpleList()
+    simpleIGGPSokoban()
   }
 
 }

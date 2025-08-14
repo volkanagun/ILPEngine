@@ -49,6 +49,15 @@ class Database(name: String) extends Serializable:
 
   def getBias:Bias = bias
   def getIndex: Map[Int, Index] = index
+  def addIndex(predicate:Predicate, predicates: Set[Predicate]) = {
+    val id= predicate.identifier()
+    val newIndex = Index(predicate, predicates.toArray).build()
+    index = index.updated(id, newIndex)
+    this
+  }
+
+
+
   def getStatistics: Map[Int, Statistics] = stats
 
   def valid(hypothesis: Hypothesis):Boolean =

@@ -4,23 +4,23 @@
 
 max_vars(7).
 max_body(10).
-constant(agent_black, agent).
-constant(action_left, action).
-constant(action_right, action).
-constant(action_up, action).
-constant(action_down, action).
-constant(action_noop, action).
-constant(int_1, int).
-constant(int_2, int).
-constant(int_3, int).
-constant(int_4, int).
-constant(int_5, int).
-constant(score_0, score).
-constant(score_100, score).
-constant(obj_x, obj).
-constant(obj_obj1, obj).
-constant(obj_obj2, obj).
-constant(obj_wall, obj).
+type(agent_black, (agent)).
+type(action_left, (action)).
+type(action_right, (action)).
+type(action_up, (action)).
+type(action_down, (action)).
+type(action_noop, (action)).
+type(int_1, (int)).
+type(int_2, (int)).
+type(int_3, (int)).
+type(int_4, (int)).
+type(int_5, (int)).
+type(score_0, (score)).
+type(score_100, (score)).
+type(obj_x, (obj)).
+type(obj_obj1, (obj)).
+type(obj_obj2, (obj)).
+type(obj_wall, (obj)).
 head_pred(goal,3).
 body_pred(true_at,4).
 body_pred(true_target,3).

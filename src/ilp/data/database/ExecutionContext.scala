@@ -92,36 +92,30 @@ final class ExecutionContext(private var rule: Optimized,
     this.originalMap
   }
 
-  def updateRowData(predicate: Predicate, array: Array[Predicate]): ExecutionContext =
-    val identifier = predicate.identifier()
-    val targetMap = relations.zipWithIndex.filter { case (relation, position) => identifier == relation.identifier() }
-      .map { case (predicate, position) => {
-        predicate.identifier(position) -> array
-      }
-      }.toMap
+  def updateRowUnion(predicate: Predicate, array: Array[Predicate]): ExecutionContext =
 
-    val roaringMap = targetMap.map { case (id, predicates) => {
+    updateUnion(predicate, array)
+
+    val roaringMap = dataMap.map { case (id, predicates) => {
       val bitmap = RoaringBitmap()
       bitmap.add(Range(0, predicates.length): _*)
       id -> bitmap
-    }
-    }
+    }}
 
-    dataMap = dataMap ++ targetMap
-    originalMap = originalMap ++ targetMap
-    rowMap = rowMap ++ roaringMap
+    rowMap = roaringMap
     originalRowMap = rowMap
     this
 
-  def updateData(predicate: Predicate, set: Array[Predicate]): ExecutionContext =
+  def updateUnion(predicate: Predicate, set: Array[Predicate]): ExecutionContext =
     val id = predicate.identifier()
-    val targetMap = relations.zipWithIndex.filter { case (relation, position) => relation.identifier() == id }
-      .map { case (predicate, index) => {
-        predicate.identifier(index) -> set
-      }}
-      .toMap
 
-    dataMap = dataMap ++ targetMap
+    relations.zipWithIndex.filter { case (relation, position) => relation.identifier() == id }
+      .foreach { case (predicate, index) => {
+        val pid = predicate.identifier(index)
+        val result = dataMap.getOrElse(pid, Array[Predicate]()) ++ set
+        dataMap = dataMap.updated(pid, result.distinct)
+      }}
+
     originalMap = dataMap
     this
 

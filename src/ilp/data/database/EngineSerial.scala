@@ -126,7 +126,7 @@ class EngineSerial(val db: Database, recursiveDepth: Int = 10) extends Engine(db
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateRowUnion(headPredicate, crrPredicates.toArray))
       }
     })
 

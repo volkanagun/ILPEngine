@@ -185,6 +185,19 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     Predicate(name, copyArray)
       .setInput(inputVariables)
 
+  def unsymbolize():Predicate =
+    var varList = Array[Variable]()
+    array.foreach(variable=>{
+      if variable.isPredicate then
+        val unsymbolized = variable.asPredicate().unsymbolize()
+        varList = varList :+ unsymbolized
+      else if variable.isSymbol then
+        varList = varList :+ variable.toVariable
+      else
+        varList = varList :+ variable
+    })
+    new Predicate(name, varList)
+
   def copy(newArray: Array[Variable]): Predicate =
     Predicate(name, newArray)
       .setInput(inputVariables)

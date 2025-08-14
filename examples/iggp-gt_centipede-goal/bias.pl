@@ -39,33 +39,33 @@
 
 max_body(7).
 max_vars(7).
-constant(agent_white, agent).
-constant(agent_black, agent).
-constant(int_0, int).
-constant(int_5, int).
-constant(int_10, int).
-constant(int_15, int).
-constant(int_20, int).
-constant(int_25, int).
-constant(int_30, int).
-constant(int_35, int).
-constant(int_40, int).
-constant(int_45, int).
-constant(int_50, int).
-constant(int_55, int).
-constant(int_60, int).
-constant(int_65, int).
-constant(int_70, int).
-constant(int_75, int).
-constant(int_80, int).
-constant(int_85, int).
-constant(int_90, int).
-constant(int_95, int).
-constant(int_100, int).
-constant(action_finish, action).
-constant(action_continue, action).
-constant(action_noop, action).
-constant(prop_gameOver, prop).
+type(agent_white, (agent)).
+type(agent_black, (agent)).
+type(int_0, (int)).
+type(int_5, (int)).
+type(int_10, (int)).
+type(int_15, (int)).
+type(int_20, (int)).
+type(int_25, (int)).
+type(int_30, (int)).
+type(int_35, (int)).
+type(int_40, (int)).
+type(int_45, (int)).
+type(int_50, (int)).
+type(int_55, (int)).
+type(int_60, (int)).
+type(int_65, (int)).
+type(int_70, (int)).
+type(int_75, (int)).
+type(int_80, (int)).
+type(int_85, (int)).
+type(int_90, (int)).
+type(int_95, (int)).
+type(int_100, (int)).
+type(action_finish, (action)).
+type(action_continue, (action)).
+type(action_noop, (action)).
+type(prop_gameOver, (prop)).
 head_pred(goal,3).
 body_pred(true_whitePayoff,2).
 body_pred(true_blackPayoff,2).

@@ -9,7 +9,7 @@ import java.io.File
 import java.util.regex.Pattern
 import scala.io.Source
 
-class Experiment(params: Params):
+class Experiment(val params: Params):
 
   val name = params.experimentName
   var folder = "examples/" + name + "/"
@@ -19,6 +19,7 @@ class Experiment(params: Params):
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
 
+  def getParams = params
   def getDatabase = database
 
   def getHypothesis = hypothesis
@@ -75,6 +76,6 @@ class Experiment(params: Params):
           rule
         }).toArray
       hypothesis = Hypothesis(rules).build()
-    println("Loading queries finieshed.")
+    println("Loading queries finished.")
     this
 

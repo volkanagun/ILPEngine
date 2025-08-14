@@ -1,6 +1,6 @@
 package ilp.invent
 
-import ilp.data.database.EngineSerial
+import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.predicates.Predicate
 import ilp.data.program.Hypothesis
 import org.apache.ignite.{Ignite, Ignition}
@@ -16,7 +16,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.jdk.CollectionConverters.IterableHasAsJava
 
-abstract class TemplateFast(engine: EngineSerial) extends Template(engine) {
+abstract class TemplateFast(engine: Engine) extends Template(engine) {
 
   def compute(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
     val crrResults = inventNext(source, targets)
@@ -25,11 +25,12 @@ abstract class TemplateFast(engine: EngineSerial) extends Template(engine) {
         hypothesis.buildDependency().compact()
           .buildOperational()
       }).filter(hypothesis => hypothesis.getRules.length < maxRules)
-      .filter(hypothesis => engine.validHypothesis(hypothesis)).toArray
+      .filter(hypothesis => engine.validHypothesis(hypothesis))
 
     val scoredResults = validResults.filter(_.validAritry(targetPredicate))
-      .map(hypothesis => igCache(hypothesis))
+      .map(hypothesis => igParallel(hypothesis))
       .filter(hypothesis => hypothesis.acceptNegRate(negThreshold) && hypothesis.acceptPosRate(posThreshold))
+      .toArray
 
     val combineSet = scoredResults.toSet ++
       validResults.filter(result => !scoredResults.contains(result))
@@ -48,12 +49,12 @@ abstract class TemplateFast(engine: EngineSerial) extends Template(engine) {
     val targetHead = positives.head
     var finalResults = Set[Hypothesis]()
     var newResults = Set[Hypothesis]()
-    val targets = target()
+    val targetRules = target()
+    val sourceRules = source()
 
-    val tasks = sources.par.map(source=> compute(source, targets, targetHead.copy().asPredicate()))
+    val tasks = sourceRules.par.map(source=> compute(source, targetRules, targetHead.copy().asPredicate()))
       .toArray
       .iterator
-
 
     while tasks.hasNext && !doStop do
       val (combineSet, scoredResults) = tasks.next()
@@ -61,11 +62,9 @@ abstract class TemplateFast(engine: EngineSerial) extends Template(engine) {
       doStop = stopCondition(scoredResults)
       newResults = scoredResults.toSet
 
-
     if doStop then newResults
     else {
       finalResults
     }
-
 
 }

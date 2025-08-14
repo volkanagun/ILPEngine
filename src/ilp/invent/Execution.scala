@@ -3,6 +3,7 @@ package ilp.invent
 import ilp.data.database.{Database, Engine, EngineSerial}
 import ilp.data.predicates.Predicate
 import ilp.data.program.Hypothesis
+import ilp.data.variables.Variable
 
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, ImmutableIterableIsParallelizable}
 import scala.util.control.Breaks
@@ -45,6 +46,10 @@ class Execution(var engine: Engine):
     this.iteration = iteration
     this
 
+  def setMaxRules(maxRules: Int): this.type =
+    this.maxRules = maxRules
+    this
+
   def setFilterSize(size: Int): this.type =
     this.filterSize = size
     this
@@ -63,6 +68,10 @@ class Execution(var engine: Engine):
 
   def addTemplate(template: Template): this.type =
     this.templates :+= template
+    this
+
+  def addTemplate(template: Array[Template]): this.type =
+    this.templates ++= template
     this
 
   def stopCondition(hypothesis: Set[Hypothesis]): Boolean =
@@ -86,10 +95,11 @@ class Execution(var engine: Engine):
     val total = items.map(pruneMap).sum / items.length
     total
 
+
   def compile(): this.type =
     val head = positives.head
     candidates = db.getTemplate3.flatMap(predicate => {
-      val generic = predicate.copy().asPredicate()
+      val generic = predicate.unsymbolize()
       val newName = InventionMeta.canonicalize(generic)
       val newHeads = InventionMeta.combinations(head, generic.array)
       newHeads.map(newHead => {
@@ -103,15 +113,21 @@ class Execution(var engine: Engine):
       .setPositives(positives)
       .setNegatives(negatives)
       .setSources(primitives)
+      .setFilterSize(filterSize)
+      .setMaxRules(maxRules)
+      .setScoreThreshold(scoreThreshold)
       .setTarget(primitives))
 
     this
 
-
+  def newFilterSize():Int = {
+    filterSize = (filterSize * 0.5).toInt
+    filterSize
+  }
 
   def induction(): Set[Hypothesis] =
 
-    val positive = positives.head
+
     var sourceHypothesis = templates
       .flatMap(template => {
         template.reset().invent()
@@ -127,7 +143,7 @@ class Execution(var engine: Engine):
       println(s"Iteration: ${count} with size: ${sortedCandidates.length}")
       println(s"Maximum score: ${sortedCandidates.map(_.score).max}")
       val pruneResults = sortedCandidates.map(hypothesis => (hypothesis, shinglesUpdate(hypothesis))).sortBy(_._2)
-        .reverse.take(filterSize).map(_._1)
+        .reverse.take(newFilterSize()).map(_._1)
 
       val distinctResults = pruneResults.distinct
 

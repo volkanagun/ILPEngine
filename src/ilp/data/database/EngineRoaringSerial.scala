@@ -77,9 +77,10 @@ class EngineRoaringSerial(db:Database, depth:Int) extends Engine(db, depth) {
         val crrSubstitutions = join(contextMap, context, context)
           .map(substitution => substitution.get(headPredicate.getVariables))
         val crrPredicates = context.get(crrSubstitutions)
-        substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
         contextProgram.filter(other => context.calledFrom(other))
-          .foreach(other => other.updateRowData(headPredicate, crrPredicates.toArray))
+          .foreach(other => other.updateRowUnion(headPredicate, crrPredicates.toArray))
+        updateIndex(headPredicate, crrPredicates)
+        substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
       }
     })
 
