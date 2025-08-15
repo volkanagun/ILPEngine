@@ -9,21 +9,25 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
   var posRate: Double = 0
   var negRate: Double = 0
-  private var posSize: Int = 0
-  private var negSize: Int = 0
+  var posSize: Int = 0
+  var negSize: Int = 0
 
   var positives = Set[Predicate]()
   var negatives = Set[Predicate]()
   var genfacts = Set[Predicate]()
   var tested = false
   var score = 0.0
-  private var acc = 0.0
+  var acc = 0.0
   var id: Set[Set[Position]] = idset()
+  var queryId = computeQueryId()
 
   def this(crr_head: Predicate) = this(crr_head, Array[Predicate]())
-
   def this(crr_head: Predicate, atom: Predicate) = this(crr_head, Array(atom))
 
+  def computeQueryId():Int = {
+    getSortedBody
+      .foldRight[Int](head.hashCode()) { case (predicate, main) => main * 7 + predicate.hashCode() }
+  }
 
   def setHead(name: String): Rule = {
     head.setName(name)
@@ -66,13 +70,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
 
   override def hashCode(): Int =
-    getSortedBody
-      .foldRight[Int](head.hashCode()) { case (predicate, main) => main * 7 + predicate.hashCode() }
-
-  /*  override def renameHead(name: String): Query = {
-      val newRule = Rule(head.copy(name), body)
-      newRule
-    }*/
+    queryId
 
   def getAllVariables: Array[Variable] =
     val items = body :+ head
@@ -250,6 +248,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     acc
 
   def ig(posSize: Int, negSize: Int): this.type = {
+    this.tested = true
     this.posSize = posSize
     this.negSize = negSize
     posRate = positives.size.toDouble / posSize

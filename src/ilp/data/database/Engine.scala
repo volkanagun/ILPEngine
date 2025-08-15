@@ -14,6 +14,7 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
 
   def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution]
   def join(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution]
+  def join(programs: Array[Optimized], callPredicate:Predicate):Set[Substitution]
 
 
   def getDatabase: Database = database

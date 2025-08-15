@@ -6,13 +6,13 @@ import ilp.data.program.Hypothesis
 class UnionFunctional(engine: Engine) extends TemplateFunctional(engine) {
 
   override def source(): Array[Hypothesis] = {
-    val results = sources.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = sources.filter(item => (item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold)))
       .distinct
     results
   }
 
   override def target(): Array[Hypothesis] = {
-    val results = candidates.filter(item => item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
+    val results = candidates.filter(item => (item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold)))
       .distinct
     results
   }

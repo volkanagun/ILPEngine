@@ -101,7 +101,10 @@ class Variable(var name: String) extends Serializable:
   def isVariableList = false
   def isSymbolList = false
 
-  def isEmpty = true
+  //def isEmpty = false
+  //def nonEmpty = false
+  //def getHead = this
+  //def getTail = this
 
   def copy(): Variable = new Variable(name)
 

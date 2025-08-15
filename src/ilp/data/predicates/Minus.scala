@@ -45,3 +45,9 @@ final class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional(
   }*/
 
   override inline def toString: String = e1.toString + "-" + e2.toString
+
+  override def copy(): Variable = Minus(result, e1, e2)
+
+  override def copy(newArray: Array[Variable]): Predicate =
+    Minus(newArray.head, newArray.tail.head, newArray.last)
+

@@ -27,21 +27,21 @@ class UnionFast(engine: Engine) extends TemplateFast(engine) {
 
   override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] =
 
-    //val sourceHead = currentSource.getHead
     val currentTargets = targets
     var unionHypothesis = currentSource
     var isFound = false
 
     currentTargets.foreach(target => {
       if target.equalArity(unionHypothesis) &&
-        unionHypothesis.similarity(target, resembleWindow) < resembleThreshold && !unionHypothesis.containsLast(target) &&
+        !unionHypothesis.containsLast(target) &&
         InventionMeta.metaUnionAccept(unionHypothesis, target) then {
         unionHypothesis = InventionMeta.metaUnion(unionHypothesis, target, getPositiveSize, getNegativeSize)
         isFound = true
       }
     })
 
-    if isFound then  Array(unionHypothesis)
+    if isFound then
+      Array(unionHypothesis)
     else Array()
 
 }

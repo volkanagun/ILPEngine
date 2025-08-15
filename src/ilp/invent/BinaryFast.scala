@@ -30,7 +30,7 @@ class BinaryFast(engine: Engine) extends TemplateFast(engine) {
       resemblence <= resembleThreshold
     })
     val results = metaApply(currentSource, crrHypotheses)
-    val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
-    fresults
+    //val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
+    results
   }
 }

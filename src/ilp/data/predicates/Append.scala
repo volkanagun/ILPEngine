@@ -14,6 +14,9 @@ final class Append(val item: Variable, val list: VariableList, val result: Varia
   override inline def copy(): Variable =
     Append(item.copy(), list, result.copy())
 
+  override inline def copy(varlist: Array[Variable]): Predicate =
+    Append(varlist.head, varlist.tail.head.asVariableList(), varlist.last)
+
   override inline def substitution(substitution: Substitution): Variable =
     val newItem = item.substitution(substitution)
     val newList = list.substitution(substitution).asVariableList()

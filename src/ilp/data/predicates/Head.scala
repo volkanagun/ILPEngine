@@ -1,26 +1,34 @@
 package ilp.data.predicates
 
 import ilp.data.program.Substitution
-import ilp.data.variables.{ Variable, VariableList}
+import ilp.data.variables.{Variable, VariableList}
 
 
-final class Head(val nm:String, val head: Variable, val list: VariableList) extends Functional(nm, Array(head, list)):
+final class Head(val nm: String, val head: Variable, val list: Variable) extends Functional(nm, Array(head, list)):
 
-  setInput(Array(list))
+  setInput(list)
 
-  def this(head:Variable, list:VariableList) = this("head", head, list)
+  def this(head: Variable, list: VariableList) = this("head", head, list)
 
-  override inline def isDefinite: Boolean =  list.isSymbol
-  override inline def isExecutable: Boolean = list.nonEmpty
+  override inline def isDefinite: Boolean = {
+    list.isVariableList
+  }
+
+  override inline def isExecutable: Boolean = {
+    list.asVariableList().nonEmpty
+  }
 
   override inline def getValue: Variable = {
-    list.getHead.copy(head.getName)
+    list.asVariableList().getHead.copy(head.getName)
   }
 
   override def getInput: Array[Variable] = Array(list)
 
   override inline def copy(): Variable =
-    Head(nm, head.copy(), list.copy().asVariableList())
+    Head(nm, head.copy(), list.copy())
+
+  override inline def copy(varlist: Array[Variable]): Predicate =
+    Head(nm, varlist.head, varlist.last)
 
   override inline def substitution(substitution: Substitution): Variable =
     val newHead = head.substitution(substitution)
@@ -30,21 +38,26 @@ final class Head(val nm:String, val head: Variable, val list: VariableList) exte
   override inline def execute(): Option[Substitution] =
     Some(Substitution().add(head, getValue))
 
-  override inline def toString: String = "head("+head.getName+","+list.getName+")"
+  override inline def toString: String = "head(" + head.getName + "," + list.getName + ")"
 
 
-final class HeadTail(val nm:String, val head: Variable, val tail: Variable, val list: VariableList) extends Predicate(nm, Array(head, tail, list)):
+final class HeadTail(val nm: String, val head: Variable, val tail: Variable, val list: VariableList) extends Predicate(nm, Array(head, tail, list)):
 
-  def this(head:Variable, tail:VariableList, list:VariableList) = this("head_tail", head,tail, list)
+  def this(head: Variable, tail: VariableList, list: VariableList) = this("head_tail", head, tail, list)
 
-  override inline def isDefinite: Boolean =  true
+  override inline def isDefinite: Boolean = true
+
   override inline def isExecutable: Boolean = list.nonEmpty
 
   override inline def getValue: Variable = {
     list.getHead
   }
+
   override inline def copy(): Variable =
     Head(nm, head.copy(), list.copy().asVariableList())
+
+  override inline def copy(varlist: Array[Variable]): Predicate =
+    Head(nm, varlist.head, varlist.last.asVariableList())
 
   override inline def substitution(substitution: Substitution): Variable =
     val newHead = head.substitution(substitution)
@@ -59,4 +72,4 @@ final class HeadTail(val nm:String, val head: Variable, val tail: Variable, val 
     Some(Substitution().add(head, h).add(tail, t))
   }
 
-  override inline def toString: String = nm + "(["+head.getName+"|"+tail.getName + "],"+head.getName+","+tail.getName+")"
+  override inline def toString: String = nm + "([" + head.getName + "|" + tail.getName + "]," + head.getName + "," + tail.getName + ")"

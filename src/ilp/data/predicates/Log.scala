@@ -4,11 +4,13 @@ import ilp.data.program.Substitution
 import ilp.data.variables.{Num, Variable}
 
 
-final class Log(name: String, result:Variable, item:Variable, logBy:Variable ) extends Functional(name, Array(result, item, logBy)):
+final class Log(result:Variable, item:Variable, logBy:Variable ) extends Functional("log", Array(result, item, logBy)):
 
   override inline def isExecutable: Boolean = isDefinite
   override inline def isDefinite: Boolean = item.isSymbol && logBy.isSymbol
-  override inline def isFunctional: Boolean = true
+
+  override def copy(newArray: Array[Variable]): Predicate =
+    Log(newArray.head, newArray.tail.head, newArray.last)
 
   override inline def getValue: Variable =
     val num1 = item.getValue.asNumber().getNumber

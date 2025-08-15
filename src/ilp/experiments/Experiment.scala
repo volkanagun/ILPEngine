@@ -4,6 +4,7 @@ package ilp.experiments
 import ilp.data.database.{Bias, Database}
 import ilp.data.predicates.Predicate
 import ilp.data.program.{Hypothesis, Parser}
+import ilp.data.variables.Variable
 
 import java.io.File
 import java.util.regex.Pattern
@@ -32,6 +33,17 @@ class Experiment(val params: Params):
     loadDatabase()
     loadSamples()
     loadQueries()
+
+
+  def pruneDatabase():this.type =
+    database = database.prune(getRelevant(), getIrrelevant())
+    this
+
+  def getRelevant():Set[Variable] =
+    positives.flatMap(predicate=> predicate.getVariables)
+
+  def getIrrelevant():Set[Variable] =
+    negatives.flatMap(predicate=> predicate.getVariables)
 
   private def loadSamples(): this.type =
     println("Loading samples")

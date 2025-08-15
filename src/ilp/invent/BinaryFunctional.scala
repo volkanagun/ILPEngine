@@ -24,13 +24,18 @@ class BinaryFunctional(engine: Engine) extends TemplateFunctional(engine) {
 
   override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] = {
 
+/*    val t = currentSource.getRules.head.getBody.exists(p=> p.getName=="tail")
+    val t2 = targets.exists(h=> h.getRules.exists(r=> r.getBody.exists(p=> p.getName == "x")))
+    if t && currentSource.getRuleSize == 1 && t2 then
+      val debug = 0;*/
+
     val crrHypotheses = targets.filter(targetHypothesis => {
       val resemblence = currentSource.similarity(targetHypothesis, resembleWindow)
       resemblence <= resembleThreshold
     })
     val results = metaApply(currentSource, crrHypotheses)
-    val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
-    fresults
+    //val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
+    results
   }
 }
 

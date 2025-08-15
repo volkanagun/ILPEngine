@@ -173,6 +173,11 @@ final class ExecutionContext(private var rule: Optimized,
     this
   }
 
+  inline def setSubstitution(variables: Array[Variable]): ExecutionContext = {
+    val pairs = this.getHead.getVariables.zip(variables)
+    setSubstitution(Substitution(pairs))
+  }
+
 
 
 }

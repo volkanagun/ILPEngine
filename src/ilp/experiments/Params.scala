@@ -8,11 +8,11 @@ class Params(var experimentName: String = "zendo2") extends Serializable:
   var windowSize: Int = 4
   var resembleWindow: Int = 3
   var iterationsSize = 10
-  var recursionSize = 5
+  var recursionSize = 15
   var filterSize = 100
-  var maxRules = 30
+  var maxRules = 40
 
-  var binaryPositiveThreshold: Double = 0.0
+  var binaryPositiveThreshold: Double = 0.01
   var binaryNegativeThreshold: Double = 0.7
   var unionPositiveThreshold: Double = 0.01
   var unionNegativeThreshold: Double = 0.0
@@ -22,11 +22,11 @@ class Params(var experimentName: String = "zendo2") extends Serializable:
   var experiments = Set("kinship-ancestor", "kinship-pi", "imdb3")
   var engineType = "MIL"
 
-  def toLine(time: Double, score: Double): String =
-    s"$experimentName, $scoreThreshold, $windowSize, $iterationsSize, $recursionSize, $filterSize, $time, $score"
+  def toLine(searchSize:Int, time: Double, score: Double): String =
+    s"$experimentName, $scoreThreshold, $windowSize, $iterationsSize, $recursionSize, $filterSize, $searchSize, $time, $score"
 
   def toCSVHeaderLine(): String =
-    "Dataset, Score Threshold, History Window Size, Iteration Size, Recursion Size, Filter Size, Time, Score";
+    "Dataset, Score Threshold, History Window Size, Iteration Size, Recursion Size, Filter Size, Search Size, Time, Score";
 
 
   def generateParams(): Array[Params] =
@@ -35,7 +35,7 @@ class Params(var experimentName: String = "zendo2") extends Serializable:
         Range(5, 1, -1).flatMap(crrWindowSize => {
           Range(7, 1, -1).flatMap(crrIterationSize => {
             Range(2, 11).flatMap(crrRecursionSize => {
-              Range(10, 2100, 100).map(crrFilterSize => {
+              Range(510, 10, -100).map(crrFilterSize => {
                 val params = Params(experimentName)
                 params.scoreThreshold = crrScoreThreshold
                 params.windowSize = crrWindowSize

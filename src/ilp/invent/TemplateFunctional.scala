@@ -38,9 +38,10 @@ abstract class TemplateFunctional(engine: Engine) extends Template(engine) {
     val targetHead = positives.head
     var finalResults = Set[Hypothesis]()
     var newResults = Set[Hypothesis]()
+    val sourceList = source()
     val targets = target()
 
-    val tasks = sources.map(source => compute(source, targets, targetHead.copy().asPredicate()))
+    val tasks = sourceList.map(source => compute(source, targets, targetHead.copy().asPredicate()))
       .iterator
 
 

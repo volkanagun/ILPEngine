@@ -34,8 +34,6 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
   override inline def isNumberList: Boolean =
     containsNumber
 
-
-
   inline def reverse(): VariableList =
     VariableList(name, values.reverse)
 
@@ -71,7 +69,7 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
       Num(resultName, 0.0)
 
 
-  override inline def isEmpty: Boolean = empty
+  inline def isEmpty: Boolean = empty
 
   override def substitution(substitution: Substitution): Variable =
     if substitution.hasVariable(this) then {

@@ -11,4 +11,8 @@ final class Average(array: VariableList) extends Functional("average", Array(arr
   override inline def getValue: Variable =
     array.avg(name)
 
+  override def copy(): Variable = Average(array)
+
+  override def copy(newArray: Array[Variable]): Predicate = Average(newArray.head.asVariableList())
+
   override inline def toString: String = "Average(" + array + ")"

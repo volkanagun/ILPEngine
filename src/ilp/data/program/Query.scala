@@ -52,8 +52,8 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
     this.head.setFunctional(functional)
     this
 
-  inline def doRecursion(item: Predicate): Boolean =
-    item.identifier() == head.identifier() && !item.isEmpty
+/*  inline def doRecursion(item: Predicate): Boolean =
+    item.identifier() == head.identifier() && !item.isEmpty*/
 
   inline def isAtom: Boolean = body.isEmpty
   inline def isDefinite: Boolean = head.isDefinite
@@ -69,6 +69,9 @@ class Query(var head: Predicate, var body: Array[Predicate]) extends Serializabl
 
   inline def toRule: Rule =
     Rule(head, body)
+      .setRecursive(recursive)
+      .setFunctional(functional)
+      .setInputVariables(inputVariables)
 
 
   inline def callByVariable(predicate: Predicate): Query = {

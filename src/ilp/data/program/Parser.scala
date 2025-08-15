@@ -165,14 +165,14 @@ object Parser extends JavaTokenParsers {
     }
 
   def modCall: Parser[Variable] =
-    "mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+    "mod(" ~ variable ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
       case "mod(" ~ result ~ "," ~ args ~ ")" =>
         Mod(result, args.head, args.last)
     }
 
   def modModCall: Parser[Predicate] =
     variable ~ keywordMod ~ argument_int ^^ {
-      case myvar ~ "mod" ~ myargument => Mod(myvar.getName, myvar, myargument)
+      case myvar ~ "mod" ~ myargument => Mod(myvar, myvar, myargument)
     }
 
 
@@ -339,7 +339,7 @@ object Parser extends JavaTokenParsers {
 
 
   def single_mod: Parser[Predicate] =
-    "mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
+    "mod(" ~ variable ~ "," ~ repsep(argument, ",") ~ ")." ^^ {
       case "mod(" ~ result ~ "," ~ args ~ ")." => Mod(result, args.head.asNumber(), args.last.asNumber())
     }
 
@@ -395,7 +395,7 @@ object Parser extends JavaTokenParsers {
     }
 
   def modArgument: Parser[Mod] =
-    "Mod(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
+    "Mod(" ~ variable ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
       case "Mod(" ~ result ~ "," ~ args ~ ")" => Mod(result, args.head, args.last)
     }
 

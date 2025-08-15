@@ -20,14 +20,15 @@ abstract class TemplateFast(engine: Engine) extends Template(engine) {
 
   def compute(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
     val crrResults = inventNext(source, targets)
+    val crrTested = crrResults.filter(_.isTested)
 
-    val validResults = crrResults.par.map(hypothesis => {
+    val validResults = crrResults.par.filter(! _.tested).map(hypothesis => {
         hypothesis.buildDependency().compact()
           .buildOperational()
       }).filter(hypothesis => hypothesis.getRules.length < maxRules)
       .filter(hypothesis => engine.validHypothesis(hypothesis))
 
-    val scoredResults = validResults.filter(_.validAritry(targetPredicate))
+    val scoredResults = crrTested ++ validResults.filter(_.validAritry(targetPredicate))
       .map(hypothesis => igParallel(hypothesis))
       .filter(hypothesis => hypothesis.acceptNegRate(negThreshold) && hypothesis.acceptPosRate(posThreshold))
       .toArray

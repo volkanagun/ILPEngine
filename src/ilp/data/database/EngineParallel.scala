@@ -7,7 +7,7 @@ import ilp.data.variables.Variable
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
-class EngineParallel(db:Database, depth:Int) extends Engine(db, depth) {
+class EngineParallel(db: Database, depth: Int) extends Engine(db, depth) {
 
   override def join(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution] = {
 
@@ -18,6 +18,33 @@ class EngineParallel(db:Database, depth:Int) extends Engine(db, depth) {
     var substitutions = Set[Substitution]()
     contextProgram.foreach(context => {
       if context.isTarget then context.setSubstitution(substitution)
+      if !context.isFunctional || context.isTarget then {
+        val headPredicate = context.getHead
+        val crrSubstitutions = join(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables)) //++ atomSubstitutions(headPredicate, substitution)
+        val crrPredicates = context.get(crrSubstitutions)
+        substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateUnion(headPredicate, crrPredicates.toArray))
+      }
+
+    })
+
+    substitutions
+  }
+
+  override def join(programs: Array[Optimized], predicate: Predicate): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead.identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      if context.isTarget then {
+        val substitution = predicate.toSubstitution(context.getHead)
+        context.setSubstitution(substitution)
+      }
       if !context.isFunctional || context.isTarget then {
         val headPredicate = context.getHead
         val crrSubstitutions = join(contextMap, context, context)

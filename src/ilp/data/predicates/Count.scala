@@ -10,5 +10,7 @@ final class Count(name: String, array: Array[Variable], var least: Int) extends 
   override inline def copy(): Count =
     Count(name, array, least)
 
+  override def copy(newArray: Array[Variable]): Predicate = Count(name, newArray, least)
+
   override inline def isCount: Boolean = true
 

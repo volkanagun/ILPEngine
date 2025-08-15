@@ -95,6 +95,7 @@ object InventionMeta:
     (unionSize > sourcePositives.size && unionSize > destinationPositives.size)
   }
 
+
   def metaUnion(source: Hypothesis, target: Hypothesis,
                 posSize: Int, negSize: Int): Hypothesis = {
 
@@ -110,11 +111,14 @@ object InventionMeta:
 
     val newPositives = source.getPositives ++ target.getPositives
     val newNegatives = source.getNegatives ++ target.getNegatives
-
+    val facts = newPositives ++ newNegatives
+    val isTested = source.isTested && target.isTested
     Hypothesis(rules.distinct)
       .setPositives(newPositives)
       .setNegatives(newNegatives)
+      .setFacts(facts)
       .ig(posSize, negSize)
+      .setTested(isTested)
   }
 
   def metaWith(source: Hypothesis, candidates: Array[Hypothesis], metaRule: Rule): Array[Hypothesis] =

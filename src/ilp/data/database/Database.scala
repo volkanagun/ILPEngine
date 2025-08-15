@@ -56,7 +56,15 @@ class Database(name: String) extends Serializable:
     this
   }
 
-
+  def prune(positives:Set[Variable], negatives:Set[Variable]):Database =
+    val primaryList = sets.filter(predicate=> positives.exists(variable=> predicate.containsValue(variable)) &&
+      !negatives.exists(variable=> predicate.containsValue(variable)))
+    val includeVariables = primaryList.flatMap(predicate=> predicate.getVariables)
+    val expandList = sets.filter(predicate => includeVariables.exists(variable=> predicate.containsValue(variable)) && !negatives.exists(variable=> predicate.containsValue(variable)))
+    Database(name)
+      .add(primaryList)
+      .add(expandList)
+      .build()
 
   def getStatistics: Map[Int, Statistics] = stats
 

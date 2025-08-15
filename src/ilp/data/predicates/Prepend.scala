@@ -14,6 +14,9 @@ final class Prepend(val item: Variable, val list: VariableList, val result: Vari
   override inline def copy(): Variable =
     Prepend(item.copy(), list.copy().asVariableList(), result.copy().asVariableList())
 
+  override def copy(newArray: Array[Variable]): Predicate =
+    Prepend(newArray.head, newArray.tail.head.asVariableList(), newArray.last.asVariableList())
+
   override inline def substitution(substitution: Substitution): Variable =
     val newItem = item.substitution(substitution)
     val newList = list.substitution(substitution)

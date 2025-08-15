@@ -14,6 +14,8 @@ final class IsList(variable:Variable) extends Functional("is_list", Array(variab
   override inline def copy(): Variable =
     IsList(variable.copy())
 
+  override def copy(newArray: Array[Variable]): Predicate = IsList(newArray.head)
+
   override inline def substitution(substitution: Substitution): Variable =
     val newHead = variable.substitution(substitution)
     IsList(newHead).asVariable()

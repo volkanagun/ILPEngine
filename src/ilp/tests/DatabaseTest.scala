@@ -5,6 +5,7 @@ import ilp.data.optimization.Plan
 import ilp.data.program.{Hypothesis, Parser, Substitution}
 import ilp.data.variables.{Num, Sym, Variable, VariableList}
 import ilp.experiments.{Experiment, Params}
+import ilp.invent.{Binary, BinaryFunctional}
 
 import scala.collection.concurrent.TrieMap
 
@@ -339,6 +340,180 @@ object DatabaseTest {
     println("r5==r6 : "+ (r5.size==r6.size).toString)
   }
 
+  private def simplePTC(): Unit = {
+    val params = Params("ptc")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase
+
+    val query = Parser.parseHypothesis(
+      //"label(V0):- zn(V2),atom(V1,V0,V2).\n" +
+      //"label(V0):- cu(V2),atom(V1,V0,V2).\n" +
+      "label(V0):- c(V4),connected(V3,V5,V2),atom(V5,V0,V4),p(V1),atom(V3,V0,V1).").get
+      //"label(V0):- connected(V3,V5,V2),atom(V5,V0,V4),p(V1),h(V4),atom(V3,V0,V1).").get
+
+
+    val plan = Plan(db)
+    val optimizedNone = plan.optimizeNone(query)
+    val optimizedBellmanford = plan.optimizeBellmanFord(query)
+
+    val engine1 = EngineSerial(db)
+    val engine2 = EngineSerial(db)
+    val engineParallel = EngineParallel(db, 30)
+    val engine4 = EngineSerial(db)
+    val engineRoaringSerial = EngineRoaringSerial(db, 30)
+    val engine6 = EngineSerial(db)
+    val r1 = engine1.join(optimizedNone)
+    val r2 = engine2.join(optimizedBellmanford)
+    val r3 = engineParallel.join(optimizedNone)
+    val r4 = engineParallel.join(optimizedBellmanford)
+    val r5 = engineRoaringSerial.join(optimizedNone)
+    val r6 = engineRoaringSerial.join(optimizedBellmanford)
+
+    println("Result1 size: "+r1.size)
+    println("Result2 size: "+r2.size)
+    println("Result3 size: "+r3.size)
+    println("Result4 size: "+r4.size)
+    println("Result5 size: "+r5.size)
+    println("Result6 size: "+r6.size)
+    println("r1==r2 : "+ (r1.size==r2.size).toString)
+    println("r1==r3 : "+ (r1.size==r3.size).toString)
+    println("r3==r4 : "+ (r3.size==r4.size).toString)
+    println("r1==r4 : "+ (r1.size==r4.size).toString)
+    println("r1==r5 : "+ (r1.size==r5.size).toString)
+    println("r5==r6 : "+ (r5.size==r6.size).toString)
+  }
+
+
+  private def simpleYeast(): Unit = {
+    val params = Params("yeast")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase
+
+    val query = Parser.parseHypothesis(
+      "proteins(V0):- path(V0,V2),location(V0,V1).\n" +
+      "proteins(V0):- enzyme(V0,V1),renzyme(V0,V1).\n" +
+      "proteins(V0):- path(V2,V3),interaction(V3,V0,V1).\n" +
+      "proteins(V0):- protein_class(V0,V1),rprotein_class(V0,V1).\n" +
+      "proteins(V0):- protein_class(V0,V4),interaction(V2,V0,V1),rprotein_class(V3,V4).\n" +
+      "proteins(V0):- phenotype(V0,V3),renzyme(V0,V2),rphenotype(V1,V3).\n" +
+      "proteins(V0):- protein_class(V0,V3),rprotein_class(V2,V3),enzyme(V2,V1).\n" +
+      "proteins(V0):- interaction(V3,V0,V1),protein_class(V3,V2),rprotein_class(V3,V2).\n" +
+      "proteins(V0):- path(V2,V1),interaction(V2,V0,V3),rprotein_class(V0,V4).").get
+
+
+    val plan = Plan(db)
+    val optimizedNone = plan.optimizeNone(query)
+    val optimizedBellmanford = plan.optimizeBellmanFord(query)
+
+    val engine1 = EngineSerial(db)
+    val engine2 = EngineSerial(db)
+    val engineParallel = EngineParallel(db, 30)
+    val engine4 = EngineSerial(db)
+    val engineRoaringSerial = EngineRoaringSerial(db, 30)
+    val engine6 = EngineSerial(db)
+    val r1 = engine1.join(optimizedNone)
+    val r2 = engine2.join(optimizedBellmanford)
+    val r3 = engineParallel.join(optimizedNone)
+    val r4 = engineParallel.join(optimizedBellmanford)
+    val r5 = engineRoaringSerial.join(optimizedNone)
+    val r6 = engineRoaringSerial.join(optimizedBellmanford)
+
+    println("Result1 size: "+r1.size)
+    println("Result2 size: "+r2.size)
+    println("Result3 size: "+r3.size)
+    println("Result4 size: "+r4.size)
+    println("Result5 size: "+r5.size)
+    println("Result6 size: "+r6.size)
+    println("r1==r2 : "+ (r1.size==r2.size).toString)
+    println("r1==r3 : "+ (r1.size==r3.size).toString)
+    println("r3==r4 : "+ (r3.size==r4.size).toString)
+    println("r1==r4 : "+ (r1.size==r4.size).toString)
+    println("r1==r5 : "+ (r1.size==r5.size).toString)
+    println("r5==r6 : "+ (r5.size==r6.size).toString)
+  }
+
+
+  private def simpleWebkb(): Unit = {
+    val params = Params("webkb")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase
+
+    val query = Parser.parseHypothesis("faculty(V0):- courseprof(V1,V0),project(V4,V0),project(V4,V3),courseta(V2,V3).\n"+
+      "faculty(V0):- courseprof(V5,V0),courseta(V5,V3),courseta(V4,V3),courseprof(V4,V2),project(V1,V2).").get
+
+
+    val plan = Plan(db)
+    val optimizedNone = plan.optimizeNone(query)
+    val optimizedBellmanford = plan.optimizeBellmanFord(query)
+
+    val engine1 = EngineSerial(db)
+    val engine2 = EngineSerial(db)
+    val engineParallel = EngineParallel(db, 30)
+    val engine4 = EngineSerial(db)
+    val engineRoaringSerial = EngineRoaringSerial(db, 30)
+    val engine6 = EngineSerial(db)
+    val r1 = engine1.join(optimizedNone)
+    val r2 = engine2.join(optimizedBellmanford)
+    val r3 = engineParallel.join(optimizedNone)
+    val r4 = engineParallel.join(optimizedBellmanford)
+    val r5 = engineRoaringSerial.join(optimizedNone)
+    val r6 = engineRoaringSerial.join(optimizedBellmanford)
+
+    println("Result1 size: "+r1.size)
+    println("Result2 size: "+r2.size)
+    println("Result3 size: "+r3.size)
+    println("Result4 size: "+r4.size)
+    println("Result5 size: "+r5.size)
+    println("Result6 size: "+r6.size)
+    println("r1==r2 : "+ (r1.size==r2.size).toString)
+    println("r1==r3 : "+ (r1.size==r3.size).toString)
+    println("r3==r4 : "+ (r3.size==r4.size).toString)
+    println("r1==r4 : "+ (r1.size==r4.size).toString)
+    println("r1==r5 : "+ (r1.size==r5.size).toString)
+    println("r5==r6 : "+ (r5.size==r6.size).toString)
+  }
+
+
+  private def simpleZendo2(): Unit = {
+    val params = Params("zendo2")
+    val experiment = Experiment(params).load()
+    val db = experiment.getDatabase
+
+    val query = Parser.parseHypothesis("zendo(V0):- piece(V0,V1),green(V1),coord1(V1,V3),piece(V0,V2),lhs(V2),coord1(V2,V3).\n"+
+      "zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).").get
+
+
+    val plan = Plan(db)
+    val optimizedNone = plan.optimizeNone(query)
+    val optimizedBellmanford = plan.optimizeBellmanFord(query)
+
+    val engine1 = EngineSerial(db)
+    val engine2 = EngineSerial(db)
+    val engineParallel = EngineParallel(db, 30)
+    val engine4 = EngineSerial(db)
+    val engineRoaringSerial = EngineRoaringSerial(db, 30)
+    val engine6 = EngineSerial(db)
+    val r1 = engine1.join(optimizedNone)
+    val r2 = engine2.join(optimizedBellmanford)
+    val r3 = engineParallel.join(optimizedNone)
+    val r4 = engineParallel.join(optimizedBellmanford)
+    val r5 = engineRoaringSerial.join(optimizedNone)
+    val r6 = engineRoaringSerial.join(optimizedBellmanford)
+
+    println("Result1 size: "+r1.size)
+    println("Result2 size: "+r2.size)
+    println("Result3 size: "+r3.size)
+    println("Result4 size: "+r4.size)
+    println("Result5 size: "+r5.size)
+    println("Result6 size: "+r6.size)
+    println("r1==r2 : "+ (r1.size==r2.size).toString)
+    println("r1==r3 : "+ (r1.size==r3.size).toString)
+    println("r3==r4 : "+ (r3.size==r4.size).toString)
+    println("r1==r4 : "+ (r1.size==r4.size).toString)
+    println("r1==r5 : "+ (r1.size==r5.size).toString)
+    println("r5==r6 : "+ (r5.size==r6.size).toString)
+  }
+
 
   def simpleRecursive(): Unit = {
 
@@ -409,116 +584,63 @@ object DatabaseTest {
     roaringSubstitutions.foreach(sub=> println(sub))
     println("===========================================")
   }
-  def simpleListMix(): Unit = {
-
-    val db = Database("listTest")
-    val p1 = Parser.parsePredicate("x(x).").get
-    val p2 = Parser.parsePredicate("a(a).").get
-    val p3 = Parser.parsePredicate("b(b).").get
-    val p4 = Parser.parsePredicate("c(c).").get
-    val p5 = Parser.parsePredicate("d(d).").get
-    val p6 = Parser.parsePredicate("e(e).").get
-    val p7 = Parser.parsePredicate("f(f).").get
-    val g0 = Parser.parsePredicate("g(g).").get
-    val g1 = Parser.parsePredicate("h(h).").get
-    val g2 = Parser.parsePredicate("i(i).").get
-    val g3 = Parser.parsePredicate("j(j).").get
-
-    db.add(p1)
-      .add(p2)
-      .add(p3)
-      .add(p4)
-      .add(p5)
-      .add(p6)
-      .add(p7)
-      .add(g0)
-      .add(g1)
-      .add(g2)
-      .add(g3)
-      .build()
-
-    val engine = EngineSerial(db)
-    val plan = Plan(db)
-    val substitution = Substitution().add(Variable("V0"), VariableList("V0", "a", Array("x","h")))
-      .add(Variable("V1"), Sym("V1","h"))
-
-    val pr1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
-      "func3198432(H,L) :- head(H,L).\n"+
-      "func120(A) :- x(A).\n"+
-      "func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).\n" +
-      "func590646503(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get.
-      buildDependency()
-      .compact()
-      .buildOperational()
-
-    val queries = plan.optimizeBellmanFord(pr1)
-
-    val parallelSubstitutions = engine.join(queries, substitution)
-    println("Parallel result: ")
-    parallelSubstitutions.foreach(sub=> println(sub))
-    println("===========================================")
-
-  }
 
   def simpleList(): Unit = {
+    val experiment = Experiment(Params("synthesis-next")).load()
+    val db = experiment.getDatabase
 
-    val db = Database("listTest")
-    val p1 = Parser.parsePredicate("x(x).").get
-    val p2 = Parser.parsePredicate("a(a).").get
-    val p3 = Parser.parsePredicate("b(b).").get
-    val p4 = Parser.parsePredicate("c(c).").get
-    val p5 = Parser.parsePredicate("d(d).").get
-    val p6 = Parser.parsePredicate("e(e).").get
-    val p7 = Parser.parsePredicate("f(f).").get
-    val g0 = Parser.parsePredicate("g(g).").get
-    val g1 = Parser.parsePredicate("h(h).").get
-    val g2 = Parser.parsePredicate("i(i).").get
-    val g3 = Parser.parsePredicate("j(j).").get
-
-    db.add(p1)
-      .add(p2)
-      .add(p3)
-      .add(p4)
-      .add(p5)
-      .add(p6)
-      .add(p7)
-      .add(g0)
-      .add(g1)
-      .add(g2)
-      .add(g3)
-      .build()
-
-    val engine = EngineRoaringSerial(db, 20)
+    val engine = EngineSerial(db, 20)
     val plan = Plan(db)
-    val sample = Substitution().add(Variable("V0"),VariableList("V0", "p", Array("x","h")))
-      .add(Variable("V1"),Sym("V1","h"))
+    val template = BinaryFunctional(engine).setPositives(experiment.getPositives).setNegatives(experiment.getNegatives)
+
+    val hres0 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n" +
+      "func3198432(H,L) :- head(H,L).\n" +
+      "func120(A) :- x(A).\n" +
+      "func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).\n" +
+      "func590646503(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).\n" +
+      "func590646503(V0,V1) :- func3552336(V0,V2) & func590646503(V2,V1).").get.buildDependency().compact().buildOperational()
+
+    val hres1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n" +
+      "func3552336(L,T) :- tail(L,T).\n" +
+      "func3198432(H,L) :- head(H,L).\n" +
+      "func120(A) :- x(A).\n" +
+      "func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).\n" +
+      "func590646503(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).\n" +
+      "func590646503(V0,V1) :- func3552336(V0,V2) & func590646503(V2,V1).").get.buildDependency().compact().buildOperational()
 
 
-    val m1 = Parser.parseRule("next_list(V0,V1) :- x(V3) & head(V3,V0) & head(V1,V2) & tail(V0, V2).").get
+
+    val rr1 = Parser.parseRule("func590646503(V0,V1) :- x(V3) & head(V3,V0) & tail(V0,V2) & head(V1,V2).").get
+    val rr2 = Parser.parseRule("func590646503(V9,V111) :- tail(V9,V022) & func590646503(V022,V111).").get.buildRecursion()
+
+    val hres2 = Hypothesis(rr1.getHead, Array(rr1, rr2)).build()
+
+    //hres.rules.last.buildRecursion()
+    val pp = hres0.normalize().print()
+    //func590646503(V0,V1) :- x(V3) & head(V3,V0) & tail(V0,V2) & head(V1,V2).
+    //func590646503(V0,G230) :- tail(V0,V2) & x(V3) & head(V3,V2) & tail(V2,V2) & head(G230,V2).
+    
+    /*val m1 = Parser.parseRule("next_list(V0,V1) :- x(V3) & head(V3,V0) & head(V1,V2) & tail(V0, V2).").get
     val m2 = Parser.parseRule("next_list(V0,V1) :- tail(V0, V2) & next_list(V2, V1).").get.buildRecursion()
-
     val rr1 = Parser.parseRule("func3552336(V0,V2) :- tail(V0,V2).").get
     val rr2 = Parser.parseRule("func3198432(V1,V2) :- head(V1,V2).").get
     val rr3 = Parser.parseRule("func120(V3) :- x(V3).").get
     val rr4 = Parser.parseRule("func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).").get
     val rr5 = Parser.parseRule("next_list(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get
-    val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()
+    val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()*/
 
-    val hr1 = Hypothesis(rr6.getHead, Array(rr1, rr2, rr3, rr4, rr5, rr6))
-      .build()
+    //val hr1 = Hypothesis(rr5.getHead, Array(rr1, rr2, rr3, rr4, rr5, rr6))
+    //  .build()
 
-    val mr1 = Hypothesis(rr6.getHead, Array(m1, m2))
-      .build()
+    val found0 = template.igFunctional(hres2)
+    val found1 = template.igFunctional(hres1)
 
-    val queries = plan.optimizeNone(hr1)
-    val parallelSubstitutions = engine.join(queries, sample)
-    println("Parallel result: ")
-    parallelSubstitutions.foreach(sub=> println(sub))
-    println("===========================================")
+    found0.print()
+
   }
 
   def main(args: Array[String]): Unit = {
-    simpleIGGPSokoban()
+    simpleList()
   }
 
 }

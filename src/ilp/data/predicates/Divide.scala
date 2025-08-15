@@ -12,6 +12,10 @@ final class Divide(e1: Variable, e2:Variable) extends Functional("divide", Array
     val lastNumber = e2.asNumber().getNumber
     Num(name, headNumber / lastNumber)
 
+  override def copy(): Variable = Divide(e1, e2)
+
+  override def copy(newArray: Array[Variable]): Predicate = Divide(newArray.head, newArray.last)
+
   override inline def toString: String = "Divide(" + array.mkString(",") + ")"
 
 

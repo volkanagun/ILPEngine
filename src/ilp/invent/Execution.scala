@@ -77,8 +77,11 @@ class Execution(var engine: Engine):
   def stopCondition(hypothesis: Set[Hypothesis]): Boolean =
     hypothesis.exists(item => item.score > scoreThreshold && item.negRate <= negThreshold)
 
-  def getResults(hypothesis: Set[Hypothesis]): Array[Hypothesis] =
-    hypothesis.filter(item => item.score > scoreThreshold && item.negRate <= negThreshold).toArray
+  def getResults(hypothesis: Array[Hypothesis]): Set[Hypothesis] =
+    hypothesis.filter(item => item.score > scoreThreshold && item.negRate <= negThreshold).toSet
+
+  def getAnyResults(hypothesis: Array[Hypothesis]): Set[Hypothesis] =
+    hypothesis.toSet
 
 
   def shingles(hypothesis: Hypothesis): Array[Int] =
@@ -140,11 +143,14 @@ class Execution(var engine: Engine):
     var count = 1
     var crrPruneMap = Map[Int, Double]()
     while !isFinished && sourceHypothesis.nonEmpty && count < iteration do
+      val maximum = sortedCandidates.maxBy(_.score)
       println(s"Iteration: ${count} with size: ${sortedCandidates.length}")
-      println(s"Maximum score: ${sortedCandidates.map(_.score).max}")
-      val pruneResults = sortedCandidates.map(hypothesis => (hypothesis, shinglesUpdate(hypothesis))).sortBy(_._2)
-        .reverse.take(newFilterSize()).map(_._1)
-
+      println(s"Maximum score: ${maximum.getScore}")
+      println(s"Maximum rule: ${maximum.normalize()}")
+      val untestedSet = sortedCandidates.filter(! _.isTested)
+      val pruneResults = sortedCandidates.filter(_.isTested).map(hypothesis => (hypothesis, shinglesUpdate(hypothesis))).sortBy(_._2)
+        .reverse.take(newFilterSize()).map(_._1) ++ untestedSet
+      println(s"Maximum score after prune: ${pruneResults.map(_.getScore).max}")
       val distinctResults = pruneResults.distinct
 
       val templateIter = templates.iterator
@@ -167,4 +173,4 @@ class Execution(var engine: Engine):
       isFinished = stopCondition(sourceHypothesis)
       count += 1
 
-    getResults(sourceHypothesis).toSet
+    getAnyResults(sortedCandidates)

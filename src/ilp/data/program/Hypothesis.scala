@@ -8,6 +8,8 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
   var sorted: Array[Rule] = rules
 
+
+
   def this(head: Predicate, rule: Rule) = this(head, Array(rule))
 
   def this(head: Predicate, body: Array[Predicate]) = this(head, Rule(head, body))
@@ -41,6 +43,8 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     buildRecursion()
   }
 
+
+
   def normalize(): Hypothesis = {
     var cache = Map[Int, Set[Query]]()
     val headMap = rules.groupBy(_.identifier()).view.mapValues(_.toSet)
@@ -55,11 +59,17 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
       else {
         var bodyList = Array[Array[Predicate]](Array())
         calledRules.zip(rule.getBody).foreach{case(crrCall, crrPredicate) => {
-          val manyExpansions = crrCall.flatMap(query => cache.getOrElse(query.identifier(), Set[Query](query))
+          if crrPredicate.isRecursive then
+            bodyList = bodyList.map(currentBody => (currentBody :+ crrPredicate))
+          else
+            val manyExpansions = crrCall.flatMap(query => cache.getOrElse(query.identifier(), Set[Query](query))
             .map(subQuery => subQuery.callByVariable(crrPredicate)))
-          bodyList = bodyList.flatMap(currentBody => manyExpansions.map(currentExpansion => currentBody ++ currentExpansion.getBody))
+            bodyList = bodyList.flatMap(currentBody => manyExpansions.map(currentExpansion => currentBody ++ currentExpansion.getBody))
         }}
-        bodyList.foreach(bodyElements => cache = cache.updated(identifier, cache.getOrElse(identifier, Set[Query]()) + Rule(rule.getHead, bodyElements)))
+        bodyList.foreach(bodyElements => cache = cache.updated(identifier, cache.getOrElse(identifier, Set[Query]()) + Rule(rule.getHead, bodyElements)
+          .setInputVariables(rule.getInputVariables)
+          .setRecursive(rule.isRecursive)
+          .setFunctional(rule.isFunctional)))
       }
     })
     val lastHead = getRules.last.getHead
@@ -103,6 +113,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     if array.length != rules.length then
       val hypothesis = Hypothesis(array.reverse)
         .substitution(subs)
+        .setTested(tested)
       hypothesis.compact()
     else
       this
@@ -264,25 +275,28 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     sorted.last.getHeadName == other.sorted.last.getHeadName
   }
 
-  override def hashCode(): Int =
-    rules.map(_.getHeadName).sorted.foldRight[Int](1){case(name, main)=> name.hashCode() + 7 * main}
+  override def computeQueryId(): Int =
+    rules.sortBy(_.getHeadName).foldRight[Int](1){case(rule, main)=> rule.hashCode() + 7 * main}
 
   override def getRuleSize: Int =
     sorted.length
 
+
   override def equals(obj: Any): Boolean =
     obj match {
       case other: Hypothesis =>
-        val test = rules.forall(rule => other.contains(rule)) && other.getRuleSize == getRuleSize
+        val test = other.getRuleSize == getRuleSize && other.hashCode() == hashCode()
         test
-      case crr: Rule =>
-        rules.size == 1 && rules.contains(crr)
+      case other: Rule =>
+        rules.size == 1 && contains(other)
       case _ => false
     }
 
   def contains(rule:Rule): Boolean =
     rules.contains(rule)
 
+
+  //Consumes time do it efficiently
   def similarity(targetHypothesis: Hypothesis, window: Int): Double =
     val currentRules = rules.map(_.getHeadName)
     val otherWindows = targetHypothesis.getRules.map(rule => rule.getHeadName).sliding(window, 1).toSet

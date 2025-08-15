@@ -6,12 +6,12 @@ import ilp.data.program.Substitution
 import ilp.data.variables.Variable
 import org.roaringbitmap.RoaringBitmap
 
-class EngineRoaringSerial(db:Database, depth:Int) extends Engine(db, depth) {
+class EngineRoaringSerial(db: Database, depth: Int) extends Engine(db, depth) {
 
 
   override def execute(contextMap: Map[Int, Array[ExecutionContext]],
-                           programContext: ExecutionContext,
-                           context: ExecutionContext, predicate: Predicate, predicateIndex: Int, attribute: Variable): Set[Variable] = {
+                       programContext: ExecutionContext,
+                       context: ExecutionContext, predicate: Predicate, predicateIndex: Int, attribute: Variable): Set[Variable] = {
     if attribute.isSymbol && predicate.isFunctional && predicate.containsInput(attribute) then {
       //No need execution or context switch
       Set[Variable](attribute)
@@ -72,6 +72,33 @@ class EngineRoaringSerial(db:Database, depth:Int) extends Engine(db, depth) {
     var substitutions = Set[Substitution]()
     contextProgram.foreach(context => {
       if context.isTarget then context.setSubstitution(substitution)
+      if !context.isFunctional || context.isTarget then {
+        val headPredicate = context.getHead
+        val crrSubstitutions = join(contextMap, context, context)
+          .map(substitution => substitution.get(headPredicate.getVariables))
+        val crrPredicates = context.get(crrSubstitutions)
+        contextProgram.filter(other => context.calledFrom(other))
+          .foreach(other => other.updateRowUnion(headPredicate, crrPredicates.toArray))
+        updateIndex(headPredicate, crrPredicates)
+        substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
+      }
+    })
+
+    substitutions
+  }
+
+  def join(programs: Array[Optimized], callPredicate: Predicate): Set[Substitution] = {
+
+    val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
+    val contextMap = contextProgram
+      .groupBy { context => context.getHead.identifier() }
+
+    var substitutions = Set[Substitution]()
+    contextProgram.foreach(context => {
+      if context.isTarget then {
+        val crrHead = context.getHead
+        context.setSubstitution(callPredicate.toSubstitution(crrHead))
+      }
       if !context.isFunctional || context.isTarget then {
         val headPredicate = context.getHead
         val crrSubstitutions = join(contextMap, context, context)

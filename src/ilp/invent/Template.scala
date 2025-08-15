@@ -202,7 +202,7 @@ abstract class Template(val engine: Engine) extends Serializable:
     val substitution = Substitution(lastHead.toVariable, targetHead.toVariable)
     val newHypothesis = hypothesis.substitution(substitution)
 
-    val optimization = plan.optimizeBellmanFord(newHypothesis)
+    val optimization = plan.optimizeNone(newHypothesis)
     val crrSubstitutions = engine.join(optimization, Substitution())
     val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
 
@@ -230,10 +230,9 @@ abstract class Template(val engine: Engine) extends Serializable:
 
     val items = positives ++ negatives
     val ruleHead = hypothesis.getLastHead
-    val optimization = plan.optimizeNone(hypothesis)
+    val optimization = plan.optimizeExperimental(hypothesis)
     val crrFacts = items.flatMap(targetHead=>{
-      val substitution = targetHead.toSubstitution(ruleHead)
-      val crrSubstitutions = engine.join(optimization, substitution)
+      val crrSubstitutions = engine.join(optimization, targetHead)
       crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
     })
 

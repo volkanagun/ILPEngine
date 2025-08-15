@@ -17,6 +17,9 @@ final class Sum(array: VariableList, result:Variable) extends Functional("sum", 
 
   override inline def toString: String = "Sum(" + array + ")"
 
+  override def copy(newArray: Array[Variable]): Predicate = Sum(newArray.head.asVariableList(), newArray.last)
+
+
 final class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("plus", Array(var1, var2, result)):
 
   override inline def isExecutable: Boolean = isDefinite
@@ -41,11 +44,24 @@ final class Plus(result:Variable, var1: Variable, var2:Variable) extends Functio
 
   override inline def toString: String = result.getName + " is " + var1 + "+" + var2
 
+  override def copy(): Variable = Plus(result, var1, var2)
+
+  override def copy(newArray: Array[Variable]): Predicate =
+    Plus(newArray.head, newArray.tail.head, newArray.last)
+
+
 final class Assign(var1: Variable, var2:Variable) extends Functional("assign", Array(var1, var2)):
 
 
+  setInput(var2)
+
   override inline def isExecutable: Boolean = var2.isNumber || var1 == var2
   override inline def isDefinite: Boolean = var2.isNumber
+
+  override def copy(): Variable = Assign(var1, var2)
+
+  override def copy(newArray: Array[Variable]): Predicate =
+    Assign(newArray.head, newArray.last)
 
   override inline def getValue: Variable = {
     val value = var2.asNumber().getNumber

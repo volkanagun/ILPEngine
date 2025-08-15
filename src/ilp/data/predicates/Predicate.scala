@@ -2,7 +2,7 @@ package ilp.data.predicates
 
 import ilp.data.*
 import ilp.data.program.{Position, Substitution}
-import ilp.data.variables.Variable
+import ilp.data.variables.{Num, Sym, Variable, VariableList}
 
 
 class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(crr_name):
@@ -64,6 +64,10 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     this.inputVariables = inputVariables
     this
   }
+  def setInput(inputVariable:Variable): this.type = {
+    this.inputVariables = Array(inputVariable)
+    this
+  }
 
   def setFunctional(functional:Boolean): this.type = {
     this.functional = functional
@@ -86,6 +90,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     Predicate(newName, newArray)
       .setInput(inputVariables)
       .setFunctional(functional)
+      .setRecursive(recursive)
 
   def call(other: Predicate, substitution: Substitution): Substitution =
     val pairs = array.zipWithIndex.filter { case (variable, _) => substitution.hasVariable(variable) }
@@ -107,8 +112,8 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
     Substitution(pairs)
 
-  def toSubstitution(callPredicate: Predicate): Substitution =
-    val variables = callPredicate.getVariables
+  def toSubstitution(headPredicate: Predicate): Substitution =
+    val variables = headPredicate.getVariables
     val symbols = array.zip(variables).map{case(symbol, variable) => symbol.copy(variable.getName)}
     Substitution(variables, symbols)
 
@@ -127,7 +132,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
 
   override def isPredicate = true
   override def isVariable = false
-  override def isEmpty: Boolean = array.forall(_.isEmpty)
+  //override def isEmpty: Boolean = array.forall(_.isEmpty)
   inline def length(): Int = array.length
 
   override def contains(variable: Variable): Boolean =
@@ -136,6 +141,9 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     inputVariables.contains(variable)
   def containsInput(index:Int):Boolean=
     inputVariables.contains(array(index))
+  def containsValue(item:Variable):Boolean =
+    array.exists(variable=> variable.equalValue(item))
+
   def containsExact(variable:Variable):Boolean=
     array.contains(variable)
   def contains(variables: Array[Variable]): Boolean =
@@ -188,15 +196,22 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   def unsymbolize():Predicate =
     var varList = Array[Variable]()
     array.foreach(variable=>{
-      if variable.isPredicate then
-        val unsymbolized = variable.asPredicate().unsymbolize()
-        varList = varList :+ unsymbolized
-      else if variable.isSymbol then
-        varList = varList :+ variable.toVariable
-      else
-        varList = varList :+ variable
+
+      variable match {
+        case crr:Predicate => {
+          val unsymbolized = crr.unsymbolize()
+          varList = varList :+ unsymbolized
+        }
+        case _ :Sym | _:Num => {
+          varList = varList :+ variable.toVariable
+        }
+        case  _ => {
+          varList = varList :+ variable
+        }
+      }
     })
-    new Predicate(name, varList)
+    copy(varList)
+
 
   def copy(newArray: Array[Variable]): Predicate =
     Predicate(name, newArray)
