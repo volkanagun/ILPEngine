@@ -5,6 +5,7 @@ import ilp.data.predicates.Predicate
 import ilp.data.program.Substitution
 import ilp.data.variables.Variable
 
+import scala.annotation.tailrec
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
 class EngineParallel(db: Database, depth: Int) extends Engine(db, depth) {
@@ -60,7 +61,7 @@ class EngineParallel(db: Database, depth: Int) extends Engine(db, depth) {
     substitutions
   }
 
-  def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
+  override def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = {
 
     if (currentContext.getDepth > recursiveDepth || currentContext.emptyAttributes) then
       Set(Substitution())

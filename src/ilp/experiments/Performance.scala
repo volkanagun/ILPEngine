@@ -13,10 +13,10 @@ import scala.io.Source
 
 object Performance {
   private val folder = "examples/"
-  //val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
-  private val joinExperiments = Array("iggp", "uwcs","zendo","webkb","dunnhumby1")
+  val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
+  //private val joinExperiments = Array("iggp", "uwcs","zendo","webkb","dunnhumby1")
   //val joinExperiments = Array("yeast")
-  private val functionalExperiments = Array("robots-functional","robots-linear")
+  private val functionalExperiments = Array("robots-functional","robots-linear","synthesis-next")
   private val resultFilename = "resources/experiments/performance.csv"
 
   def measureMultipleTime[T](block: => T, count: Int = 1): (T, Double) = {

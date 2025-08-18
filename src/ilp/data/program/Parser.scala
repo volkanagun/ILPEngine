@@ -49,14 +49,14 @@ object Parser extends JavaTokenParsers {
 
   def anystr: Parser[String] = "\\_[A-Z]*".r
 
-  def lower:Parser[String] = "[a-z\\_\\d]+".r
+  def lower: Parser[String] = "[a-z\\_\\d]+".r
+
   def keywordMod: Parser[String] = "mod".r
 
   def keywordIs: Parser[String] = "is".r
 
   def variable: Parser[Variable] =
     "[A-Z]([A-Za-z0-9\\_]*)".r ^^ (item => Variable(item))
-
 
 
   /** Parser for a variable (starts with an lowercase letter) */
@@ -76,19 +76,20 @@ object Parser extends JavaTokenParsers {
     "[" ~ repsep(numVar, ",") ~ "]" ^^ {
       case "[" ~ args ~ "]" => {
         var items = Array[Variable]()
-        args.zipWithIndex.foreach{case(item, index) => {
+        args.zipWithIndex.foreach { case (item, index) => {
           if (item.matches("\\d+(\\.\\d+?)")) then
-            items = items :+ variables.Num("item"+index, item.toDouble)
+            items = items :+ variables.Num("item" + index, item.toDouble)
           else if (item.matches("[a-z0-9\\_]+"))
-            items = items :+ new variables.Sym("item"+index, item)
+            items = items :+ new variables.Sym("item" + index, item)
           else
             items = items :+ Variable(item)
-        }}
+        }
+        }
         VariableList("X", items)
       }
     }
 
-  def tailArgument:Parser[Tail] =
+  def tailArgument: Parser[Tail] =
     tailArgument1 | tailArgument2 | tailNameArgument
 
   def tailNameArgument: Parser[Tail] =
@@ -128,7 +129,7 @@ object Parser extends JavaTokenParsers {
       }
     }
 
-  def headArgument: Parser[Head]=
+  def headArgument: Parser[Head] =
     headArgument3 | headArgument2 | headArgument1 | headNameArgument
 
   def headArgument1: Parser[Head] =
@@ -190,7 +191,7 @@ object Parser extends JavaTokenParsers {
 
   def equalSym: Parser[Predicate] =
     variable ~ "==" ~ variable ^^ {
-      case v1 ~ "==" ~ v2  => Equal("r", v1, v2)
+      case v1 ~ "==" ~ v2 => Equal("r", v1, v2)
     }
 
   def equalIsCall: Parser[Predicate] =
@@ -303,7 +304,9 @@ object Parser extends JavaTokenParsers {
 
   def greaterEqualArgument: Parser[Predicate] =
     argument ~ ">=" ~ argument ^^ {
-      case var1 ~ ">=" ~ var2 => GreaterEqual("G", var1.asNumber(), var2.asNumber())
+      case var1 ~ ">=" ~ var2 => {
+        GreaterEqual("G", var1, var2)
+      }
     }
 
   def lowerArgument: Parser[Predicate] =
@@ -313,7 +316,7 @@ object Parser extends JavaTokenParsers {
 
   def lowerEqualArgument: Parser[Predicate] =
     argument ~ "<=" ~ argument ^^ {
-      case var1 ~ "<=" ~ var2 => LowerEqual("L", var1.asNumber(), var2.asNumber())
+      case var1 ~ "<=" ~ var2 => LowerEqual("L", var1, var2)
     }
 
   /** Parser for a predicate (e.g., parent(X, func(y))) */
@@ -489,9 +492,9 @@ object Parser extends JavaTokenParsers {
     }
   }
 
-  def parseHypothesis(input:String):Option[Hypothesis]={
+  def parseHypothesis(input: String): Option[Hypothesis] = {
     val inputSplit = input.split("\n")
-    val rules = inputSplit.flatMap(line=> parseRule(line))
+    val rules = inputSplit.flatMap(line => parseRule(line))
     if rules.isEmpty then None
     else Some(Hypothesis(rules.last.getHead, rules))
   }

@@ -6,11 +6,14 @@ import ilp.data.program.{Hypothesis, Substitution}
 import ilp.data.variables.Variable
 import org.roaringbitmap.RoaringBitmap
 
+import scala.annotation.tailrec
+
 
 abstract class Engine(val database: Database, val recursiveDepth: Int = 10) extends Serializable{
 
   val executionCache = ExecutionCache()
   val programCache = ProgramCache()
+
 
   def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution]
   def join(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution]

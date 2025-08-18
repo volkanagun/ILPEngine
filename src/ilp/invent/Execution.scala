@@ -149,8 +149,8 @@ class Execution(var engine: Engine):
       println(s"Maximum rule: ${maximum.normalize()}")
       val untestedSet = sortedCandidates.filter(! _.isTested)
       val pruneResults = sortedCandidates.filter(_.isTested).map(hypothesis => (hypothesis, shinglesUpdate(hypothesis))).sortBy(_._2)
-        .reverse.take(newFilterSize()).map(_._1) ++ untestedSet
-      println(s"Maximum score after prune: ${pruneResults.map(_.getScore).max}")
+        .reverse.take(filterSize).map(_._1) ++ untestedSet
+      println(s"Maximum score after prune: ${pruneResults.map(_.getScore).maxOption.getOrElse(0)}")
       val distinctResults = pruneResults.distinct
 
       val templateIter = templates.iterator

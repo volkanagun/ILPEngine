@@ -8,6 +8,7 @@ import ilp.invent.*
 
 import java.io.PrintWriter
 import scala.Tuple.Union
+import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 
 object Invention:
 
@@ -19,10 +20,10 @@ object Invention:
     //results ++= testTrains1()
     //results ++= testTrains2()
     //results ++= testTrains3()
-    //results ++= testIGGPAttritionNextScore() //error
+    //results ++= testIGGPAttritionNextScore()
     //results ++= testIGGPMinimalDecayScore()
     //results ++= testIGGPChickenGoalScore()
-    //results ++= testIGGPSokobanGoalScore()
+    //results ++= testIGGPSokobanGoalScore() //not tested memory problem
     //results ++= testPTC() //unsuccesfull
     //results ++= testPTE()
     //results ++= testYeast() //sem-success
@@ -85,8 +86,8 @@ object Invention:
     val metaTransition = Parser.parseRule("grandparent(A, B) :- parent(A,Z), parent(Z, B).").get
       .buildRecursion()
 
-    val params = Params("kinship-pi").generateParams().take(5)
-    params.map(param=>{
+    val params = Params("kinship-pi").generateParams()
+    params.par.map(param=>{
       val experiment = Experiment(param).load()
       val engine = EngineParallel(experiment.getDatabase, param.recursionSize)
       val heRecursive = new Binary(engine)
@@ -107,7 +108,7 @@ object Invention:
 
 
       measureResult(experiment, Array(heRecursive, heUnion))
-    })
+    }).toArray
   }
 
   private def testIMDB1(): Array[String] = {
@@ -117,7 +118,7 @@ object Invention:
     val metaTransition3 = Parser.parseRule("tilda(A,B) :- d(Z, B), a(Z,A).").get
     val parameters = Params("imdb1").generateParams()
 
-    parameters.map(params=>{
+    parameters.par.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
       val heBinary = new Binary(engine)
@@ -130,7 +131,7 @@ object Invention:
         .setResembleThreshold(params.resembleWindow)
 
       measureResult(experiment, Array(heBinary))
-    })
+    }).toArray
 
   }
 
@@ -282,7 +283,7 @@ object Invention:
 
     parameters.map(params=>{
       //Condition
-      params.maxRules = 7
+      //params.maxRules = 7
       val experiment = new Experiment(params).load()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
 
@@ -312,9 +313,9 @@ object Invention:
     val metaTransition3 = Parser.parseRule("r3(V0,V1,V2) :- r4(V0,V6,V4), r5(V0,V3,V4,V5,V6), rk(V1), rn(V2).").get
 
     parameters.map(params=>{
-      params.maxRules = 50
-      params.iterationsSize = 20
-      params.filterSize = 1000
+
+      //params.iterationsSize = 20
+      //params.filterSize = 1000
       val experiment = new Experiment(params).load()
 
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
@@ -354,7 +355,7 @@ object Invention:
     val metaTransition4 = Parser.parseRule("r3(V0) :- m(V0,V1,V4), c(V1), r(V4).").get
 
     parameters.map(params=>{
-      params.filterSize = 10000
+      //params.filterSize = 10000
       params.maxRules = 50
       params.unionPositiveThreshold = 0.0005
       params.unionNegativeThreshold = 0.0
@@ -397,7 +398,7 @@ object Invention:
       params.unionPositiveThreshold = 0.01
       params.unionNegativeThreshold = 0.005
       params.scoreThreshold = 0.7
-      params.filterSize = 10000
+      //params.filterSize = 10000
 
       val experiment = new Experiment(params).load().pruneDatabase()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
@@ -452,7 +453,7 @@ object Invention:
     val metaTransition5 = Parser.parseRule("r(V0) :- p(V2,V1), i(V2,V0,V3), rb(V0,V4).").get*/
 
     parameters.map(params=>{
-      params.filterSize = 5000000
+      //params.filterSize = 5000000
       params.binaryPositiveThreshold = 0.005
       params.binaryNegativeThreshold = 0.9
       params.unionPositiveThreshold = 0.001
@@ -491,13 +492,10 @@ object Invention:
     val metaTransition1 = Parser.parseRule("r(V0, V1, V2, V4) :- a(V4, V0, V5), a(V4, V1, V2).").get
     val metaTransition2 = Parser.parseRule("r(V0, V1, V2, V3, V4) :- t(V0, V1, V2, V4), a(V3, V1).").get
     val metaTransition3 = Parser.parseRule("r(V0, V1) :- t(V0, V1, V2, V3, V4), s(V0).").get
-
     val metaTransition4 = Parser.parseRule("r(V0, V1, V2, V4) :- p(V2, V0), p(V2, V1), p(V2, V4).").get
     val metaTransition5 = Parser.parseRule("r(V0, V1, V2, V4) :- t(V4, V1), k(V0, V1, V2, V4).").get
     val metaTransition6 = Parser.parseRule("r(V0, V1) :- t(V5, V0, V3), a(V5, V1, V3), k(V0, V1, V2, V4).").get
     parameters.map(params => {
-      params.filterSize = 10000
-      params.windowSize = 10
       params.unionNegativeThreshold = 0.0
       params.unionPositiveThreshold = 0.001
 
@@ -527,22 +525,39 @@ object Invention:
   }
 
   def testWebkb(): Array[String] = {
-    val parameters = Params("webkb").generateParams()
     /*
-    "faculty(V0):- courseprof(V1,V0),project(V4,V0),project(V4,V3),courseta(V2,V3).\n"+
-      "faculty(V0):- courseprof(V5,V0),courseta(V5,V3),courseta(V4,V3),courseprof(V4,V2),project(V1,V2)."
+    type(faculty, (person)).
+    type(courseprof, (course, person)).
+    type(courseta, (course, person)).
+    type(project, (project, person)).
+    %type(sameperson, (person, person)).
+    type(student, (person)).
      */
-    val metaTransition0 = Parser.parseRule("r(V0,V1,V2) :- co(V0, V2), pr(V1, V2).").get
-    val metaTransition1 = Parser.parseRule("r(V0,V1,V4) :- co(V1,V0), pr(V4,V0).").get
-    val metaTransition2 = Parser.parseRule("r(V0) :- t(V0, V3), a(V0,V1,V2).").get
+
+    val parameters = Params("webkb").generateParams()
+    val metaTransition0 = Parser.parseRule("r(C,P) :- co(C, P), pr(P).").get
+    val metaTransition1 = Parser.parseRule("r(C1,C2,P) :- co(C1,P), pr(C2,P).").get
+    val metaTransition2 = Parser.parseRule("r(C1,P1,P2) :- co(C1,P1), pr(C1,P2).").get
+    val metaTransition3 = Parser.parseRule("r(C1,P1,P2) :- t(C1, P1, P2), a(C1,P1,P2).").get
+    val metaTransition4 = Parser.parseRule("r(C1,C2, P1) :- t(C1, C2, P1), a(C1,P1,P2).").get
+    val metaTransition5 = Parser.parseRule("r(C1,P1, P2) :- t(C1, P1, P2), a(C1,P1,P2).").get
+    val metaTransition6 = Parser.parseRule("r(P1) :- t(C1, C2, P1), a(C1,P1,P2).").get
+    val metaTransition7 = Parser.parseRule("r(P2) :- t(C1, C2, P1), a(C1,P1,P2).").get
+
     parameters.map(params=>{
-      params.filterSize = 1000000
-      val experiment = new Experiment(params).load()
+
+      val experiment = new Experiment(params).load().pruneDatabase()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
 
       val heBinary = new Binary(engine)
+        .addMetaRule(metaTransition0)
         .addMetaRule(metaTransition1)
         .addMetaRule(metaTransition2)
+        .addMetaRule(metaTransition3)
+        .addMetaRule(metaTransition4)
+        .addMetaRule(metaTransition5)
+        .addMetaRule(metaTransition6)
+        .addMetaRule(metaTransition7)
         .setPositiveThreshold(params.binaryPositiveThreshold)
         .setNegativeThreshold(params.binaryNegativeThreshold)
         .setResembleThreshold(params.resembleThreshold)
@@ -615,7 +630,7 @@ object Invention:
     val metaTransition5 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V1, V2, V3).").get
 */
     parameters.map(params=>{
-      params.filterSize = 5000
+      //params.filterSize = 5000
       val experiment = new Experiment(params).load().pruneDatabase()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
 
@@ -648,7 +663,6 @@ object Invention:
     val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V3, V0), alpha(V3).").get
 
     parameters.map(params=>{
-      params.filterSize = 10000
       params.binaryPositiveThreshold = 0.0
       params.binaryNegativeThreshold = 0.7
       params.unionPositiveThreshold = 0.0

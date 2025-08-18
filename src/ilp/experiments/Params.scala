@@ -30,12 +30,11 @@ class Params(var experimentName: String = "zendo2") extends Serializable:
 
 
   def generateParams(): Array[Params] =
-    Iterator.iterate(0.7)(_ + 0.1)
-      .takeWhile(_ <= 1.0).flatMap(crrScoreThreshold => {
-        Range(5, 1, -1).flatMap(crrWindowSize => {
-          Range(7, 1, -1).flatMap(crrIterationSize => {
-            Range(2, 11).flatMap(crrRecursionSize => {
-              Range(510, 10, -100).map(crrFilterSize => {
+    Array(0.7).flatMap(crrScoreThreshold => {
+        Array(2, 3, 5).flatMap(crrWindowSize => {
+          Array(2, 3, 7).flatMap(crrIterationSize => {
+            Array(20).flatMap(crrRecursionSize => {
+              Array(20, 500, 5000).map(crrFilterSize => {
                 val params = Params(experimentName)
                 params.scoreThreshold = crrScoreThreshold
                 params.windowSize = crrWindowSize

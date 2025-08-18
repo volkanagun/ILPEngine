@@ -640,7 +640,7 @@ object DatabaseTest {
   }
 
   def main(args: Array[String]): Unit = {
-    simpleList()
+    simpleWebkb()
   }
 
 }
