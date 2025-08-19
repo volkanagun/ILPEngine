@@ -50,7 +50,7 @@ class DatabaseStatistics(val name: String, val database: Database) extends Seria
 object DatabaseStatistics {
 
   val files = new File("examples").listFiles()
-  val joinExperiments = Array(/*"ptc", "pte", "acetyl", "dunnhumby1", "iggp", "imdb", "kinship", "protein", "random0", "random1", "random2", "noisy", "suranim", "trains1", "trains2", "uwcs", "webkb",*/ "yeast"/*, "zendo"*/)
+  val joinExperiments = Array("ptc", "pte", "acetyl", "dunnhumby1", "iggp", "imdb", "kinship", "protein", "random0", "random1", "random2", "noisy", "suranim", "trains1", "trains2", "uwcs", "webkb","yeast", "zendo")
   val joinFilenames = files.filter(file => joinExperiments.exists(name => file.getName.startsWith(name))).map(_.getName)
   val filename = "resources/experiments/statistics.csv"
 

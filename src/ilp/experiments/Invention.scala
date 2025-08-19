@@ -60,7 +60,6 @@ object Invention:
     val pos = experiment.positives
     val neg = experiment.negatives
 
-
     val execution = Execution(engine)
       .setPositives(pos)
       .setNegatives(neg)
@@ -663,6 +662,7 @@ object Invention:
     val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V3, V0), alpha(V3).").get
 
     parameters.map(params=>{
+
       params.binaryPositiveThreshold = 0.0
       params.binaryNegativeThreshold = 0.7
       params.unionPositiveThreshold = 0.0

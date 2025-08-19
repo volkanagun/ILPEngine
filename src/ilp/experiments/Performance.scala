@@ -13,13 +13,13 @@ import scala.io.Source
 
 object Performance {
   private val folder = "examples/"
-  val joinExperiments = Array("ptc","pte","acetyl","dunnhumby1","iggp", "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast")
+  val joinExperiments = Array(/*"ptc","pte","acetyl","dunnhumby1",*/"iggp"/*, "imdb", "kinship", "protein", "random0","random1","random2",  "noisy","suranim","trains1", "trains2", "uwcs","webkb","zendo", "yeast"*/)
   //private val joinExperiments = Array("iggp", "uwcs","zendo","webkb","dunnhumby1")
   //val joinExperiments = Array("yeast")
   private val functionalExperiments = Array("robots-functional","robots-linear","synthesis-next")
   private val resultFilename = "resources/experiments/performance.csv"
 
-  def measureMultipleTime[T](block: => T, count: Int = 1): (T, Double) = {
+  def measureMultipleTime[T](block: => T, count: Int = 5): (T, Double) = {
 
     val time = Range(0, count).map(i => {
       val start = System.nanoTime()
@@ -340,22 +340,30 @@ object Performance {
     val engineRoaringParallel = EngineRoaringParallel(database, 10)
     var (result10, crrTime10) = measureMultipleTime({
       predicates.par.foreach(predicate=> {
-        engineRoaringParallel.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
+        engineRoaringParallel.join(optimizedNone, predicate.toSubstitution(hypothesisHead))
       })
     })
 
     crrTime10 = crrTime10 / predicates.size
-    text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime10.toString + "\n"
-
+    text = text + s"${name}, Roaring Index, Parallel, No Optimization, " + crrTime10.toString + "\n"
 
     var (result11, crrTime11) = measureMultipleTime({
+      predicates.par.foreach(predicate=> {
+        engineRoaringParallel.join(optimizedRel, predicate.toSubstitution(hypothesisHead))
+      })
+    })
+
+    crrTime11 = crrTime11 / predicates.size
+    text = text + s"${name}, Roaring Index, Parallel, BellmanFord Optimization, " + crrTime11.toString + "\n"
+
+    var (result12, crrTime12) = measureMultipleTime({
       predicates.par.foreach(predicate=> {
         engineRoaringParallel.join(optimizedExperimental, predicate.toSubstitution(hypothesisHead))
       })
     })
 
-    crrTime11 = crrTime11 / predicates.size
-    text = text + s"${name}, Roaring Index, Parallel, Iterative Optimization, " + crrTime11.toString + "\n"
+    crrTime12 = crrTime12 / predicates.size
+    text = text + s"${name}, Roaring Index, Parallel, Iterative Optimization, " + crrTime12.toString + "\n"
     text
 
 

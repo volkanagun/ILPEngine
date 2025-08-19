@@ -5,7 +5,7 @@ import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.data.program.{Hypothesis, Query}
 
-final class Plan(val db: Database) extends Serializable{
+final class Plan(val db: Database, val functional:Boolean = true) extends Serializable{
 
 
   private val statistics: Map[Int, Statistics] = db.getStatistics
@@ -36,8 +36,10 @@ final class Plan(val db: Database) extends Serializable{
 
 
   def getFunctions(head:Predicate, attributes:Array[Variable], predicates:Array[Predicate]):Array[Variable] =
-    val ordered = attributes.sortBy(attribute=> getScore(head, predicates, attribute))
-    ordered
+    if functional then
+      attributes.sortBy(attribute=> getScore(head, predicates, attribute))
+    else
+      attributes
 
   def getStatistics(maxMap: Map[Int, Map[Int, Double]], predicate: Predicate): Statistics = {
     val id = predicate.identifier()
