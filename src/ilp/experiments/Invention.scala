@@ -19,19 +19,19 @@ object Invention:
     //results ++= testIMDB1()
     //results ++= testTrains1()
     //results ++= testTrains2()
-    //results ++= testTrains3()
-    //results ++= testIGGPAttritionNextScore()
-    //results ++= testIGGPMinimalDecayScore()
-    //results ++= testIGGPChickenGoalScore()
+    results ++= testTrains3()
+    results ++= testIGGPAttritionNextScore()
+    results ++= testIGGPMinimalDecayScore()
+    results ++= testIGGPChickenGoalScore()
     //results ++= testIGGPSokobanGoalScore() //not tested memory problem
-    //results ++= testPTC() //unsuccesfull
+    results ++= testPTC() //unsuccesfull
     //results ++= testPTE()
-    //results ++= testYeast() //sem-success
-    //results ++= testUWCS()
+    results ++= testYeast() //sem-success
+    results ++= testUWCS()
     //results ++= testWebkb() //semi-success
     //results ++= testZendo1()
     //results ++= testZendo2()
-    results ++= testSynthesis()
+    //results ++= testSynthesis()
 
     val pw = new PrintWriter("resources/experiments/invention.csv")
     pw.println(Params().toCSVHeaderLine())
@@ -86,7 +86,7 @@ object Invention:
       .buildRecursion()
 
     val params = Params("kinship-pi").generateParams()
-    params.par.map(param=>{
+    val results = params.map(param=>{
       val experiment = Experiment(param).load()
       val engine = EngineParallel(experiment.getDatabase, param.recursionSize)
       val heRecursive = new Binary(engine)
@@ -107,7 +107,14 @@ object Invention:
 
 
       measureResult(experiment, Array(heRecursive, heUnion))
-    }).toArray
+    })
+
+    val pw = new PrintWriter("resources/experiments/inventions/kinship-pi.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   private def testIMDB1(): Array[String] = {
@@ -117,7 +124,7 @@ object Invention:
     val metaTransition3 = Parser.parseRule("tilda(A,B) :- d(Z, B), a(Z,A).").get
     val parameters = Params("imdb1").generateParams()
 
-    parameters.par.map(params=>{
+    val results = parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
       val heBinary = new Binary(engine)
@@ -130,8 +137,13 @@ object Invention:
         .setResembleThreshold(params.resembleWindow)
 
       measureResult(experiment, Array(heBinary))
-    }).toArray
+    })
 
+    val pw = new PrintWriter("resources/experiments/inventions/imdb1.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
   }
 
   def testTrains1(): Array[String] = {
@@ -141,7 +153,7 @@ object Invention:
     val metaTransition2 = Parser.parseRule("r2(V0, V1) :- r0(V0, V1), r1(V0, V1).").get
     val metaTransition3 = Parser.parseRule("r3(V0) :- r1(V0, V2), r2(V0, V1).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
 
@@ -156,7 +168,11 @@ object Invention:
       measureResult(experiment, Array(heBinary))
     })
 
-
+    val pw = new PrintWriter("resources/experiments/inventions/trains1.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
   }
 
   def testTrains2(): Array[String] = {
@@ -166,7 +182,7 @@ object Invention:
     val metaTransition1 = Parser.parseRule("r1(V0,V1) :- g(V0,V1), f(V1).").get
     val metaTransition2 = Parser.parseRule("r2(V0, V1) :- r0(V0, V1), r1(V0, V1).").get
     val metaTransition3 = Parser.parseRule("r3(V0) :- r1(V0, V2), r2(V0, V1).").get
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
 
@@ -182,6 +198,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/trains2.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testTrains3(): Array[String] = {
@@ -191,7 +214,7 @@ object Invention:
     val metaTransition3 = Parser.parseRule("r3(V0) :- w(V0, V1), k(V0, V2).").get
     val metaTransition4 = Parser.parseRule("r4(V0) :- m(V0), n(V0).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
 
@@ -213,6 +236,12 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/trains3.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
   }
 
   def testIGGPAttritionNextScore(): Array[String] = {
@@ -223,7 +252,7 @@ object Invention:
     val metaTransition3 = Parser.parseRule("r3(V0, V1, V2) :- w(V2, V3), k(V0, V1, V3).").get
     val metaTransition4 = Parser.parseRule("r4(V0, V1, V2) :- r(V0, V1), n(V0, V1, V2).").get
 
-    parameters.map(params=>{
+    val results =  parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
 
@@ -244,6 +273,12 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/IGGPAttritionNextScore.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
   }
 
   def testIGGPMinimalDecayScore(): Array[String] = {
@@ -253,7 +288,7 @@ object Invention:
     val metaTransition2 = Parser.parseRule("r1(V0, V1, V2) :- w(V1, V2), k(V0, V2).").get
     val metaTransition3 = Parser.parseRule("r4(V0, V1) :- r(V0, V1, V2), n(V0, V4, V3).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
 
@@ -273,6 +308,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/testIGGPMinimalDecayScore.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
 
@@ -280,7 +322,7 @@ object Invention:
     val parameters = Params("iggp-gt-chicken-goal-tiny").generateParams()
     val metaTransition0 = Parser.parseRule("r1(V0, V1, V2) :- m(V0,V2),l(V1).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       //Condition
       //params.maxRules = 7
       val experiment = new Experiment(params).load()
@@ -301,6 +343,12 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/testIGGPChickenGoalScore.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
   }
 
   def testIGGPSokobanGoalScore(): Array[String] = {
@@ -311,7 +359,7 @@ object Invention:
     val metaTransition2 = Parser.parseRule("r2(V0,V1,V2,V3) :- t1(V0,V1,V2), a1(V0,V1,V2,V3).").get
     val metaTransition3 = Parser.parseRule("r3(V0,V1,V2) :- r4(V0,V6,V4), r5(V0,V3,V4,V5,V6), rk(V1), rn(V2).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
 
       //params.iterationsSize = 20
       //params.filterSize = 1000
@@ -337,6 +385,14 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+
+    val pw = new PrintWriter("resources/experiments/inventions/testIGGPSokobanGoalScore.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
 
@@ -353,7 +409,7 @@ object Invention:
     val metaTransition3 = Parser.parseRule("r2(V0, V1, V4) :- l(V0, V2, V3, V4, V5), r(V3,V0,V1).").get
     val metaTransition4 = Parser.parseRule("r3(V0) :- m(V0,V1,V4), c(V1), r(V4).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       //params.filterSize = 10000
       params.maxRules = 50
       params.unionPositiveThreshold = 0.0005
@@ -382,6 +438,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/ptc.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testPTE(): Array[String] = {
@@ -390,7 +453,7 @@ object Invention:
     val metaTransition1 = Parser.parseRule("r(V0) :- o(V5,V1), k(V5,V1), a(V0,V1,V2,V4,V3).").get
     val metaTransition2 = Parser.parseRule("r(V0) :- i(V5,V1), s(V5), a(V0,V1,V2,V4,V3).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
 
       params.binaryPositiveThreshold = 0.01
       params.binaryNegativeThreshold = 1.0
@@ -419,6 +482,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/pte.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testYeast(): Array[String] = {
@@ -451,7 +521,7 @@ object Invention:
     val metaTransition4 = Parser.parseRule("r(V0) :- i(V3,V0,V1), p(V3,V2), rb(V3,V2).").get
     val metaTransition5 = Parser.parseRule("r(V0) :- p(V2,V1), i(V2,V0,V3), rb(V0,V4).").get*/
 
-    parameters.map(params=>{
+    val results  = parameters.map(params=>{
       //params.filterSize = 5000000
       params.binaryPositiveThreshold = 0.005
       params.binaryNegativeThreshold = 0.9
@@ -484,6 +554,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/yeast.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testUWCS(): Array[String] = {
@@ -494,7 +571,7 @@ object Invention:
     val metaTransition4 = Parser.parseRule("r(V0, V1, V2, V4) :- p(V2, V0), p(V2, V1), p(V2, V4).").get
     val metaTransition5 = Parser.parseRule("r(V0, V1, V2, V4) :- t(V4, V1), k(V0, V1, V2, V4).").get
     val metaTransition6 = Parser.parseRule("r(V0, V1) :- t(V5, V0, V3), a(V5, V1, V3), k(V0, V1, V2, V4).").get
-    parameters.map(params => {
+    val results  =parameters.map(params => {
       params.unionNegativeThreshold = 0.0
       params.unionPositiveThreshold = 0.001
 
@@ -521,6 +598,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/uwcs.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testWebkb(): Array[String] = {
@@ -543,7 +627,7 @@ object Invention:
     val metaTransition6 = Parser.parseRule("r(P1) :- t(C1, C2, P1), a(C1,P1,P2).").get
     val metaTransition7 = Parser.parseRule("r(P2) :- t(C1, C2, P1), a(C1,P1,P2).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
 
       val experiment = new Experiment(params).load().pruneDatabase()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
@@ -570,6 +654,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/webkb.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testZendo1(): Array[String] = {
@@ -579,11 +670,9 @@ object Invention:
     val metaTransition3 = Parser.parseRule("r(V0, V1, V2) :- r1(V0, V1, V2), a(V1).").get
     val metaTransition4 = Parser.parseRule("r(V0) :- r1(V0, V1, V2), r2(V2, V3).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       params.binaryPositiveThreshold = 0.1
       params.binaryNegativeThreshold = 0.9
-
-
 
       val experiment = new Experiment(params).load()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
@@ -606,6 +695,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/zendo1.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testZendo2(): Array[String] = {
@@ -628,7 +724,7 @@ object Invention:
     val metaTransition2 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V0, V3).").get
     val metaTransition5 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V1, V2, V3).").get
 */
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
       //params.filterSize = 5000
       val experiment = new Experiment(params).load().pruneDatabase()
       val engine = EngineCache(experiment.getDatabase, params.recursionSize)
@@ -652,6 +748,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/zendo2.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def testSynthesis(): Array[String] = {
@@ -661,7 +764,7 @@ object Invention:
     val metaRest1 = Parser.parseRule("re(V0, V1, V2) :- t(V0, V2), c(V1, V2).").get
     val metaRest2 = Parser.parseRule("re(V0, V1) :- rest(V0, V1, V2), r2(V3, V0), alpha(V3).").get
 
-    parameters.map(params=>{
+    val results = parameters.map(params=>{
 
       params.binaryPositiveThreshold = 0.0
       params.binaryNegativeThreshold = 0.7
@@ -689,6 +792,13 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
+
+    val pw = new PrintWriter("resources/experiments/inventions/synthesis.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
   }
 
   def main(args: Array[String]): Unit = {
