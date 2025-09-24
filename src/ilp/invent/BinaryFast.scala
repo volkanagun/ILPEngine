@@ -24,13 +24,13 @@ class BinaryFast(engine: Engine) extends TemplateFast(engine) {
     inventNext(currentSource, targets)
 
   override def inventNext(currentSource: Hypothesis, targets: Array[Hypothesis]): Array[Hypothesis] = {
-
     val crrHypotheses = targets.filter(targetHypothesis => {
       val resemblence = currentSource.similarity(targetHypothesis, resembleWindow)
       resemblence <= resembleThreshold
     })
     val results = metaApply(currentSource, crrHypotheses)
-    //val fresults = results.filter(hypothesis => !sources.exists(source => source.equals(hypothesis)))
-    results
+
+
+    results.distinct
   }
 }

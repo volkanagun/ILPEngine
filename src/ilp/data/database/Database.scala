@@ -1,5 +1,4 @@
 package ilp.data.database
-
 import ilp.data.*
 import ilp.data.optimization.{Index, Statistics}
 import ilp.data.predicates.*
@@ -36,17 +35,6 @@ class Database(name: String) extends Serializable:
   def getIndex(id: Int):Index =
     index(id)
 
-/*  def getValues(predicateId:Int, position:Int, bitset:RoaringBitmap):Set[Variable] =
-    index(predicateId).getValues(bitset, position)*/
-
-/*  def index(predicate:Predicate, samples:Array[Predicate]):this.type = {
-    val id = predicate.identifier()
-    index = index.updated(id, index.getOrElse(id, Index(predicate, Array[Predicate]()))
-      .addIndex(samples))
-    this
-  }*/
-
-
   def getBias:Bias = bias
   def getIndex: Map[Int, Index] = index
   def addIndex(predicate:Predicate, predicates: Set[Predicate]) = {
@@ -62,11 +50,11 @@ class Database(name: String) extends Serializable:
     val includeVariables = primaryList.flatMap(predicate=> predicate.getVariables)
     val expandList = sets.filter(predicate => includeVariables.exists(variable=> predicate.containsValue(variable)) && !negatives.exists(variable=> predicate.containsValue(variable)))
     Database(name)
-      .add(primaryList)
-      .add(expandList)
+      .add(primaryList.toSet)
+      .add(expandList.toSet)
       .build()
 
-  def getStatistics: Map[Int, Statistics] = stats
+  def getStatistics: Map[Int, Statistics] = stats.toMap
 
   def valid(hypothesis: Hypothesis):Boolean =
     bias.getHypothesis(hypothesis).nonEmpty
@@ -131,57 +119,31 @@ class Database(name: String) extends Serializable:
 
   def getTemplates(predicate: Predicate): Set[Predicate] =
     if predicate.isNegative && templates2.contains(predicate.getArity) then
-      templates2(predicate.getArity) -- templates.getOrElse(predicate.identifier(), Set())
+      templates2(predicate.getArity).toSet -- templates.getOrElse(predicate.identifier(), Set())
     else if  templates.contains(predicate.identifier()) then
-      templates(predicate.identifier())
+      templates(predicate.identifier()).toSet
     else
       Set()
 
   def getTemplates2(predicate: Predicate): Set[Predicate] =
     if templates2.contains(predicate.length()) then
-      templates2(predicate.length())
+      templates2(predicate.length()).toSet
     else
       Set()
 
   def getPredicates:Set[Predicate] =
-    sets
+    sets.toSet
 
   def getTemplate3: Set[Predicate] =
     templates.values.map(set => set.head)
       .toSet
 
-
   def getTemplates: Map[Int, Set[Predicate]] =
-    templates
+    templates.view.mapValues(_.toSet)
+      .toMap
 
   def copy(): Database =
-    Database(name).add(sets)
-
-/*  protected def execute(operation: Operation): Boolean =
-    var affected = false
-    operation.items.foreach(variable => {
-      val predicate = variable.asPredicate()
-      if predicate.isNegative then
-        affected = removePredicate(predicate) || affected
-      else
-        affected = addPredicate(predicate) || affected
-    })
-
-    affected*/
-
-
-/*  protected def expand(operation: Operation): Array[Predicate] =
-    var result = Array[Predicate]()
-    operation.items.foreach(variable => {
-      val predicate = variable.asPredicate()
-      if !predicate.isNegative && addPredicate(predicate) then
-        result = result :+ predicate
-      else if predicate.isNegative then
-        removePredicate(predicate)
-    })
-
-    result*/
-
+    Database(name).add(sets.toSet)
 
   override def toString: String = {
     sets.map(predicate => predicate.toString).mkString("\n")

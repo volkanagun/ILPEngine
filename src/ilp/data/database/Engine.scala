@@ -93,7 +93,7 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
     val substitution = nextContext.getSubstitution
     val domains = nextContext.getRelations.zipWithIndex.flatMap {
       case (predicate, index) => {
-        if predicate.contains(attribute) && predicate.isFunctional && !nextContext.canExecute(predicate) then
+        if !predicate.isRecursive && predicate.contains(attribute) && predicate.isFunctional && !nextContext.canExecute(predicate) then
           None
         else if predicate.contains(attribute) then
           Some(execute(contextMap, programContext, nextContext, predicate, index, attribute))
@@ -139,7 +139,7 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
   def execute(contextMap: Map[Int, Array[ExecutionContext]],
                       programContext: ExecutionContext,
                       context: ExecutionContext, predicate: Predicate, predicateIndex: Int, attribute: Variable): Set[Variable] = {
-    val result = if attribute.isSymbol && predicate.isFunctional && predicate.containsInput(attribute) then {
+    val result = if !predicate.isRecursive && attribute.isSymbol && predicate.isFunctional && predicate.containsInput(attribute) then {
       Set[Variable](attribute)
     }
     else if !predicate.isRecursive && predicate.isFunctional && context.canExecute(predicate) then
@@ -177,7 +177,6 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
       }
       else if context.isRecursive && crrResults.isEmpty then
         val switchResult = switch(contextMap, programContext, context, predicate, attribute, predicateId, position)
-        //checkConfliction(context, switchResult)
         switchResult
       else
         crrResults

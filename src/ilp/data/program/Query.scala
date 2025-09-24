@@ -5,8 +5,13 @@ import ilp.data.variables.Variable
 
 class Query(var head: Predicate, var body: Array[Predicate]) extends Serializable:
 
+
+  def this() = this(Predicate("empty", Array[Variable]()), Array())
+
   var recursive = false
+
   var functional: Boolean = body.exists(_.isFunctional)
+  lazy val containsDublicate = body.exists(predicate=> body.count(other=> other.name == predicate.name) > 1)
   var inputVariables: Array[Variable] = body.flatMap(predicate=> predicate.getInput)
 
   head.setFunctional(functional)

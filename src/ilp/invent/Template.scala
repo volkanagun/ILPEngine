@@ -62,7 +62,7 @@ abstract class Template(val engine: Engine) extends Serializable:
 
 
       val scoredResults = recursiveResults ++ validResults.filter(_.validAritry(targetHead))
-        .map(hypothesis => igParallel(hypothesis))
+        .map(hypothesis => igFast(hypothesis))
         .filter(hypothesis => hypothesis.acceptNegRate(negThreshold) && hypothesis.acceptPosRate(posThreshold))
 
       val combineSet = scoredResults.toSet ++
@@ -211,6 +211,20 @@ abstract class Template(val engine: Engine) extends Serializable:
     hypothesis.accuracy()
     hypothesis
 
+  def igFast(hypothesis: Hypothesis): Hypothesis =
+    val targetHead = positives.head
+    val lastHead = hypothesis.getHead
+    val substitution = Substitution(lastHead.toVariable, targetHead.toVariable)
+    val newHypothesis = hypothesis.substitution(substitution)
+
+    val optimization = plan.optimizeBellmanFord(newHypothesis)
+    val crrSubstitutions = engine.join(optimization, Substitution())
+    val crrFacts = crrSubstitutions.map(crrSubstition => newHypothesis.callHead(crrSubstition))
+
+    hypothesis.ig(crrFacts, positives, negatives)
+    hypothesis.accuracy()
+    hypothesis
+
   /*def igCache(hypothesis: Hypothesis): Hypothesis =
     val targetHead = positives.head
     val lastRule = hypothesis.getLast
@@ -230,7 +244,7 @@ abstract class Template(val engine: Engine) extends Serializable:
 
     val items = positives ++ negatives
     val ruleHead = hypothesis.getLastHead
-    val optimization = plan.optimizeExperimental(hypothesis)
+    val optimization = plan.optimizeNone(hypothesis)
     val crrFacts = items.flatMap(targetHead=>{
       val crrSubstitutions = engine.join(optimization, targetHead)
       crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
@@ -261,6 +275,8 @@ abstract class Template(val engine: Engine) extends Serializable:
     metaRules.flatMap(metaRule => {
       if metaRule.isRecursive && metaRule.getSize == 2 then
          InventionMeta.metaWithRecursive(source, metaRule) ++ InventionMeta.metaWithRecursive(source, candidates, metaRule)
+      else if metaRule.containsDublicate then
+        InventionMeta.metaWithLazy(source, candidates, metaRule)
       else
-        InventionMeta.metaWith(source, candidates, metaRule)
+        InventionMeta.metaWithLazy(source, candidates, metaRule)
     })

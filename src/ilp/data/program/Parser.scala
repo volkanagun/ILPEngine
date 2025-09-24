@@ -424,6 +424,11 @@ object Parser extends JavaTokenParsers {
       case "max_vars" ~ "(" ~ num ~ ")." => Max("vars", num.item)
     }
 
+  def definition0: Parser[Type] =
+    "constant(" ~ identifier ~ "," ~ lower ~ ")." ^^ {
+      case "constant(" ~ name ~ "," ~ item ~ ")." => Type(name, Array(item))
+    }
+
   def definition1: Parser[Type] =
     "type(" ~ identifier ~ ", (" ~ repsep(lower, ", ") ~ "))." ^^ {
       case "type(" ~ name ~ ", (" ~ items ~ "))." => Type(name, items.toArray)
@@ -436,7 +441,7 @@ object Parser extends JavaTokenParsers {
 
 
   def definition: Parser[Type] =
-    definition1 | definition2
+    definition0 | definition1 | definition2
 
   def ruleByAnd: Parser[Rule] =
     head ~ ":-" ~ repsep(predicate_input, "&") ~ "." ^^ {

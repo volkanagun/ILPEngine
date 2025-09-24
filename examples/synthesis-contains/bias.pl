@@ -25,29 +25,29 @@ body_pred(head,2).
 body_pred(odd,1).
 body_pred(tail,2).
 
-type(f,(list,)).
-type(c_0,(element,)).
-type(c_1,(element,)).
-type(c_10,(element,)).
-type(c_2,(element,)).
-type(c_3,(element,)).
-type(c_4,(element,)).
-type(c_5,(element,)).
-type(c_6,(element,)).
-type(c_7,(element,)).
-type(c_8,(element,)).
-type(c_9,(element,)).
-type(empty,(list,)).
+type(f,(list)).
+type(c_0,(element)).
+type(c_1,(element)).
+type(c_10,(element)).
+type(c_2,(element)).
+type(c_3,(element)).
+type(c_4,(element)).
+type(c_5,(element)).
+type(c_6,(element)).
+type(c_7,(element)).
+type(c_8,(element)).
+type(c_9,(element)).
+type(empty,(list)).
 
 type(geq,(element,element)).
-type(head,(list,element)).
+type(head,(element,list)).
 type(tail,(list,list)).
-type(odd,(element,)).
-type(even,(element,)).
+type(odd,(element)).
+type(even,(element)).
 
-direction(f,(in,)).
-direction(c_0,(in,)).
-direction(c_1,(in,)).
+direction(f,(in)).
+direction(c_0,(in)).
+direction(c_1,(in)).
 direction(c_10,(in,)).
 direction(c_2,(in,)).
 direction(c_3,(in,)).
@@ -59,7 +59,7 @@ direction(c_8,(in,)).
 direction(c_9,(in,)).
 direction(empty,(out,)).
 direction(geq,(in,in)).
-direction(head,(in,out)).
+direction(head,(out,in)).
 direction(tail,(in,out)).
 direction(odd,(in,)).
 direction(even,(in,)).

@@ -3,7 +3,7 @@ package ilp.invent
 import ilp.data.*
 import ilp.data.database.Database
 import ilp.data.predicates.Predicate
-import ilp.data.program.{Hypothesis, Rule, Substitution}
+import ilp.data.program.{Hypothesis, Parser, Rule, Substitution}
 import ilp.data.variables.Variable
 
 import javax.print.attribute.standard.Destination
@@ -25,6 +25,28 @@ object InventionMeta:
     } yield
       xs + x
 
+
+  def cartesianPowerLazy(xs: Array[Hypothesis], n: Int): LazyList[Array[Hypothesis]] =
+    if n <= 0 then LazyList(Array.empty[Hypothesis])
+    else {
+      val buffer = new Array[Hypothesis](n)
+
+      def loop(d: Int): LazyList[Array[Hypothesis]] =
+        if d == n then LazyList(buffer.clone())
+        else LazyList.from(xs).flatMap { a =>
+          buffer(d) = a
+          loop(d + 1)
+        }
+
+      loop(0)
+    }
+
+  def combinations(xs: Array[Hypothesis], n: Int): Array[Array[Hypothesis]] =
+    if n <= 0 then Array(Array.empty[Hypothesis])
+    else for
+      h <- Array.from(xs)
+      t <- combinations(xs, n - 1)
+    yield h +: t
 
   def combinations(head: Predicate, array: Array[Variable]): Set[Predicate] =
     val combinations = array.combinations(array.length)
@@ -150,6 +172,31 @@ object InventionMeta:
     })
     results
 
+  def metaWithLazy(source: Hypothesis, candidates: Array[Hypothesis], metaRule: Rule): Array[Hypothesis] =
+    val sourceHead = source.getHead
+    val metaBody = metaRule.getNonRecursive.getBody
+    val metaBodyArity = metaBody.map(_.getArity)
+    val n = metaBody.length - 1
+    val array = combinations(candidates, n)
+    var index = 0
+    var results = Array[Hypothesis]()
+    while (index < array.length){
+      val permutation = array(index)
+      val crrCombination = source +: permutation
+      val combinedCombinations = crrCombination
+      val pairs = metaBody.zip(combinedCombinations.map(hypothesis => hypothesis.getHead))
+        .filter { case (meta, candidate) => meta.equalByArity(candidate) }
+      if pairs.length == combinedCombinations.length then
+        val substitution = Substitution.create(pairs)
+        val newRule = canonicalize(metaRule.substitution(substitution))
+        val combinedRules = source.getRules ++ permutation.flatMap(_.getRules) :+ newRule
+        val newHypothesis = Hypothesis(newRule.getHead, combinedRules.distinct)
+        results :+= newHypothesis
+
+      index+=1
+    }
+    results
+
   /*
     def metaWith(source: Hypothesis, candidates: Array[Hypothesis], metaRule: Rule): Array[Hypothesis] =
       val sourceHead = source.getHead
@@ -192,8 +239,12 @@ object InventionMeta:
   def metaWithRecursive(source: Hypothesis, candidates: Array[Hypothesis], metaRule: Rule): Array[Hypothesis] =
     val metaBody = metaRule.getBody
     val n = metaBody.length - 1
-    val combinations = candidates.combinations(n).flatMap(array => array.permutations).toArray
-    combinations.flatMap(candidateCombination => {
+    val array = combinations(candidates, n)
+    var results = Array[Hypothesis]()
+
+    var index = 0
+    while index < array.length do{
+      val candidateCombination = array(index)
       val combinedCombinations = source +: candidateCombination
       val pairs = metaBody.zip(combinedCombinations.map(hypothesis => hypothesis.getHead))
         .filter { case (meta, candidate) => meta.equalByArity(candidate) }
@@ -202,10 +253,12 @@ object InventionMeta:
         val newRule = metaRule.substitution(substitution)
         val combinedRules = source.getRules ++ candidateCombination.flatMap(_.getRules) :+ newRule
         val newHypothesis = Hypothesis(newRule.getHead, combinedRules)
-        Some(newHypothesis)
-      else
-        None
-    })
+        results = results :+ newHypothesis
+
+      index += 1
+    }
+
+    results
 
   /*
     def metaWithHeuristic(source: Hypothesis, candidates: Array[Hypothesis], metaRule: Rule): Array[Hypothesis] =
@@ -256,4 +309,12 @@ object InventionMeta:
     newRules
 
 
-    
+  def main(args: Array[String]): Unit = {
+    val h1 = Parser.parseHypothesis("h(X,Y,Z) :- movie(X,Y), movie(X,Z).").get
+    val hTarget1 = Parser.parseHypothesis("g(X,Y) :- gender(X,Y).").get
+    val hTarget2 = Parser.parseHypothesis("g(X,Y) :- director(X,Y).").get
+    val h3 = Parser.parseRule("meta(X,Y) :- j(X,Y,Z), gg(X,Y), gg(K,Y).")
+    val array = Array(hTarget1, hTarget2)
+    val results = metaWithLazy(h1, array, h3.get)
+    val debug = 0
+  }

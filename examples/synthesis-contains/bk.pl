@@ -1,7 +1,5 @@
-is_list([]).
-is_list([_|_]).
-tail([_|T],T).
-head([H|_],H).
+tail(L,T).
+head(H,T).
 empty([]).
 geq(A,B):- A >= B.
 even(A):- 0 is A mod 2.

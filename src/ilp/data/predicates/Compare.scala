@@ -75,9 +75,13 @@ final class NotEqual(result: Variable, e1: Variable, e2: Variable) extends Predi
     Equal(result, e1new, e2new)
 
 
-final class GreaterEqual(result:Variable, e1: Variable, e2: Variable) extends Predicate("greater_equal", Array[Variable](result, e1, e2)):
+final class GreaterEqual(name:String, e1: Variable, e2: Variable) extends Predicate(name, Array[Variable](e1, e2)):
 
-  def this(r:String, e1:Variable, e2:Variable) = this(Variable(r), e1, e2)
+  setInput(Array[Variable]())
+
+  def this(e1:Variable, e2:Variable) = this("geq", e1, e2)
+
+  override def isFunctional: Boolean = true
 
   override inline def isExecutable: Boolean =
     isDefinite && e1.asNumber().greaterEqual(e2.asNumber())
@@ -88,24 +92,24 @@ final class GreaterEqual(result:Variable, e1: Variable, e2: Variable) extends Pr
 
   override inline def getValue: Variable =
     val r = e1.asNumber().getNumber >= e2.asNumber().getNumber
-    new Sym(result.getName, r.toString)
+    new Sym(name, r.toString)
 
   override inline def execute(): Option[Substitution] =
     val r = e1.asNumber().getNumber >= e2.asNumber().getNumber
-    if r then Some(Substitution().add(array.last, Sym(result.getName, r.toString)))
+    if r then Some(Substitution().add(e1, e1).add(e2, e2))
     else None
 
   override inline def toString: String = e1.toString + ">=" + e2.toString
 
   override inline def copy(): Variable =
-    GreaterEqual(result, e1.copy().asNumber(), e2.copy().asNumber())
+    GreaterEqual(name, e1.copy().asNumber(), e2.copy().asNumber())
 
-  override def copy(newArray: Array[Variable]): Predicate = GreaterEqual(newArray.head, newArray.tail.head, newArray.last)
+  override def copy(newArray: Array[Variable]): Predicate = GreaterEqual(name, newArray.tail.head, newArray.last)
 
   override inline def substitution(substitution: Substitution): Variable =
     val e1new = e1.substitution(substitution)
     val e2new = e2.substitution(substitution)
-    GreaterEqual(result, e1new.asNumber(), e2new.asNumber())
+    GreaterEqual(name, e1new.asNumber(), e2new.asNumber())
 
 
 final class Lower(result:Variable, e1: Variable, e2: Variable) extends Predicate("lower", Array[Variable](result, e1, e2 )):

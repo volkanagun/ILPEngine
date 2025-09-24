@@ -6,6 +6,8 @@ import ilp.data.variables.Variable
 final class Position(val predicate:Predicate, val pindex:Int, val index:Int) extends Serializable{
   override inline def hashCode(): Int = (predicate.identifier().hashCode() * 7 + pindex) * 7 + index
 
+  def identifier():Int = predicate.identifier() * 7 + index
+
   override inline def equals(obj: Any): Boolean = {
     val other = obj.asInstanceOf[Position]
     other.predicate.identifier() == predicate.identifier() && other.pindex == pindex && other.index == index

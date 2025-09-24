@@ -164,6 +164,8 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
   override def hashCode(): Int =
     array.foldRight(name.hashCode) { case (a, m) => a.hashCode() + 7 * m }
 
+
+
   def equalType(predicate: Predicate): Boolean =
     if predicate.isNegative && isNegative then true
     else if predicate.isCount && isCount then true

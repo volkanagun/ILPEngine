@@ -3,36 +3,44 @@ package ilp.data.program
 import ilp.data.predicates.Predicate
 import ilp.data.variables.Variable
 import ilp.invent.InventionMeta
+import scala.collection.mutable.{Set=>HashSet}
 
 
-class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
+
+class Rule(var crr_head: Predicate, var crr_body: Array[Predicate]) extends Query(crr_head, crr_body):
 
   var posRate: Double = 0
   var negRate: Double = 0
   var posSize: Int = 0
   var negSize: Int = 0
 
-  var positives = Set[Predicate]()
-  var negatives = Set[Predicate]()
-  var genfacts = Set[Predicate]()
+  var positives = HashSet[Predicate]()
+  var negatives = HashSet[Predicate]()
+  var genfacts = HashSet[Predicate]()
   var tested = false
   var score = 0.0
   var acc = 0.0
-  var id: Set[Set[Position]] = idset()
-  var queryId = computeQueryId()
+
+  lazy val id: HashSet[HashSet[Position]] = idset()
+  lazy val queryId = computeQueryId()
 
   def this(crr_head: Predicate) = this(crr_head, Array[Predicate]())
   def this(crr_head: Predicate, atom: Predicate) = this(crr_head, Array(atom))
+  def this() = this(Predicate("empty", Array[Variable]()))
 
   def computeQueryId():Int = {
-    getSortedBody
-      .foldRight[Int](head.hashCode()) { case (predicate, main) => main * 7 + predicate.hashCode() }
+    val predicateID = getSortedBody
+      .foldRight[Int](head.identifier()) { case (predicate, main) => main * 7 + predicate.identifier() }
+    val newID = id.map(positions => positions.foldRight(predicateID){case(position, main)=> position.identifier() + 7 * main})
+      .sum
+    newID
   }
 
   def setHead(name: String): Rule = {
     head.setName(name)
     this
   }
+
 
   def isTested: Boolean =
     tested
@@ -42,14 +50,16 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     this
   }
 
-  private def idset(): Set[Set[Position]] =
+  private def idset(): HashSet[HashSet[Position]] =
     val allVariables = getAllVariables.toSet
     val allPredicates = getSortedBody :+ head.copy("head")
-    allVariables.map(variable => {
-      allPredicates.zipWithIndex.filter { case (predicate, pindex) => predicate.contains(variable) }
+    val result = allVariables.map(variable => {
+      val subresult = allPredicates.zipWithIndex.filter { case (predicate, pindex) => predicate.contains(variable) }
         .map { case (predicate, pindex) => predicate.getPosition(pindex, variable) }
-        .toSet
+      HashSet.from(subresult)
     })
+
+    HashSet.from(result)
 
   def buildRecursion(): this.type = {
     this.body.foreach(predicate => {
@@ -101,14 +111,14 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     acc
 
   def getFacts: Set[Predicate] =
-    genfacts
+    genfacts.toSet
 
 
   def getPositives: Set[Predicate] =
-    positives
+    positives.toSet
 
   def getNegatives: Set[Predicate] =
-    negatives
+    negatives.toSet
 
 
   def getNegRate: Double =
@@ -146,7 +156,7 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
 
 
   def setFacts(facts: Set[Predicate]): this.type = {
-    this.genfacts = facts
+    this.genfacts = HashSet.from(facts)
     this
   }
 
@@ -159,11 +169,11 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
   }
 
   def setPositives(positives: Set[Predicate]): this.type =
-    this.positives = positives
+    this.positives = HashSet.from(positives)
     this
 
   def setNegatives(negatives: Set[Predicate]): this.type =
-    this.negatives = negatives
+    this.negatives = HashSet.from(negatives)
     this
 
   def setPosRate(rate: Double): this.type =
@@ -261,13 +271,13 @@ class Rule(crr_head: Predicate, crr_body: Array[Predicate]) extends Query(crr_he
     val functName = posItems.head.getName
     val matchFacts = facts.map(predicate => predicate.setName(functName).asPredicate())
     tested = true
-    genfacts = facts
+    genfacts = HashSet.from(facts)
 
     this.posSize = posItems.size
     this.negSize = negItems.size
 
-    positives = matches(posItems, matchFacts)
-    negatives = matches(negItems, matchFacts)
+    positives = HashSet.from(matches(posItems, matchFacts))
+    negatives = HashSet.from(matches(negItems, matchFacts))
 
     posRate = positives.size.toDouble / math.max(posSize, 1.0)
     negRate = negatives.size.toDouble / math.max(negSize, 1.0)

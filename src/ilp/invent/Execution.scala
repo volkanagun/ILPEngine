@@ -11,6 +11,7 @@ import scala.util.control.Breaks
 class Execution(var engine: Engine):
   var maxRules = 20
   var filterSize: Int = Int.MaxValue
+  var unTestedSize:Int = Int.MaxValue
   var shingleSize = 3
   var scoreThreshold = 0.9
 
@@ -52,6 +53,9 @@ class Execution(var engine: Engine):
 
   def setFilterSize(size: Int): this.type =
     this.filterSize = size
+    this
+  def setUntestedSize(size: Int): this.type =
+    this.unTestedSize = size
     this
 
   def setWindow(windowSize: Int): this.type =
@@ -147,7 +151,7 @@ class Execution(var engine: Engine):
       println(s"Iteration: ${count} with size: ${sortedCandidates.length}")
       println(s"Maximum score: ${maximum.getScore}")
       println(s"Maximum rule: ${maximum.normalize()}")
-      val untestedSet = sortedCandidates.filter(! _.isTested)
+      val untestedSet = sortedCandidates.filter(! _.isTested).sortBy(hypothesis=> shinglesRank(hypothesis)).reverse.take(unTestedSize)
       val pruneResults = sortedCandidates.filter(_.isTested).map(hypothesis => (hypothesis, shinglesUpdate(hypothesis))).sortBy(_._2)
         .reverse.take(filterSize).map(_._1) ++ untestedSet
       println(s"Maximum score after prune: ${pruneResults.map(_.getScore).maxOption.getOrElse(0)}")

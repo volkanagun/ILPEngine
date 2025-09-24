@@ -5,5 +5,6 @@
     <option name="warnings" value="false" />
     <option name="optimiseBytecode" value="true" />
     <option name="specialization" value="false" />
+    <profile name="Maven 1" modules="ILPEngine" />
   </component>
 </project>

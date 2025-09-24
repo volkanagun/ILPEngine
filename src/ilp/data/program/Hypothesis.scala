@@ -6,9 +6,13 @@ import ilp.data.variables.Variable
 
 class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_head, rules.head.getBody):
 
+
+
+
   var sorted: Array[Rule] = rules
+  lazy val normalized = normalize()
 
-
+  def this() = this(Predicate("empty", Array[Variable]()), Array[Rule]())
 
   def this(head: Predicate, rule: Rule) = this(head, Array(rule))
 
@@ -27,6 +31,11 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   def this(rule1: Rule, rule2: Rule, rule3: Rule) = this(rule3.getHead, Array(rule1, rule2, rule3))
 
   def this(set: Array[Rule]) = this(set.last.getHead, set)
+
+
+
+  def debug(name:String):Boolean=
+    rules.exists(r=> r.getBody.exists(p=> p.getName == name))
 
   def print(): this.type = {
     println("====Hypothesis====")
@@ -64,7 +73,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
           else
             val manyExpansions = crrCall.flatMap(query => cache.getOrElse(query.identifier(), Set[Query](query))
             .map(subQuery => subQuery.callByVariable(crrPredicate)))
-            bodyList = bodyList.flatMap(currentBody => manyExpansions.map(currentExpansion => currentBody ++ currentExpansion.getBody))
+            bodyList = bodyList.flatMap(currentBody => manyExpansions.map(currentExpansion => (currentBody ++ currentExpansion.getBody)))
         }}
         bodyList.foreach(bodyElements => cache = cache.updated(identifier, cache.getOrElse(identifier, Set[Query]()) + Rule(rule.getHead, bodyElements)
           .setInputVariables(rule.getInputVariables)
@@ -75,13 +84,13 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     val lastHead = getRules.last.getHead
     val newRules = cache.getOrElse(lastHead.identifier(), Set()).map(_.toRule).toArray
     val result =Hypothesis(lastHead, newRules)
-      .setPositives(positives)
-      .setNegatives(negatives)
+      .setPositives(positives.toSet)
+      .setNegatives(negatives.toSet)
       .setRecursive(recursive)
       .setNegRate(negRate)
       .setPosRate(posRate)
       .setScore(score)
-      .setFacts(genfacts)
+      .setFacts(genfacts.toSet)
     result
   }
 
@@ -276,7 +285,8 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   }
 
   override def computeQueryId(): Int =
-    rules.sortBy(_.getHeadName).foldRight[Int](1){case(rule, main)=> rule.hashCode() + 7 * main}
+   if rules.length > 1 then rules.sortBy(_.identifier()).foldRight[Int](1){case(rule, main)=> rule.queryId + 7 * main}
+   else super.computeQueryId()
 
   override def getRuleSize: Int =
     sorted.length
@@ -285,7 +295,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
   override def equals(obj: Any): Boolean =
     obj match {
       case other: Hypothesis =>
-        val test = other.getRuleSize == getRuleSize && other.hashCode() == hashCode()
+        val test = other.getRuleSize == getRuleSize && queryId == other.queryId
         test
       case other: Rule =>
         rules.size == 1 && contains(other)
@@ -304,6 +314,13 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
     val resembleSize = otherWindows.count(array => array.forall(name => currentRules.contains(name)))
     val matchScore = resembleSize.toDouble / otherSize
     matchScore
+
+  def similarityLast(targetHypothesis:Hypothesis):Double = {
+    val otherNormalized = targetHypothesis.normalized.getLast.getBody
+    val crr_rules = normalized.rules.map(rule=> rule.getBody)
+    val matchScore = crr_rules.map(body => body.filter(item => otherNormalized.contains(item)).size.toDouble / body.length).max
+    matchScore
+  }
 
   def containsLast(targetHypothesis: Hypothesis): Boolean =
     val currentLast = rules.last.getHeadName

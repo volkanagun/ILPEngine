@@ -2,13 +2,10 @@ package ilp.experiments
 
 import ilp.data.database.{EngineCache, EngineParallel, EngineSerial}
 import ilp.data.program.{Hypothesis, Parser, Rule, Substitution}
-import ilp.data.variables.Variable
-import ilp.experiments.Invention.experiment
 import ilp.invent.*
 
 import java.io.PrintWriter
-import scala.Tuple.Union
-import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
+
 
 object Invention:
 
@@ -17,17 +14,19 @@ object Invention:
     var results = Array[String]()
     //results ++= testKinshipPi()
     //results ++= testIMDB1()
+    //results ++= testIMDB3()
     //results ++= testTrains1()
     //results ++= testTrains2()
-    results ++= testTrains3()
-    results ++= testIGGPAttritionNextScore()
-    results ++= testIGGPMinimalDecayScore()
-    results ++= testIGGPChickenGoalScore()
-    //results ++= testIGGPSokobanGoalScore() //not tested memory problem
-    results ++= testPTC() //unsuccesfull
+    //results ++= testTrains3()
+    //results ++= testIGGPAttritionNextScore()
+    //results ++= testIGGPMinimalDecayScore()
+    //results ++= testIGGPChickenGoalScore()
+    //results ++= testIGGPSokobanGoalScore()
+    results ++= Invention.testSynthesisContains()
+    //results ++= testPTC()
     //results ++= testPTE()
-    results ++= testYeast() //sem-success
-    results ++= testUWCS()
+    //results ++= testYeast() //semi-success
+    //results ++= testUWCS()
     //results ++= testWebkb() //semi-success
     //results ++= testZendo1()
     //results ++= testZendo2()
@@ -56,7 +55,7 @@ object Invention:
   def measureResult(experiment: Experiment, metaRules:Array[Template]):String =
     val params = experiment.getParams
     val db = experiment.database
-    val engine = EngineParallel(db, params.recursionSize)
+    val engine = EngineCache(db, params.recursionSize)
     val pos = experiment.positives
     val neg = experiment.negatives
 
@@ -67,6 +66,8 @@ object Invention:
       .setIter(params.iterationsSize)
       .setWindow(params.windowSize)
       .setFilterSize(params.filterSize)
+      .setUntestedSize(params.unTestedSize)
+      .setScoreThreshold(params.scoreThreshold)
 
     metaRules.foreach(metaTemplate=> execution.addTemplate(metaTemplate))
     execution.compile()
@@ -76,7 +77,11 @@ object Invention:
       .maxOption.getOrElse(0d)
 
     val line = params.toLine(results.size, time, maxScore)
-    println(line)
+    //println(line)
+    val found = results.toArray.sortBy(_.score).reverse.head
+    val rule = found.normalize()
+    rule.print()
+    found.print()
     line
 
   def testKinshipPi(): Array[String] = {
@@ -146,6 +151,62 @@ object Invention:
     results
   }
 
+  private def testIMDB3(): Array[String] = {
+
+    val metaTransitionB0 = Parser.parseRule("r0(V0,V1,V3) :- g(V0,V3), g(V1, V3).").get
+    val metaTransitionB1 = Parser.parseRule("r0(V0,V1) :- f(V0,V1,V3), p(V2, V0), p(V2, V1).").get
+
+    val metaTransitionL0 = Parser.parseRule("r0(A,B) :- f(B), g(A,B).").get
+    val metaTransitionL1 = Parser.parseRule("r0(A,B) :- d(Z, B), a(Z,A).").get
+
+    val parameters = Params("imdb3").generateParams()
+    val hypothesis = Parser.parseHypothesis("f(E870,L387) :- movie(K910,E870) & movie(K910,L387) & gender(E870,L902) & gender(L387,L902).")
+    //func294359557(C413,J547) :- gender(C57,C413) & gender(C57,J547) & movie(C413,D141) & movie(J547,D141).
+    val results = parameters.map(params=>{
+
+      params.scoreThreshold = 1.0
+      params.binaryPositiveThreshold = 0.0
+      params.binaryNegativeThreshold = 1.0
+
+      params.filterSize = 10000
+      params.windowSize = 5
+      params.iterationsSize = 5
+
+      val experiment = new Experiment(params).load()
+      val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
+      val heBinary = new BinaryFast(engine)
+        .addMetaRule(metaTransitionB0)
+        .addMetaRule(metaTransitionB1)
+        .addMetaRule(metaTransitionL0)
+        .addMetaRule(metaTransitionL1)
+        .setPositiveThreshold(params.binaryPositiveThreshold)
+        .setNegativeThreshold(params.binaryNegativeThreshold)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleThreshold(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+
+      val heUnion = new UnionFast(engine)
+        .setScoreThreshold(params.scoreThreshold)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+        .setPositiveThreshold(params.unionPositiveThreshold)
+        .setNegativeThreshold(params.unionNegativeThreshold)
+
+      heBinary
+        .setPositives(experiment.getPositives)
+        .setNegatives(experiment.getNegatives)
+        .igParallel(hypothesis.get).print()
+
+      measureResult(experiment, Array(heBinary, heUnion))
+    })
+
+    val pw = new PrintWriter("resources/experiments/inventions/imdb1.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+  }
+
   def testTrains1(): Array[String] = {
     val parameters = Params("trains1-toy").generateParams()
     val metaTransition0 = Parser.parseRule("r0(V0,V1) :- f(V1), g(V0,V1).").get
@@ -191,6 +252,7 @@ object Invention:
         .addMetaRule(metaTransition1)
         .addMetaRule(metaTransition2)
         .addMetaRule(metaTransition3)
+        .setScoreThreshold(params.scoreThreshold)
         .setPositiveThreshold(params.binaryPositiveThreshold)
         .setNegativeThreshold(params.binaryNegativeThreshold)
         .setResembleThreshold(params.resembleThreshold)
@@ -227,6 +289,7 @@ object Invention:
         .setNegativeThreshold(params.binaryNegativeThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       val heUnion = new UnionFast(engine)
         .setNegativeThreshold(params.unionNegativeThreshold)
@@ -246,28 +309,39 @@ object Invention:
 
   def testIGGPAttritionNextScore(): Array[String] = {
     val parameters = Params("iggp-attrition-next-score").generateParams()
-    val metaTransition0 = Parser.parseRule("r1(V0, V1, V2) :- m(V0,V1,V2),l(V4),d(V0,V3,V4),o(V1,V3).").get
-    val metaTransition1 = Parser.parseRule("r1(V0, V1, V2) :- m(V0, V1, V2), d(V0,V1,V3), f(V3).").get
-    val metaTransition2 = Parser.parseRule("r2(V0, V1) :- m(V0,V1, V4), f(V4).").get
-    val metaTransition3 = Parser.parseRule("r3(V0, V1, V2) :- w(V2, V3), k(V0, V1, V3).").get
-    val metaTransition4 = Parser.parseRule("r4(V0, V1, V2) :- r(V0, V1), n(V0, V1, V2).").get
+
+    val metaTransitionL0 = Parser.parseRule("p(G,Pl) :- s(Act), r(G,Opp,Act), u(Pl,Opp).").get
+    val metaTransitionL1 = Parser.parseRule("p(G,Pl,Sc) :- k(G,Pl), q(G,Pl,Sc).").get
+    val metaTransitionB0 = Parser.parseRule("p(G,Pl, Sc0) :- s(Act), r(G,Pl,Act), q(G,Pl,Sc0).").get
+    val metaTransitionB1 = Parser.parseRule("p(G,Pl, Sc1) :- k(G,Pl, Sc0), t(Sc1,Sc0).").get
+    val metaTransitionS0 = Parser.parseRule("p(G,Pl,Sc) :- q(G,Pl,Sc), r(G,Pl,Act), s(Act).").get
 
     val results =  parameters.map(params=>{
       val experiment = new Experiment(params).load()
       val engine = EngineParallel(experiment.getDatabase, params.recursionSize)
 
+      params.binaryPositiveThreshold = 0.0
+      params.binaryNegativeThreshold = 1.0
+
+
       val heBinary = new BinaryFast(engine)
-        .addMetaRule(metaTransition1)
-        .addMetaRule(metaTransition2)
-        .addMetaRule(metaTransition3)
-        .addMetaRule(metaTransition4)
+        .addMetaRule(metaTransitionL0)
+        .addMetaRule(metaTransitionL1)
+        .addMetaRule(metaTransitionB0)
+        .addMetaRule(metaTransitionB1)
+        .addMetaRule(metaTransitionS0)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+        .setPositiveThreshold(params.binaryPositiveThreshold)
+        .setNegativeThreshold(params.binaryNegativeThreshold)
 
-      val heUnion = new UnionBinary(engine)
+      //heBinary.setPositives(experiment.getPositives).setNegatives(experiment.getNegatives).igParallel(hypothesis).print()
 
-        .setNegativeThreshold(params.unionNegativeThreshold)
-        .setPositiveThreshold(params.unionPositiveThreshold)
+      val heUnion = new UnionFast(engine)
+        .setScoreThreshold(params.scoreThreshold)
+        .setNegativeThreshold(0.1)
+        .setPositiveThreshold(0.01)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
 
@@ -275,6 +349,97 @@ object Invention:
     })
 
     val pw = new PrintWriter("resources/experiments/inventions/IGGPAttritionNextScore.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+  }
+
+  def testIGGPCentipedeScore(): Array[String] = {
+    val parameters = Params("iggp-gt_centipede-legal").generateParams()
+
+    val metaTransitionL0 = Parser.parseRule("p(V0,V1,V2) :- pair(V0,V1), single(V2).").get
+    val metaTransitionL1 = Parser.parseRule("p(V0,V1) :- pair(V0,V1), single(V1).").get
+    //val metaTransitionC0 = Parser.parseRule("p(V0,V1,V2) :- pair(V0,V1, V2), tuple(V0,V1,V2).").get
+
+    val metaTransitionC0 = Parser.parseRule("p(V0,V1,V2) :- found(V0,V3), single1(V1), single2(V2).").get
+
+    val results =  parameters.map(params=>{
+      val experiment = new Experiment(params).load()
+      val engine = EngineCache(experiment.getDatabase, params.recursionSize)
+
+      params.binaryPositiveThreshold = 0.0
+      params.binaryNegativeThreshold = 1.0
+
+      val heBinary = new BinaryFast(engine)
+        .addMetaRule(metaTransitionL0)
+        .addMetaRule(metaTransitionL1)
+        .addMetaRule(metaTransitionC0)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+        .setPositiveThreshold(params.binaryPositiveThreshold)
+        .setNegativeThreshold(params.binaryNegativeThreshold)
+
+      val heUnion = new UnionFast(engine)
+        .setScoreThreshold(params.scoreThreshold)
+        .setNegativeThreshold(0.000)
+        .setPositiveThreshold(0.005)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+
+      measureResult(experiment, Array(heBinary, heUnion))
+    })
+
+    val pw = new PrintWriter("resources/experiments/inventions/iggp-gt_centipede-legal.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.toArray.foreach(line => pw.println(line))
+    pw.close()
+    results.toArray
+  }
+
+  def testButtonsGoal(): Array[String] = {
+    val parameters = Params("iggp-buttons-goal").generateParams()
+
+    /*
+    goal(V0,V1,V2):- int_0(V2),role(V1),not_my_true(V0,V3).
+goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_true(V0,V3),prop_q(V5),my_true(V0,V5).
+     */
+
+    val metaTransitionL0 = Parser.parseRule("p(V0,V1,V2) :- pair(V0,V1), single(V2).").get
+    val metaTransitionL1 = Parser.parseRule("p(V0,V1) :- pair(V0,V1), single(V1).").get
+    val metaTransitionC0 = Parser.parseRule("p(V0,V1,V2) :- found(V0,V3), single1(V1), single2(V2).").get
+    val metaTransitionC1 = Parser.parseRule("p(V0,V1,V2) :- pair1(V0,V1), single1(V2), pair2(V0,V2).").get
+
+    val results =  parameters.map(params=>{
+      val experiment = new Experiment(params).load()
+      val engine = EngineCache(experiment.getDatabase, params.recursionSize)
+
+      params.binaryPositiveThreshold = 0.0
+      params.binaryNegativeThreshold = 1.0
+
+      val heBinary = new BinaryFast(engine)
+        .addMetaRule(metaTransitionL0)
+        .addMetaRule(metaTransitionL1)
+        .addMetaRule(metaTransitionC0)
+        .addMetaRule(metaTransitionC1)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+        .setPositiveThreshold(params.binaryPositiveThreshold)
+        .setNegativeThreshold(params.binaryNegativeThreshold)
+
+      val heUnion = new UnionFast(engine)
+        .setScoreThreshold(params.scoreThreshold)
+        .setNegativeThreshold(0.000)
+        .setPositiveThreshold(0.005)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+
+      measureResult(experiment, Array(heBinary, heUnion))
+    })
+
+    val pw = new PrintWriter("resources/experiments/inventions/iggp-buttons-goal.csv")
     pw.println(Params().toCSVHeaderLine())
     results.foreach(line => pw.println(line))
     pw.close()
@@ -297,6 +462,7 @@ object Invention:
         .addMetaRule(metaTransition1)
         .addMetaRule(metaTransition2)
         .addMetaRule(metaTransition3)
+        .setScoreThreshold(params.scoreThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
 
@@ -305,6 +471,7 @@ object Invention:
         .setPositiveThreshold(0.01)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
@@ -444,7 +611,6 @@ object Invention:
     results.foreach(line => pw.println(line))
     pw.close()
     results
-
   }
 
   def testPTE(): Array[String] = {
@@ -545,12 +711,14 @@ object Invention:
         .setNegativeThreshold(params.binaryNegativeThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       val heUnion = new UnionFast(engine)
         .setNegativeThreshold(params.unionNegativeThreshold)
         .setPositiveThreshold(params.unionPositiveThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
@@ -565,6 +733,11 @@ object Invention:
 
   def testUWCS(): Array[String] = {
     val parameters = Params("uwcs").generateParams()
+
+    val hypothesis = Parser.parseHypothesis("advisedBy(V0,V1):- ta(V3,V0,V4),taughtBy(V3,V1,V4),taughtBy(V5,V0,V2).\n"+
+      "advisedBy(V0,V1):- student(V0),tempAdvisedBy(V3,V1),taughtBy(V4,V0,V5),taughtBy(V4,V1,V2).\n"+
+      "advisedBy(V0,V1):- ta(V5,V0,V3),taughtBy(V5,V1,V3),tempAdvisedBy(V4,V1),publication(V2,V0),publication(V2,V1),publication(V2,V4).")
+
     val metaTransition1 = Parser.parseRule("r(V0, V1, V2, V4) :- a(V4, V0, V5), a(V4, V1, V2).").get
     val metaTransition2 = Parser.parseRule("r(V0, V1, V2, V3, V4) :- t(V0, V1, V2, V4), a(V3, V1).").get
     val metaTransition3 = Parser.parseRule("r(V0, V1) :- t(V0, V1, V2, V3, V4), s(V0).").get
@@ -589,12 +762,20 @@ object Invention:
         .setNegativeThreshold(params.binaryNegativeThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+
+
+      heBinary
+        .setPositives(experiment.getPositives)
+        .setNegatives(experiment.getNegatives)
+        .igParallel(hypothesis.get).print()
 
       val heUnion = new UnionFast(engine)
         .setNegativeThreshold(params.unionNegativeThreshold)
         .setPositiveThreshold(params.unionPositiveThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
@@ -608,14 +789,6 @@ object Invention:
   }
 
   def testWebkb(): Array[String] = {
-    /*
-    type(faculty, (person)).
-    type(courseprof, (course, person)).
-    type(courseta, (course, person)).
-    type(project, (project, person)).
-    %type(sameperson, (person, person)).
-    type(student, (person)).
-     */
 
     val parameters = Params("webkb").generateParams()
     val metaTransition0 = Parser.parseRule("r(C,P) :- co(C, P), pr(P).").get
@@ -783,17 +956,63 @@ object Invention:
         .setNegativeThreshold(params.binaryNegativeThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       val heUnion = new UnionFunctional(engine)
         .setNegativeThreshold(params.unionNegativeThreshold)
         .setPositiveThreshold(params.unionPositiveThreshold)
         .setResembleThreshold(params.resembleThreshold)
         .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
     val pw = new PrintWriter("resources/experiments/inventions/synthesis.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
+  }
+  def testSynthesisContains(): Array[String] = {
+    val parameters = Params("synthesis-contains").generateParams()
+    val metaRecursion = Parser.parseRule("re(V0) :- pi(V0, V2), re(V2).").get
+      .setRecursion(true)
+      .buildRecursion()
+    val metaRest1 = Parser.parseRule("re(V0) :- t(V0, V1), single(V1).").get
+
+    val results = parameters.map(params=>{
+
+      params.binaryPositiveThreshold = 0.0
+      params.binaryNegativeThreshold = 0.7
+      params.unionPositiveThreshold = 0.0
+      params.unionNegativeThreshold = 0.0
+      params.recursionSize = 15
+
+      val experiment = new Experiment(params).load()
+      val engine = EngineSerial(experiment.getDatabase, params.recursionSize)
+
+      val heBinary = new BinaryFunctional(engine)
+        .addMetaRule(metaRecursion)
+        .addMetaRule(metaRest1)
+        .setPositiveThreshold(params.binaryPositiveThreshold)
+        .setNegativeThreshold(params.binaryNegativeThreshold)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+
+      val heUnion = new UnionFunctional(engine)
+        .setNegativeThreshold(params.unionNegativeThreshold)
+        .setPositiveThreshold(params.unionPositiveThreshold)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+        .setScoreThreshold(params.scoreThreshold)
+
+      measureResult(experiment, Array(heBinary, heUnion))
+    })
+
+    val pw = new PrintWriter("resources/experiments/inventions/synthesis-contains.csv")
     pw.println(Params().toCSVHeaderLine())
     results.foreach(line => pw.println(line))
     pw.close()

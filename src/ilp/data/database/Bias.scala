@@ -6,7 +6,7 @@ import ilp.data.variables.Variable
 
 import java.io.File
 import scala.io.Source
-
+import scala.collection.mutable.{Map=>HashMap}
 class Bias extends Serializable{
 
   case class Function(name: String, variables: Array[Position]) {
@@ -22,32 +22,32 @@ class Bias extends Serializable{
 
     override def equals(obj: Any): Boolean = {
       val other = obj.asInstanceOf[Position]
-      other.function == function && other.index == index
+      other.index == index && other.function.equals(function)
     }
 
     override def toString: String = function + "/"+index +"=" + name
   }
 
-  var predicates: Map[String, Function] = Map[String, Function]()
-  var map: Map[Position, Position] = Map[Position, Position]()
+  var predicates: HashMap[String, Function] = HashMap[String, Function]()
+  var map: HashMap[Position, Position] = HashMap[Position, Position]()
 
 
   //noinspection SourceNotClosed
   def build(filename: String): this.type = {
     if File(filename).exists() then
       val definitions = Source.fromFile(filename).getLines().filter(line => !line.startsWith("%") || line.trim.isEmpty)
-        .filter(line => line.startsWith("type"))
+        .filter(line => line.startsWith("type")||line.startsWith("constant"))
         .flatMap(line => Parser.parseDefinition(line))
 
-      predicates = definitions.map(function => {
+      predicates = HashMap.from(definitions.map(function => {
         val positions = function.variables.zipWithIndex.map { case (name, index) =>
           Position(function.name, name, index)
         }
         function.name -> Function(function.name, positions)
-      }).toMap
+      }).toMap)
 
-      map = predicates.toArray.flatMap { case (name, function) => function.variables.map(position => (position, position)) }
-        .toMap
+      map = HashMap.from(predicates.toArray.flatMap { case (name, function) => function.variables.map(position => (position, position)) }
+        .toMap)
 
     this
   }
@@ -57,7 +57,7 @@ class Bias extends Serializable{
       Position(predicate.getName, variable.getName, index)
     }
 
-  def getRule(rule: Rule, map:Map[Position, Position] = map): Option[Function] = {
+  def getRule(rule: Rule, map:Map[Position, Position] = map.toMap): Option[Function] = {
     var result = Map[String, String]()
 
     rule.getBody.flatMap(predicate => {
@@ -98,8 +98,8 @@ class Bias extends Serializable{
   }
 
   def getHypothesis(hypothesis: Hypothesis): Option[Map[Position, Position]] = {
-    var crrMap = map
-    if map.isEmpty then Some(map)
+    var crrMap = map.toMap
+    if map.isEmpty then Some(map.toMap)
     else {
       hypothesis.getSorted.foreach(rule => {
         val functionOpt = getRule(rule, crrMap)

@@ -26,6 +26,24 @@ object DatabaseTest {
     println(results.mkString("[",",","]"))
   }
 
+  def simpleExecution2(): Unit = {
+    val db = Database("executionTest")
+
+    val r = Parser.parseRule("f(X,Y) :- X >= Y.").get
+    val h = Hypothesis(r.getHead, r).setFunctional(true).build()
+    val substitution = Substitution().add(Variable("X"), Num("X", 1.0))
+      .add(Variable("Y"), Num("Y", 0.0))
+
+
+
+    db.build()
+    val engine = EngineParallel(db, 5)
+    val plan = Plan(db)
+    val o1 = plan.optimizeExperimental(h)
+    val results = engine.join(o1, substitution)
+    println(results.mkString("[",",","]"))
+  }
+
 
   def simpleMixCycling(): Unit = {
     val params = Params("synthesis-length")
@@ -639,8 +657,31 @@ object DatabaseTest {
 
   }
 
+  def simpleContains(): Unit = {
+    val experiment = Experiment(Params("synthesis-contains")).load()
+    val db = experiment.getDatabase
+
+    val engine = EngineParallel(db, 20)
+    val plan = Plan(db)
+
+    val pos = Set(Parser.parsePredicate("f([49, 9]).").get.asPredicate())
+
+    val template = BinaryFunctional(engine).
+      setPositives(pos)
+      .setNegatives(experiment.getNegatives.take(0))
+
+    val containsHypothesis = Parser.parseHypothesis("f(V0):- head(V0,V1), c_9(V1).\n"+
+      "f(V0):- tail(V0,V1), f(V1).")
+      .get.buildDependency().compact().buildOperational()
+      .setRecursion(true)
+      .buildRecursion()
+
+    val pp = containsHypothesis.normalize().print()
+    template.igFunctional(pp).print()
+  }
+
   def main(args: Array[String]): Unit = {
-    simpleWebkb()
+    simpleContains()
   }
 
 }

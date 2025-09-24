@@ -3,18 +3,8 @@ package ilp.invent
 import ilp.data.database.{Engine, EngineSerial}
 import ilp.data.predicates.Predicate
 import ilp.data.program.Hypothesis
-import org.apache.ignite.{Ignite, Ignition}
-import org.apache.ignite.configuration.IgniteConfiguration
-import org.apache.ignite.lang.IgniteRunnable
-import org.apache.ignite.marshaller.jdk.JdkMarshaller
-import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi
-import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder
-
-import java.util
-import java.util.Collections
-import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
-import scala.jdk.CollectionConverters.IterableHasAsJava
+
 
 abstract class TemplateFast(engine: Engine) extends Template(engine) {
 
@@ -28,19 +18,34 @@ abstract class TemplateFast(engine: Engine) extends Template(engine) {
       }).filter(hypothesis => hypothesis.getRules.length < maxRules)
       .filter(hypothesis => engine.validHypothesis(hypothesis))
 
+    val unscoredList = validResults.filter(item=> !item.validAritry(targetPredicate))
     val scoredResults = crrTested ++ validResults.filter(_.validAritry(targetPredicate))
-      .map(hypothesis => igParallel(hypothesis))
+      .map(hypothesis => igFast(hypothesis))
       .filter(hypothesis => hypothesis.acceptNegRate(negThreshold) && hypothesis.acceptPosRate(posThreshold))
       .toArray
 
-    val combineSet = scoredResults.toSet ++
-      validResults.filter(result => !scoredResults.contains(result))
-
+    val combineSet = scoredResults.toSet ++ unscoredList
     (combineSet, scoredResults)
   }
 
-  def computeRemote(targets: Array[Hypothesis], targetPredicate: Predicate): (Set[Hypothesis], Array[Hypothesis]) = {
-    (Set(), Array())
+  def computeRemote(source: Hypothesis, targets: Array[Hypothesis], targetPredicate: Predicate): (Array[Hypothesis], Array[Hypothesis]) = {
+    val crrResults = inventNext(source, targets)
+    val crrTested = crrResults.filter(_.isTested)
+
+    val validResults = crrResults.par.filter(!_.tested).map(hypothesis => {
+        hypothesis.buildDependency().compact()
+          .buildOperational()
+      }).filter(hypothesis => hypothesis.getRules.length < maxRules)
+      .filter(hypothesis => engine.validHypothesis(hypothesis))
+
+    val unscoredList = validResults.filter(item => !item.validAritry(targetPredicate))
+    val scoredResults = crrTested ++ validResults.filter(_.validAritry(targetPredicate))
+      .map(hypothesis => igFast(hypothesis))
+      .filter(hypothesis => hypothesis.acceptNegRate(negThreshold) && hypothesis.acceptPosRate(posThreshold))
+      .toArray
+
+    val combineSet = scoredResults ++ unscoredList
+    (combineSet, scoredResults)
   }
 
 
