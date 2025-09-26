@@ -17,7 +17,6 @@ final class ExecutionContext(private var rule: Optimized,
                              private var attributes: Array[Variable],
                              private var depth: Int = 0) extends Serializable{
 
-
   def copy():ExecutionContext =
     val nrule = rule
     val ndataMap = dataMap
@@ -32,13 +31,20 @@ final class ExecutionContext(private var rule: Optimized,
     new ExecutionContext(nrule, ndataMap, noriginalMap, nrowMap, noriginalRowMap, nsubstitution, ntarget, nrelations, nattributes, ndepth)
 
 
+  def getBack(substitution: Substitution, predicate: Predicate):Substitution =
+    val values = rule.getHead.getVariables.zipWithIndex.flatMap {case(variable, index) => substitution.valueByVariable(variable, predicate.getVariable(index).getName)}
+    Substitution(values, values)
 
+  def getChanged(executionContext: ExecutionContext):Boolean =
+    substitution.getSize != executionContext.substitution.getSize
 
   def get(substitutions: Set[Substitution]): Set[Predicate] = {
     val headVariables = getHead.getVariables
     substitutions
       .map(substitution => rule.getHead.substitution(substitution).asPredicate())
   }
+
+
 
   def getExecutionId(predicate: Predicate): Int =
     (predicate.getInput
@@ -48,12 +54,40 @@ final class ExecutionContext(private var rule: Optimized,
       .foldRight[Int](1) { case (code, main) => main * 7 + code }
 
   def canSwitchContext(substitution: Substitution): Boolean = {
-    val hasInputVariables = getQuery.getInputVariables.forall(variable => substitution.hasVariable(variable))
+    val hasInputVariables = getQuery.getHead.getInput.forall(variable => substitution.hasVariable(variable))
     hasInputVariables
   }
 
   def canExecute(predicate: Predicate):Boolean =
     substitution.hasInputs(predicate)
+
+  def executable(predicate: Predicate):Boolean= {
+    predicate.getInput.forall(variable => {
+      val item = substitution.valueByVariable(variable)
+
+      if item.isDefined then {
+        val value = item.get
+        if (value.isVariableList)
+          if(value.asVariableList().nonEmpty) then true
+          else false
+        else if (value.isSymbol) then true
+        else false
+      }
+      else{
+        false
+      }
+
+    })
+  }
+
+  def canExecute():Boolean =
+    //all the inputs are symbolic for functionals
+    rule.getRelations.filter(_.isFunctional)
+      .forall(predicate => canExecute(predicate))
+
+  def canJoin() : Boolean =
+    rule.getRelations.filter(predicate=> predicate.isRecursive || !predicate.isFunctional)
+      .forall(predicate => substitution.hasVariables(predicate))
 
   def conflictContext(newContext: ExecutionContext): Boolean = {
     val result = depth == newContext.getDepth && substitution.conflicts(newContext.getSubstitution)

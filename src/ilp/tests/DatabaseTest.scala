@@ -1,6 +1,6 @@
 package ilp.tests
 
-import ilp.data.database.{Database, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
+import ilp.data.database.{Database, EngineLeap, EngineParallel, EngineRoaringParallel, EngineRoaringSerial, EngineSerial}
 import ilp.data.optimization.Plan
 import ilp.data.program.{Hypothesis, Parser, Substitution}
 import ilp.data.variables.{Num, Sym, Variable, VariableList}
@@ -607,53 +607,14 @@ object DatabaseTest {
     val experiment = Experiment(Params("synthesis-next")).load()
     val db = experiment.getDatabase
 
-    val engine = EngineSerial(db, 20)
+    val engine = EngineLeap(db, 20)
     val plan = Plan(db)
-    val template = BinaryFunctional(engine).setPositives(experiment.getPositives).setNegatives(experiment.getNegatives)
+    val template = BinaryFunctional(engine).setPositives(experiment.getPositives)
+      .setNegatives(experiment.getNegatives)
 
-    val hres0 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n" +
-      "func3198432(H,L) :- head(H,L).\n" +
-      "func120(A) :- x(A).\n" +
-      "func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).\n" +
-      "func590646503(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).\n" +
-      "func590646503(V0,V1) :- func3552336(V0,V2) & func590646503(V2,V1).").get.buildDependency().compact().buildOperational()
-
-    val hres1 = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n" +
-      "func3552336(L,T) :- tail(L,T).\n" +
-      "func3198432(H,L) :- head(H,L).\n" +
-      "func120(A) :- x(A).\n" +
-      "func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).\n" +
-      "func590646503(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).\n" +
-      "func590646503(V0,V1) :- func3552336(V0,V2) & func590646503(V2,V1).").get.buildDependency().compact().buildOperational()
-
-
-
-    val rr1 = Parser.parseRule("func590646503(V0,V1) :- x(V3) & head(V3,V0) & tail(V0,V2) & head(V1,V2).").get
-    val rr2 = Parser.parseRule("func590646503(V9,V111) :- tail(V9,V022) & func590646503(V022,V111).").get.buildRecursion()
-
-    val hres2 = Hypothesis(rr1.getHead, Array(rr1, rr2)).build()
-
-    //hres.rules.last.buildRecursion()
-    val pp = hres0.normalize().print()
-    //func590646503(V0,V1) :- x(V3) & head(V3,V0) & tail(V0,V2) & head(V1,V2).
-    //func590646503(V0,G230) :- tail(V0,V2) & x(V3) & head(V3,V2) & tail(V2,V2) & head(G230,V2).
-    
-    /*val m1 = Parser.parseRule("next_list(V0,V1) :- x(V3) & head(V3,V0) & head(V1,V2) & tail(V0, V2).").get
-    val m2 = Parser.parseRule("next_list(V0,V1) :- tail(V0, V2) & next_list(V2, V1).").get.buildRecursion()
-    val rr1 = Parser.parseRule("func3552336(V0,V2) :- tail(V0,V2).").get
-    val rr2 = Parser.parseRule("func3198432(V1,V2) :- head(V1,V2).").get
-    val rr3 = Parser.parseRule("func120(V3) :- x(V3).").get
-    val rr4 = Parser.parseRule("func71410313(V0,V1,V2) :- func3198432(V1,V2) & func3552336(V0,V2).").get
-    val rr5 = Parser.parseRule("next_list(V0,V1) :- func120(V3) & func3198432(V3,V0) & func71410313(V0,V1,V2).").get
-    val rr6 = Parser.parseRule("next_list(V0,V1) :- func3552336(V0,V2) & next_list(V2,V1).").get.buildRecursion()*/
-
-    //val hr1 = Hypothesis(rr5.getHead, Array(rr1, rr2, rr3, rr4, rr5, rr6))
-    //  .build()
-
-    val found0 = template.igFunctional(hres2)
-    val found1 = template.igFunctional(hres1)
-
-    found0.print()
+    val rr1 = Parser.parseHypothesis("f(V0,V1) :- x(V3) & head(V3,V0) & tail(V0,V2) & head(V1,V2).\n" +
+      "f(V9,V111) :- tail(V9,V022) & f(V022,V111).").get.buildRecursion()
+    template.igFunctional(rr1).print()
 
   }
 
@@ -661,27 +622,31 @@ object DatabaseTest {
     val experiment = Experiment(Params("synthesis-contains")).load()
     val db = experiment.getDatabase
 
-    val engine = EngineParallel(db, 20)
+    val engine = EngineLeap(db, 20)
     val plan = Plan(db)
 
-    val pos = Set(Parser.parsePredicate("f([49, 9]).").get.asPredicate())
+
 
     val template = BinaryFunctional(engine).
-      setPositives(pos)
-      .setNegatives(experiment.getNegatives.take(0))
+      setPositives(experiment.getPositives.take(2))
+      .setNegatives(experiment.getNegatives.take(2))
 
-    val containsHypothesis = Parser.parseHypothesis("f(V0):- head(V0,V1), c_9(V1).\n"+
-      "f(V0):- tail(V0,V1), f(V1).")
+    //
+    //func149939801(V0) :- func3552336(V0,V2) & func149939801(V2).
+
+    val containsHypothesis = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
+        "f(V0) :- head(V1, V0), c_9(V1).\n"+
+        "f(V0) :- func3552336(V0,V1), f(V1).")
       .get.buildDependency().compact().buildOperational()
       .setRecursion(true)
       .buildRecursion()
 
-    val pp = containsHypothesis.normalize().print()
+    val pp = containsHypothesis.print()
     template.igFunctional(pp).print()
   }
 
   def main(args: Array[String]): Unit = {
-    simpleContains()
+    simpleList()
   }
 
 }

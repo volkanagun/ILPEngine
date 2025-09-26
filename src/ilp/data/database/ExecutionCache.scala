@@ -14,12 +14,19 @@ class ExecutionCache extends Serializable{
     context.getExecutionId(predicate)
   }
 
+  def contains(id:Int) : Boolean = cache.contains(id)
+
   def get(crrId: Int): Option[Set[(ExecutionContext, Set[Substitution])]] = {
     val result = cache.get(crrId)
     if result.isDefined then
       Some(result.get.map(pair=> (pair._1, pair._2)))
     else
       None
+  }
+
+  def getFlat(crrId: Int): Set[(ExecutionContext, Set[Substitution])] = {
+    val result = cache(crrId)
+    result.map(pair=> (pair._1, pair._2))
   }
 
   def update(crrId: Int, contextData: ExecutionContext, set: Set[Substitution]): Unit = {

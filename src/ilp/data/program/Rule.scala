@@ -268,7 +268,7 @@ class Rule(var crr_head: Predicate, var crr_body: Array[Predicate]) extends Quer
   }
 
   def ig(facts: Set[Predicate], posItems: Set[Predicate], negItems: Set[Predicate]): this.type =
-    val functName = posItems.head.getName
+    val functName = negItems.head.getName
     val matchFacts = facts.map(predicate => predicate.setName(functName).asPredicate())
     tested = true
     genfacts = HashSet.from(facts)

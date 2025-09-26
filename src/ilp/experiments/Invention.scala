@@ -1,6 +1,6 @@
 package ilp.experiments
 
-import ilp.data.database.{EngineCache, EngineParallel, EngineSerial}
+import ilp.data.database.{EngineCache, EngineLeap, EngineParallel, EngineSerial}
 import ilp.data.program.{Hypothesis, Parser, Rule, Substitution}
 import ilp.invent.*
 
@@ -991,7 +991,7 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
       params.recursionSize = 15
 
       val experiment = new Experiment(params).load()
-      val engine = EngineSerial(experiment.getDatabase, params.recursionSize)
+      val engine = EngineLeap(experiment.getDatabase, params.recursionSize)
 
       val heBinary = new BinaryFunctional(engine)
         .addMetaRule(metaRecursion)

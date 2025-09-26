@@ -77,7 +77,7 @@ object Parser extends JavaTokenParsers {
       case "[" ~ args ~ "]" => {
         var items = Array[Variable]()
         args.zipWithIndex.foreach { case (item, index) => {
-          if (item.matches("\\d+(\\.\\d+?)")) then
+          if (item.matches("\\d+(\\.\\d+)?")) then
             items = items :+ variables.Num("item" + index, item.toDouble)
           else if (item.matches("[a-z0-9\\_]+"))
             items = items :+ new variables.Sym("item" + index, item)

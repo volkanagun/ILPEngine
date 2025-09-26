@@ -44,10 +44,6 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
       domains.reduce(_ intersect _)
     }
 
-  def atomSubstitutions(headPredicate: Predicate, substitution: Substitution): Set[Substitution] = {
-    val substitutions = database.getSubstitutions(headPredicate)
-    substitutions.filter(crrSubstitution => !crrSubstitution.conflicts(substitution))
-  }
 
   def switch(contextMap: Map[Int, Array[ExecutionContext]],
              programContext: ExecutionContext,
@@ -78,8 +74,7 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
       val newVariable = currentContext.getHead.getVariable(position)
       substitutions.flatMap(substitution => substitution.valueByVariable(newVariable, targetName)
         .map(variable => variable))
-    }
-    }
+    }}
 
     variables
   }

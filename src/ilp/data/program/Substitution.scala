@@ -23,6 +23,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
     this
   }
 
+  inline def getSize = variables.length
   inline def getVariables: Array[Variable] = variables
   inline def getVariable(index: Int): Variable = variables(index)
   inline def getSymbols: Array[Variable] = symbols
@@ -37,6 +38,7 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
   }
 
   def contains(variable: Variable): Boolean = variables.exists(item => item.getName == variable.getName)
+
 
   def containsAll(variables: Array[Variable]): Boolean = variables.forall(variable => contains(variable))
 
@@ -195,6 +197,9 @@ final class Substitution(var variables: Array[Variable], var symbols: Array[Vari
 
   def hasInputs(predicate: Predicate):Boolean =
     predicate.getInput.forall(inputVariable => contains(inputVariable))
+
+  def hasVariables(predicate: Predicate):Boolean =
+    predicate.getVariables.forall(inputVariable => contains(inputVariable))
 
   def sameValue(variable: Variable): Boolean =
     this.variables.zip(symbols).exists{case(crr, symbol)=> crr.getName == variable.getName && symbol.equalValue(variable)}
