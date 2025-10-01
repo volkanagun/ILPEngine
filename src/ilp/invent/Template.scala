@@ -244,7 +244,7 @@ abstract class Template(val engine: Engine) extends Serializable:
 
     val items = positives ++ negatives
     val ruleHead = hypothesis.getLastHead
-    val optimization = plan.optimizeNone(hypothesis)
+    val optimization = plan.optimizeExperimental(hypothesis)
     val crrFacts = items.flatMap(targetHead=>{
       val crrSubstitutions = engine.join(optimization, targetHead)
       crrSubstitutions.map(substitution=> targetHead.substitution(substitution).asPredicate())
@@ -273,9 +273,11 @@ abstract class Template(val engine: Engine) extends Serializable:
 
   def metaApply(source: Hypothesis, candidates: Array[Hypothesis]): Array[Hypothesis] =
     metaRules.flatMap(metaRule => {
-      if metaRule.isRecursive && metaRule.getSize == 2 then
-         InventionMeta.metaWithRecursive(source, metaRule) ++ InventionMeta.metaWithRecursive(source, candidates, metaRule)
-      else if metaRule.containsDublicate then
+      if metaRule.isRecursive && metaRule.getSize == 2 then {
+         val metaResult = InventionMeta.metaWithRecursive(source, metaRule)
+        val validCandidates = candidates.filter(hypothesis=> hypothesis.getHead != source.getHead)
+         metaResult ++ InventionMeta.metaWithRecursive(source, validCandidates, metaRule)
+      } else if metaRule.containsDublicate then
         InventionMeta.metaWithLazy(source, candidates, metaRule)
       else
         InventionMeta.metaWithLazy(source, candidates, metaRule)

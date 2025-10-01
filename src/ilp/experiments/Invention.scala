@@ -22,7 +22,7 @@ object Invention:
     //results ++= testIGGPMinimalDecayScore()
     //results ++= testIGGPChickenGoalScore()
     //results ++= testIGGPSokobanGoalScore()
-    results ++= Invention.testSynthesisContains()
+    //results ++= Invention.testSynthesisContains()
     //results ++= testPTC()
     //results ++= testPTE()
     //results ++= testYeast() //semi-success
@@ -31,6 +31,8 @@ object Invention:
     //results ++= testZendo1()
     //results ++= testZendo2()
     //results ++= testSynthesis()
+    //results ++= testRobotsRecursion()
+    results ++= testSynthesisContains()
 
     val pw = new PrintWriter("resources/experiments/invention.csv")
     pw.println(Params().toCSVHeaderLine())
@@ -879,24 +881,11 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
 
   def testZendo2(): Array[String] = {
     val parameters = Params("zendo2").generateParams()
-
-    /*
-      zendo(V0):- piece(V0,V1),green(V1),coord1(V1,V3),piece(V0,V2),lhs(V2),coord1(V2,V3).\n"+
-      "zendo(V0):- piece(V0,V1),blue(V1),piece(V0,V3),green(V3),piece(V0,V2),red(V2).
-     */
-
     val metaTransition1 = Parser.parseRule("re(V0, V1) :- pi(V0, V1), s(V1).").get
     val metaTransition2 = Parser.parseRule("re(V0, V2, V3) :- pi(V0, V2), c(V2,V3).").get
     val metaTransition3 = Parser.parseRule("re(V0, V1, V2, V3) :- co(V1, V3), ke(V0,V2,V3).").get
     val metaTransition4 = Parser.parseRule("re(V0) :- c1(V0, V1), ke(V0,V1,V2,V3).").get
     val metaTransition5 = Parser.parseRule("re(V0) :- c1(V0, V1), g1(V0,V3), r(V0,V2).").get
-
-    /*
-    val metaTransition1 = Parser.parseRule("re(V0, V1) :- pi(V0, V1), s(V1).").get
-    val metaTransition4 = Parser.parseRule("re(V1, V2, V3) :- c(V1, V3), c(V2, V3).").get
-    val metaTransition2 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V0, V3).").get
-    val metaTransition5 = Parser.parseRule("re(V0) :- r1(V0, V1), r2(V0, V2), r3(V1, V2, V3).").get
-*/
     val results = parameters.map(params=>{
       //params.filterSize = 5000
       val experiment = new Experiment(params).load().pruneDatabase()
@@ -923,6 +912,48 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
     })
 
     val pw = new PrintWriter("resources/experiments/inventions/zendo2.csv")
+    pw.println(Params().toCSVHeaderLine())
+    results.foreach(line => pw.println(line))
+    pw.close()
+    results
+
+  }
+
+  def testRobotsRecursion(): Array[String] = {
+    val parameters = Params("robots-recursion")
+      .generateParams()
+    val metaTransition1 = Parser.parseRule("f(X0,Y0,X1,Y1) :- up(X0,Y0,X2,Y2), up(X2,Y2,X1,Y1).").get
+    val metaTransition2 = Parser.parseRule("f(X0,Y0,X1,Y1) :- up(X0,Y0,X2,Y2), f(X2,Y2,X1,Y1).")
+      .get.setRecursion(true).buildRecursion()
+    val results = parameters.map(params=>{
+
+      params.resembleThreshold = 1.00
+      params.binaryPositiveThreshold = 0.0
+      params.binaryNegativeThreshold = 1.00
+
+      params.unionPositiveThreshold = 0.0
+      params.unionNegativeThreshold = 0.0
+
+      val experiment = new Experiment(params).load()
+      val engine = EngineLeap(experiment.getDatabase, params.recursionSize)
+
+      val heBinary = new BinaryFunctional(engine)
+        .addMetaRule(metaTransition1)
+        .addMetaRule(metaTransition2)
+        .setPositiveThreshold(params.binaryPositiveThreshold)
+        .setNegativeThreshold(params.binaryNegativeThreshold)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+
+      val heUnion = new UnionFunctional(engine)
+        .setNegativeThreshold(params.unionNegativeThreshold)
+        .setPositiveThreshold(params.unionPositiveThreshold)
+        .setResembleThreshold(params.resembleThreshold)
+        .setResembleWindow(params.resembleWindow)
+      measureResult(experiment, Array(heBinary, heUnion))
+    })
+
+    val pw = new PrintWriter("resources/experiments/inventions/robots-recursion.csv")
     pw.println(Params().toCSVHeaderLine())
     results.foreach(line => pw.println(line))
     pw.close()
@@ -980,15 +1011,14 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
     val metaRecursion = Parser.parseRule("re(V0) :- pi(V0, V2), re(V2).").get
       .setRecursion(true)
       .buildRecursion()
-    val metaRest1 = Parser.parseRule("re(V0) :- t(V0, V1), single(V1).").get
+    val metaRest1 = Parser.parseRule("re(V0) :- t(V1, V0), single(V1).").get
 
     val results = parameters.map(params=>{
 
       params.binaryPositiveThreshold = 0.0
-      params.binaryNegativeThreshold = 0.7
+      params.binaryNegativeThreshold = 1.0
       params.unionPositiveThreshold = 0.0
-      params.unionNegativeThreshold = 0.0
-      params.recursionSize = 15
+      params.unionNegativeThreshold = 0.1
 
       val experiment = new Experiment(params).load()
       val engine = EngineLeap(experiment.getDatabase, params.recursionSize)
@@ -1002,7 +1032,7 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
         .setResembleWindow(params.resembleWindow)
         .setScoreThreshold(params.scoreThreshold)
 
-      val heUnion = new UnionFunctional(engine)
+      val heUnion = new UnionSingleFunctional(engine)
         .setNegativeThreshold(params.unionNegativeThreshold)
         .setPositiveThreshold(params.unionPositiveThreshold)
         .setResembleThreshold(params.resembleThreshold)

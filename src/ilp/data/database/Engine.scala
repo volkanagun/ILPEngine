@@ -15,6 +15,11 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
   val programCache = ProgramCache()
 
 
+  def clear():Engine = {
+    executionCache.clear()
+    this
+  }
+
   def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution]
   def join(programs: Array[Optimized], substitution: Substitution = Substitution()): Set[Substitution]
   def join(programs: Array[Optimized], callPredicate:Predicate):Set[Substitution]
@@ -32,9 +37,15 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
     }
     this
 
+  def validRecursion(hypothesis: Hypothesis):Boolean =
+    hypothesis.getRules.filter(_.isRecursive).forall(rule=>{
+      val id = rule.identifier()
+      val count = rule.getBody.count(predicate=> predicate.identifier() == id)
+      count == 1
+    })
 
   def validHypothesis(hypothesis: Hypothesis): Boolean =
-    database.valid(hypothesis)
+    validRecursion(hypothesis) && database.valid(hypothesis)
 
   def intersection(domains: Array[Set[Variable]]): Set[Variable] =
     if domains.isEmpty then {
@@ -50,7 +61,7 @@ abstract class Engine(val database: Database, val recursiveDepth: Int = 10) exte
              nextContext: ExecutionContext, predicate: Predicate,
              attribute: Variable, predicateId: Int, position: Int): Set[Variable] = {
 
-    val executionId = executionCache.id(nextContext, predicate)
+    val executionId = executionCache.id(nextContext, predicate, position)
     val existingSubstitutions = executionCache.get(executionId)
 
     val items = (if contextMap.contains(predicateId) then {

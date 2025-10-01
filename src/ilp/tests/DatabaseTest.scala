@@ -622,21 +622,23 @@ object DatabaseTest {
     val experiment = Experiment(Params("synthesis-contains")).load()
     val db = experiment.getDatabase
 
+    /*val positives = Set(Parser.parsePredicate("f([1,9]).").get)
+    val negatives = Set(Parser.parsePredicate("f([1,1]).").get)*/
+
+    val positives = experiment.getPositives
+    val negatives = experiment.getNegatives
+
     val engine = EngineLeap(db, 20)
     val plan = Plan(db)
-
-
-
     val template = BinaryFunctional(engine).
-      setPositives(experiment.getPositives.take(2))
-      .setNegatives(experiment.getNegatives.take(2))
+      setPositives(positives)
+      .setNegatives(negatives)
 
-    //
-    //func149939801(V0) :- func3552336(V0,V2) & func149939801(V2).
-
-    val containsHypothesis = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n"+
-        "f(V0) :- head(V1, V0), c_9(V1).\n"+
-        "f(V0) :- func3552336(V0,V1), f(V1).")
+    val containsHypothesis = Parser.parseHypothesis("func3198432(H,T) :- head(H,T).\n"+
+      "func98138(A) :- c_6(A).\n"+
+      "func3552336(L,T) :- tail(L,T).\n"+
+      "func2015540875(V0) :- func3198432(V1,V0) & func98138(V1).\n"+
+      "func2015540875(V0) :- func3552336(V0,V2) & func2015540875(V2).")
       .get.buildDependency().compact().buildOperational()
       .setRecursion(true)
       .buildRecursion()
@@ -645,8 +647,49 @@ object DatabaseTest {
     template.igFunctional(pp).print()
   }
 
+  def simpleRobots(): Unit = {
+
+    val experiment = Experiment(Params("robots-recursion")).load()
+    val db = experiment.getDatabase
+
+    //val positives = Set(Parser.parsePredicate("f(85.0,68.0,85.0,70.0).").get)
+    //val negatives = Set(Parser.parsePredicate("f(85,85,85,80).").get)
+
+    val positives = experiment.getPositives
+    val negatives = experiment.getNegatives
+
+    val engine = EngineLeap(db, 20)
+    val plan = Plan(db)
+    val template = BinaryFunctional(engine).
+      setPositives(positives)
+      .setNegatives(negatives)
+
+    /*val containsHypothesis = Parser.parseHypothesis(
+      "move_up(X1,Y1,X2,Y2) :- X2 is X1 & size(S) & Y1<S & Y2 is Y1+1.\n" +
+      "f(X0,Y0,X1,Y1) :- move_up(X0,Y0,X2,Y2) & move_up(X2,Y2,X1,Y1).\n")
+      .get.buildDependency().compact().buildOperational()
+      .setRecursion(true)
+      .buildRecursion()*/
+  /*
+    val containsHypothesis = Parser.parseHypothesis(
+      "moveup(X1,Y1,X2,Y2) :- X2 is X1, size(S), Y1 < S, Y2 = Y1 + 1.\n"+
+        "f(X0,Y0,X1,Y1) :- moveup(X0,Y0,X2,Y2),moveup(X2,Y2,X1,Y1).\n"+
+        "f(X0,Y0,X1,Y1) :- moveup(X0,Y0,X2,Y2), f(X2,Y2,X1,Y1).")
+    */
+    val robotsHypothesis = Parser.parseHypothesis(
+        "move_up(X1,Y1,X2,Y2) :- X2 is X1 & size(S) & Y1<S & Y2 is Y1+1.\n"+
+        "func579855927(X0,Y0,X1,Y1) :- move_up(X0,Y0,X2,Y2) & move_up(X2,Y2,X1,Y1).\n"+
+        "func579855927(X0,Y0,X1,Y1) :- func579855927(X2,Y2,X1,Y1) & move_up(X0,Y0,X2,Y2).")
+      .get.buildDependency().compact().buildOperational()
+      .setRecursion(true)
+      .buildRecursion()
+
+    val pp = robotsHypothesis.print()
+    template.igFunctional(pp).print()
+  }
+
   def main(args: Array[String]): Unit = {
-    simpleList()
+    simpleContains()
   }
 
 }

@@ -3,8 +3,8 @@ package ilp.data.variables
 final class Sym(n: String, var value: String) extends Variable(n):
 
   override inline def isSymbol = true
-
   override inline def isPredicate = false
+  override inline def isDefinite = true
 
   override inline def isVariable = false
 
@@ -14,7 +14,7 @@ final class Sym(n: String, var value: String) extends Variable(n):
 
   override inline def hashCode(): Int = value.hashCode
 
-  override inline def id(): Int = name.hashCode * 7 + value.hashCode
+  override inline def id(): Int = name.hashCode * 31 + value.hashCode
 
   override inline def equalValue(variable: Variable): Boolean = {
     variable.isInstanceOf[Sym] && variable.asSymbol().value == value

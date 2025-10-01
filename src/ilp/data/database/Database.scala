@@ -15,7 +15,7 @@ class Database(name: String) extends Serializable:
   private var index = Map[Int, Index]()
   private var stats = Map[Int, Statistics]()
 
-  private var preRules = Set[Rule]()
+  private var primitives = Set[Hypothesis]()
   private var bias : Bias = Bias()
 
   def build(): this.type =
@@ -50,20 +50,21 @@ class Database(name: String) extends Serializable:
     val includeVariables = primaryList.flatMap(predicate=> predicate.getVariables)
     val expandList = sets.filter(predicate => includeVariables.exists(variable=> predicate.containsValue(variable)) && !negatives.exists(variable=> predicate.containsValue(variable)))
     Database(name)
-      .add(primaryList.toSet)
-      .add(expandList.toSet)
+      .add(primaryList)
+      .add(expandList)
+      .addPrimitives(primitives)
       .build()
 
   def getStatistics: Map[Int, Statistics] = stats.toMap
 
+  def getPrimitives:Set[Hypothesis] = primitives
+
   def valid(hypothesis: Hypothesis):Boolean =
     bias.getHypothesis(hypothesis).nonEmpty
 
-  def add(rule:Rule):this.type =
-    if !preRules.contains(rule) then {
-        preRules += rule
-        for predicate <- rule.getBody do
-          add(predicate)
+  def add(rule:Hypothesis):this.type =
+    if !primitives.contains(rule) then {
+        primitives += rule
     }
     this
 
@@ -106,6 +107,10 @@ class Database(name: String) extends Serializable:
 
   def add(predicates: Set[Predicate]): this.type =
     predicates.foreach(add)
+    this
+
+  def addPrimitives(primitives: Set[Hypothesis]): this.type =
+    primitives.foreach(add)
     this
 
 /*

@@ -24,12 +24,12 @@ final class VariableList(nm: String, var values: Array[Variable]) extends Variab
   def this(name: String, head: String, items: Array[String]) = this(name, (head +: items).zipWithIndex.map(pair => Sym("item" + pair._2, pair._1).asVariable()))
 
   override inline def isVariable: Boolean = true
-
   override inline def isVariableList: Boolean = true
 
   override inline def isList: Boolean = true
-
   override inline def isSymbol: Boolean = true
+  override inline def isDefinite: Boolean = nonEmpty
+
 
   override inline def isNumberList: Boolean =
     containsNumber

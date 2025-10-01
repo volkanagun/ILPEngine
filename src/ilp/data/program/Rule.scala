@@ -276,8 +276,11 @@ class Rule(var crr_head: Predicate, var crr_body: Array[Predicate]) extends Quer
     this.posSize = posItems.size
     this.negSize = negItems.size
 
-    positives = HashSet.from(matches(posItems, matchFacts))
-    negatives = HashSet.from(matches(negItems, matchFacts))
+    val positiveMatches = HashSet.from(matches(posItems, matchFacts))
+    val negativeMatches = HashSet.from(matches(negItems, matchFacts))
+
+    positives = positiveMatches
+    negatives = negativeMatches
 
     posRate = positives.size.toDouble / math.max(posSize, 1.0)
     negRate = negatives.size.toDouble / math.max(negSize, 1.0)

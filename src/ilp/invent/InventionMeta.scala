@@ -82,7 +82,8 @@ object InventionMeta:
 
 
   def canonicalize(rule: Rule): Rule = {
-    val sorted = rule.getBody.sortBy(_.getName)
+    val sorted = rule.getBody.filter(predicate=> !predicate.isRecursive).sortBy(_.getName) ++
+      rule.getBody.filter(_.isRecursive)
     val id = sorted.foldRight[Int](1) { case (item, main) => main * 7 + item.hashCode }
     val absid = math.abs(id)
     val name = "func" + absid

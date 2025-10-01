@@ -100,6 +100,7 @@ class Variable(var name: String) extends Serializable:
   def isNumberList = false
   def isVariableList = false
   def isSymbolList = false
+  def isDefinite = false
 
   //def isEmpty = false
   //def nonEmpty = false

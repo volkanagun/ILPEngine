@@ -6,7 +6,7 @@ import ilp.data.program.Hypothesis
 
 class BinaryFunctional(engine: Engine) extends TemplateFunctional(engine) {
 
-  override def source(): Array[Hypothesis] = {
+  /*override def source(): Array[Hypothesis] = {
     val results = sources.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
       .distinct
     results
@@ -16,7 +16,7 @@ class BinaryFunctional(engine: Engine) extends TemplateFunctional(engine) {
     val results = candidates.filter(item => !item.isTested || item.acceptPosRate(posThreshold) && item.acceptNegRate(negThreshold))
       .distinct
     results
-  }
+  }*/
 
   override def inventNext(targets: Array[Hypothesis]): Array[Hypothesis] =
     val currentSource = nextSource()

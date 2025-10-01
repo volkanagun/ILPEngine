@@ -25,9 +25,11 @@ class Execution(var engine: Engine):
   var pruneMap = Map[Int, Double]()
 
   val db: Database = engine.getDatabase
+  primitives = db.getPrimitives.toArray
 
   var targetWindow = 3
   var iteration = 1
+
 
   def setPositives(positives:Set[Predicate]):this.type = {
     this.positives = positives
@@ -114,7 +116,7 @@ class Execution(var engine: Engine):
       })
     }).toArray
 
-    primitives = candidates
+    primitives ++= candidates
 
     templates.foreach(template=> template
       .setPositives(positives)
@@ -138,9 +140,7 @@ class Execution(var engine: Engine):
     var sourceHypothesis = templates
       .flatMap(template => {
         template.reset().invent()
-      }).toSet
-
-    sourceHypothesis ++= primitives
+      }).toSet ++ primitives
     var previousCandidates = Array(sourceHypothesis)
     var sortedCandidates = sourceHypothesis.toArray
     var isFinished = stopCondition(sourceHypothesis)

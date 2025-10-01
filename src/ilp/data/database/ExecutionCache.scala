@@ -10,8 +10,13 @@ class ExecutionCache extends Serializable{
 
   var cache = ConcurrentMap[Int, Set[(ExecutionContext, Set[Substitution])]]()
 
-  def id(context: ExecutionContext, predicate:Predicate): Int = {
-    context.getExecutionId(predicate)
+  def clear():this.type = {
+    cache.clear()
+    this
+  }
+
+  def id(context: ExecutionContext, predicate:Predicate, position:Int): Int = {
+    context.getExecutionId(predicate, position)
   }
 
   def contains(id:Int) : Boolean = cache.contains(id)
@@ -26,7 +31,7 @@ class ExecutionCache extends Serializable{
 
   def getFlat(crrId: Int): Set[(ExecutionContext, Set[Substitution])] = {
     val result = cache(crrId)
-    result.map(pair=> (pair._1, pair._2))
+    result
   }
 
   def update(crrId: Int, contextData: ExecutionContext, set: Set[Substitution]): Unit = {

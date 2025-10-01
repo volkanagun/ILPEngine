@@ -75,6 +75,18 @@ class Experiment(val params: Params):
     println("Loading database finished.")
     val bias = Bias().build(folder + "bias.pl")
     database.build().setBias(bias)
+    loadPrimitives()
+    this
+
+  def loadPrimitives():this.type =
+    println(s"Loading database primitives from ${folder}")
+    Source.fromFile(folder + "bk.pl").getLines().map(_.trim)
+      .filter(line => line.nonEmpty && !line.startsWith("%") && line.contains(":-"))
+      .foreach(line => {
+        val rule = Parser.parseHypothesis(line).get
+        database.add(rule)
+      })
+    println("Loading database primitives finished.")
     this
 
   def loadQueries(): this.type =

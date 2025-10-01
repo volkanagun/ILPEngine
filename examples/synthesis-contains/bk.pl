@@ -2,8 +2,9 @@ tail(L,T).
 head(H,T).
 empty([]).
 geq(A,B):- A >= B.
-even(A):- 0 is A mod 2.
-odd(A):- 1 is A mod 2.
+%not supported
+%even(A):- 0 is A mod 2.
+%odd(A):- 1 is A mod 2.
 
 c_0(0.0).
 c_1(1.0).

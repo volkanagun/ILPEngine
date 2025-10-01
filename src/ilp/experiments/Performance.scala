@@ -42,7 +42,7 @@ object Performance {
         if line.startsWith("%") then
           val skip = 1
         else if line.contains(":") then
-          val rule = Parser.parseRule(line).get
+          val rule = Parser.parseHypothesis(line).get
           database.add(rule)
         else
           val predicate = Parser.parsePredicate(line).get

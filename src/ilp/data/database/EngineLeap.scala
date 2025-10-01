@@ -5,15 +5,12 @@ import ilp.data.predicates.Predicate
 import ilp.data.program.Substitution
 import ilp.data.variables.Variable
 
-class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursiveDepth) {
+class EngineLeap(db: Database, recursiveDepth: Int) extends EngineSerial(db, recursiveDepth) {
 
-  var contextMap: Map[Int, Array[ExecutionContext]] = null
-
-  override def join(contextMap: Map[Int, Array[ExecutionContext]], programContext: ExecutionContext, currentContext: ExecutionContext): Set[Substitution] = ???
 
   override def join(programs: Array[Optimized], substitution: Substitution): Set[Substitution] = {
     val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
-    contextMap = contextProgram
+    val program = contextProgram
       .groupBy { context => context.getHead.identifier() }
 
     var substitutions = Set[Substitution]()
@@ -21,7 +18,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
       if context.isTarget then context.setSubstitution(substitution)
       if !context.isFunctional || context.isTarget then {
         val headPredicate = context.getHead
-        val crrSubstitutions = simpleJoin(context)
+        val crrSubstitutions = simpleJoin(program, context)
           .map(substitution => substitution.get(headPredicate.getVariables)) //++ atomSubstitutions(headPredicate, substitution)
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
@@ -34,10 +31,10 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
   }
 
 
-  def join(programs: Array[Optimized], callPredicate: Predicate): Set[Substitution] = {
+  override def join(programs: Array[Optimized], callPredicate: Predicate): Set[Substitution] = {
 
     val contextProgram = programs.map(rule => ExecutionContext(rule, Substitution()))
-    contextMap = contextProgram
+    val program = contextProgram
       .groupBy { context => context.getHead.identifier() }
 
     var substitutions = Set[Substitution]()
@@ -47,7 +44,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
       }
       if !context.isFunctional || context.isTarget then {
         val headPredicate = context.getHead
-        val crrSubstitutions = simpleJoin(context)
+        val crrSubstitutions = simpleJoin(program, context)
           .map(substitution => substitution.get(headPredicate.getVariables)) //++ atomSubstitutions(headPredicate, substitution)
         val crrPredicates = context.get(crrSubstitutions)
         substitutions = substitutions ++ (if context.isTarget then crrSubstitutions else Set())
@@ -60,15 +57,15 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
   }
 
 
-  def simpleSwitch(context: ExecutionContext, predicate: Predicate,
+  def simpleSwitch(program:Map[Int, Array[ExecutionContext]], context: ExecutionContext, predicate: Predicate,
                    attribute: Variable, predicateId: Int, position: Int): Set[Variable] = {
-    val executionId = executionCache.id(context, predicate)
+    val executionId = executionCache.id(context, predicate, position)
     val existingSubstitutions = if !executionCache.contains(executionId) then {
-      val results = contextMap(predicateId)
+      val results = program(predicateId)
         .flatMap(currentContext => {
           currentContext.switchContext(context.getSubstitution, predicate, position, context.getDepth + 1)
         }).map(currentContext => {
-          val substitutions = simpleJoin(currentContext)
+          val substitutions = simpleJoin(program, currentContext)
           (currentContext, substitutions)
         }).toSet
 
@@ -90,14 +87,19 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
     variables
   }
 
-  def simpleSwitchSubstitutions(context: ExecutionContext, predicate: Predicate, position: Int): Set[Substitution] = {
-    val executionId = executionCache.id(context, predicate)
+  def simpleSwitchSubstitutions(contextMap:Map[Int, Array[ExecutionContext]], context: ExecutionContext, predicate: Predicate, position: Int): Set[Substitution] = {
+    val executionId = executionCache.id(context, predicate, position)
     val existingSubstitutions = if !executionCache.contains(executionId) then {
-      val results = contextMap(predicate.identifier())
+      val identifier = predicate.identifier()
+      /*
+      if !contextMap.contains(identifier) then
+        val debuf = 0*/
+
+      val results = contextMap.getOrElse(identifier, Array[ExecutionContext]())
         .flatMap(currentContext => {
           currentContext.switchContext(context.getSubstitution, predicate, position, context.getDepth + 1)
         }).map(currentContext => {
-          val substitutions = simpleJoin(currentContext)
+          val substitutions = simpleJoin(contextMap, currentContext)
           (currentContext, substitutions)
         }).toSet
 
@@ -105,7 +107,11 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
       results
     }
     else {
-      executionCache.getFlat(executionId)
+
+
+
+      val results = executionCache.getFlat(executionId)
+      results
     }
 
     val main = context.getSubstitution
@@ -120,7 +126,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
     substitutionList
   }
 
-  def simpleRetrieve(context: ExecutionContext, predicate: Predicate, attribute: Variable, index: Int): Set[Variable] =
+  def simpleRetrieve(contextMap:Map[Int, Array[ExecutionContext]], context: ExecutionContext, predicate: Predicate, attribute: Variable, index: Int): Set[Variable] =
     //Retrieve the result
     val predicateId = predicate.identifier()
     val pid = predicate.identifier(index)
@@ -131,12 +137,12 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
       .map(predicate => predicate.getVariable(position).copy(targetName))
       .filter(variable => attribute.equalValue(variable)).toSet
     if existingResults.isEmpty && contextMap.contains(predicateId) then
-      simpleSwitch(context, predicate, attribute, predicateId, position)
+      simpleSwitch(contextMap, context, predicate, attribute, predicateId, position)
     else
       existingResults
 
 
-  def simpleActive(context: ExecutionContext): Set[Variable] = {
+  def simpleActive(contextMap:Map[Int, Array[ExecutionContext]], context: ExecutionContext): Set[Variable] = {
     val attribute = context.getTargetVariable
     val substitution = context.getSubstitution
     val domains = context.getRelations.zipWithIndex.flatMap {
@@ -145,7 +151,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
           Some(Set(attribute))
         }
         else if predicate.contains(attribute) then
-          Some(simpleRetrieve(context, predicate, attribute, index))
+          Some(simpleRetrieve(contextMap, context, predicate, attribute, index))
         else
           None
       }
@@ -184,7 +190,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
     Some(context.newContext(main))
   }
 
-  def simpleRetrieveSubstitutions(context: ExecutionContext, predicate: Predicate, index: Int): Set[Substitution] =
+  def simpleRetrieveSubstitutions(contextMap:Map[Int, Array[ExecutionContext]], context: ExecutionContext, predicate: Predicate, index: Int): Set[Substitution] =
     //Retrieve the result
     val predicateId = predicate.identifier()
     val pid = predicate.identifier(index)
@@ -196,26 +202,26 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
       .toSet
 
     if (predicate.isFunctional || predicate.isRecursive) && existingResults.isEmpty then
-      simpleSwitchSubstitutions(context, predicate, index)
+      simpleSwitchSubstitutions(contextMap, context, predicate, index)
         .filter(substitution => !mainSubstitution.hasConflict(substitution))
     else
       existingResults.map(substition => context.getSubstitution.composition(substition))
         .filter(substitution => !mainSubstitution.hasConflict(substitution))
 
-  def simpleExecute(executionContext: ExecutionContext, substitutions: Set[Substitution], predicate: Predicate, index: Int): Set[Substitution] =
+  def simpleExecute(contextMap:Map[Int, Array[ExecutionContext]], executionContext: ExecutionContext, substitutions: Set[Substitution], predicate: Predicate, index: Int): Set[Substitution] =
     var results = Set[Substitution]()
     substitutions.foreach(main => {
       val newPredicate = predicate.substitution(main)
         .asPredicate()
-      if newPredicate.isDefinite && newPredicate.isExecutable then
+      if newPredicate.isDefinite/* && newPredicate.isExecutable*/ then
         newPredicate.execute().foreach(substitution => {
           val composed = main.composition(substitution)
           if !main.hasConflict(composed) then
             results += composed
         })
-      else if newPredicate.isFunctional then
-        val newContext = executionContext.newContext(main)
-        simpleRetrieveSubstitutions(newContext, newPredicate, index).foreach(substitution => {
+      else if executionContext.getDepth <= recursiveDepth then
+        val newContext = executionContext.newContext(main).incrementDepth()
+        simpleRetrieveSubstitutions(contextMap, newContext, newPredicate, index).foreach(substitution => {
           val composed = main.composition(substitution)
           if !main.hasConflict(composed) then
             results += composed
@@ -224,15 +230,18 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
 
     results
 
-  def simpleExecuteSubstitutions(context: ExecutionContext, substitutions: Set[Substitution]): Set[Substitution] = {
+  def simpleExecuteSubstitutions(contextMap:Map[Int, Array[ExecutionContext]], context: ExecutionContext, substitutions: Set[Substitution]): Set[Substitution] = {
     val rule = context.getRule
     var newSubstitutions = substitutions
     rule.getQuery.getBody
       .zipWithIndex
-      .filter { case (predicate, index) => !predicate.isRecursive && predicate.isFunctional && context.executable(predicate) }
-      .foreach { case (predicate, index) => {
-        newSubstitutions = simpleExecute(context, newSubstitutions, predicate, index)
+      .filter { case (predicate, index) => {
+        !predicate.isRecursive /*&& /*predicate.isFunctional && */context.executable(predicate)*/
       }}
+      .foreach { case (predicate, index) => {
+        newSubstitutions = simpleExecute(contextMap, context, newSubstitutions, predicate, index)
+      }
+      }
 
     newSubstitutions
 
@@ -240,15 +249,15 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
 
 
   //Find all input values for all items
-  def simpleJoin(executionContext: ExecutionContext): Set[Substitution] = {
+  def simpleJoin(program:Map[Int, Array[ExecutionContext]], executionContext: ExecutionContext): Set[Substitution] = {
 
 
-    val substitutions = simpleExecuteSubstitutions(executionContext, Set(executionContext.getSubstitution))
-    substitutions.flatMap(substitution => join(executionContext.newContext(substitution)))
+    val substitutions = simpleExecuteSubstitutions(program, executionContext, Set(executionContext.getSubstitution))
+    substitutions.flatMap(substitution => join(program, executionContext.newContext(substitution)))
 
   }
 
-  def join(currentContext: ExecutionContext): Set[Substitution] = {
+  def join(contextMap:Map[Int, Array[ExecutionContext]], currentContext: ExecutionContext): Set[Substitution] = {
     if (currentContext.getDepth > recursiveDepth || currentContext.emptyAttributes) then
       Set[Substitution](Substitution())
     else {
@@ -256,7 +265,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
       val nextContext = currentContext.nextContext(newSubstitution)
       val nextVariable = nextContext.getTargetVariable
 
-      val activeDomain = simpleActive(nextContext)
+      val activeDomain = simpleActive(contextMap, nextContext)
       val count = activeDomain.size
       val results = activeDomain.flatMap(value => {
 
@@ -264,7 +273,7 @@ class EngineLeap(db: Database, recursiveDepth: Int) extends Engine(db, recursive
         val newContext = nextContext.newContext(newSubstitution.composition(value))
           .setDataMap(filteredMap)
 
-        val partialResults = join(newContext)
+        val partialResults = join(contextMap, newContext)
 
         val substitutions = partialResults.map(partial => {
           //partial.replaceNew(nextVariable, value.copy(nextVariable.getName))

@@ -44,7 +44,7 @@ final class Minus(result:Variable, e1:Variable, e2:Variable) extends Functional(
     }
   }*/
 
-  override inline def toString: String = e1.toString + "-" + e2.toString
+  override inline def toString: String = result.toString + "=" + e1.toString + "-" + e2.toString
 
   override def copy(): Variable = Minus(result, e1, e2)
 

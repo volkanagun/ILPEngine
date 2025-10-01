@@ -2,8 +2,8 @@ package ilp.data.variables
 
 final class Num(vname: String, val item: Double) extends Variable(vname):
   override inline def isNumber: Boolean = true
-
   override inline def isSymbol: Boolean = true
+  override inline def isDefinite: Boolean = true
 
   inline def getNumber: Double = item
 
@@ -28,7 +28,7 @@ final class Num(vname: String, val item: Double) extends Variable(vname):
 
   override inline def toString: String = getName + "=" + item.toString
 
-  override inline def id(): Int = name.hashCode * 7 + item.hashCode()
+  override inline def id(): Int = name.hashCode * 31 + item.hashCode()
 
   override inline def copy(): Variable = Num(name, item)
 

@@ -29,8 +29,10 @@ final class Tail(val nm: String, val list: Variable, val tail: Variable) extends
   override inline def copy(newArray: Array[Variable]): Predicate =
     Tail(nm, newArray.head, newArray.last)
 
-  override inline def execute(): Option[Substitution] =
-    Some(Substitution().add(tail, getValue))
+  override inline def execute(): Option[Substitution] = {
+    if list.asVariableList().nonEmpty then Some(Substitution().add(tail, getValue))
+    else None
+  }
 
   override def substitution(substitution: Substitution): Predicate =
     val newTail = tail.substitution(substitution).asVariableList()

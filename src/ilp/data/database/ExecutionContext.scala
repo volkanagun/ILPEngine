@@ -6,6 +6,8 @@ import ilp.data.program.{Query, Substitution}
 import ilp.data.variables.{Num, Variable}
 import org.roaringbitmap.RoaringBitmap
 
+import scala.util.hashing.MurmurHash3
+
 final class ExecutionContext(private var rule: Optimized,
                              private var dataMap: Map[Int, Array[Predicate]],
                              private var originalMap: Map[Int, Array[Predicate]],
@@ -31,6 +33,11 @@ final class ExecutionContext(private var rule: Optimized,
     new ExecutionContext(nrule, ndataMap, noriginalMap, nrowMap, noriginalRowMap, nsubstitution, ntarget, nrelations, nattributes, ndepth)
 
 
+  def incrementDepth():ExecutionContext = {
+    depth += 1
+    this
+  }
+
   def getBack(substitution: Substitution, predicate: Predicate):Substitution =
     val values = rule.getHead.getVariables.zipWithIndex.flatMap {case(variable, index) => substitution.valueByVariable(variable, predicate.getVariable(index).getName)}
     Substitution(values, values)
@@ -46,12 +53,21 @@ final class ExecutionContext(private var rule: Optimized,
 
 
 
-  def getExecutionId(predicate: Predicate): Int =
-    (predicate.getInput
+  def getExecutionId(predicate: Predicate, position:Int): Int = {
+    val inputs = predicate.getInput
+    val predicateId = predicate.identifier(position)
+    val values = inputs
       .filter(variable => substitution.contains(variable))
       .flatMap(variable => substitution.valueByVariable(variable))
-      .map(symbol => symbol.hashCode()) :+ predicate.hashCode())
-      .foldRight[Int](1) { case (code, main) => main * 7 + code }
+
+    val id = MurmurHash3.orderedHash(
+      values.iterator.map(s => s.hashCode()),
+      seed = predicateId
+    )
+
+    id
+
+  }
 
   def canSwitchContext(substitution: Substitution): Boolean = {
     val hasInputVariables = getQuery.getHead.getInput.forall(variable => substitution.hasVariable(variable))
@@ -62,21 +78,9 @@ final class ExecutionContext(private var rule: Optimized,
     substitution.hasInputs(predicate)
 
   def executable(predicate: Predicate):Boolean= {
-    predicate.getInput.forall(variable => {
+    predicate.getInput.filter(item=> !item.isDefinite).forall(variable => {
       val item = substitution.valueByVariable(variable)
-
-      if item.isDefined then {
-        val value = item.get
-        if (value.isVariableList)
-          if(value.asVariableList().nonEmpty) then true
-          else false
-        else if (value.isSymbol) then true
-        else false
-      }
-      else{
-        false
-      }
-
+      item.isDefined && item.get.isDefinite
     })
   }
 

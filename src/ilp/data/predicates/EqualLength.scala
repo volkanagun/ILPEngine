@@ -32,7 +32,7 @@ final class EqualLength(result:Variable, e1:Variable, e2:Variable) extends Funct
   override inline def substitution(substitution: Substitution): Variable =
     val e1new = e1.substitution(substitution)
     val e2new = e2.substitution(substitution)
-    Equal(result, e1new, e2new)
+    Equal(e1new, e2new)
 }
 
 final class Length(result:String, e1:VariableList) extends Predicate("equal_length", e1, Variable(result)) {

@@ -185,18 +185,18 @@ object Parser extends JavaTokenParsers {
     }
 
   def equalCall: Parser[Predicate] =
-    "equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
-      case "equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
+    "equal(" ~ repsep(argument, ",") ~ ")" ^^ {
+      case "equal(" ~ args ~ ")" => Equal(args.head, args.last)
     }
 
   def equalSym: Parser[Predicate] =
     variable ~ "==" ~ variable ^^ {
-      case v1 ~ "==" ~ v2 => Equal("r", v1, v2)
+      case v1 ~ "==" ~ v2 => Equal(v1, v2)
     }
 
   def equalIsCall: Parser[Predicate] =
     (symbol <~ keywordIs) ~ argument ^^ {
-      case (sym ~ (myargument)) => Equal(myargument.getName, sym, myargument)
+      case (sym ~ (myargument)) => Equal(sym, myargument)
     }
 
   /** Parser for an argument, which can be a variable or a function call */
@@ -311,12 +311,12 @@ object Parser extends JavaTokenParsers {
 
   def lowerArgument: Parser[Predicate] =
     argument ~ "<" ~ argument ^^ {
-      case var1 ~ "<" ~ var2 => Lower("L", var1, var2)
+      case var1 ~ "<" ~ var2 => Lower(var1, var2)
     }
 
   def lowerEqualArgument: Parser[Predicate] =
     argument ~ "<=" ~ argument ^^ {
-      case var1 ~ "<=" ~ var2 => LowerEqual("L", var1, var2)
+      case var1 ~ "<=" ~ var2 => LowerEqual(var1, var2)
     }
 
   /** Parser for a predicate (e.g., parent(X, func(y))) */
@@ -383,8 +383,8 @@ object Parser extends JavaTokenParsers {
     }
 
   def equalArgument: Parser[Equal] =
-    "equal(" ~ varstr ~ "," ~ repsep(argument, ",") ~ ")" ^^ {
-      case "equal(" ~ result ~ "," ~ args ~ ")" => Equal(result, args.head, args.last)
+    "equal(" ~ repsep(argument, ",") ~ ")" ^^ {
+      case "equal(" ~ args ~ ")" => Equal(args.head, args.last)
     }
 
   def emptyListArgument: Parser[Empty] =

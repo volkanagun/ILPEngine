@@ -35,8 +35,10 @@ final class Head(val nm: String, val head: Variable, val list: Variable) extends
     val newList = list.substitution(substitution).asVariableList()
     Head(nm, newHead, newList).asVariable()
 
-  override inline def execute(): Option[Substitution] =
-    Some(Substitution().add(head, getValue))
+  override inline def execute(): Option[Substitution] = {
+    if list.isDefinite then Some(Substitution().add(head, getValue))
+    else None
+  }
 
   override inline def toString: String = "head(" + head.getName + "," + list.getName + ")"
 

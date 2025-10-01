@@ -22,6 +22,10 @@ final class Sum(array: VariableList, result:Variable) extends Functional("sum", 
 
 final class Plus(result:Variable, var1: Variable, var2:Variable) extends Functional("plus", Array(var1, var2, result)):
 
+  functional = true
+  recursive = false
+  setInput(Array(var1, var2))
+
   override inline def isExecutable: Boolean = isDefinite
   override inline def isDefinite: Boolean = var1.isNumber && var2.isNumber
   override inline def getVariables: Array[Variable] = array.filter(variable=> variable.isVariable)
@@ -39,8 +43,9 @@ final class Plus(result:Variable, var1: Variable, var2:Variable) extends Functio
     Plus(result, var1new, var2new)
   }
 
-  override inline def execute(): Option[Substitution] =
+  override inline def execute(): Option[Substitution] = {
     Some(Substitution(result, getValue))
+  }
 
   override inline def toString: String = result.getName + " is " + var1 + "+" + var2
 

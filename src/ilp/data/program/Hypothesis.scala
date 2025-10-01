@@ -307,7 +307,7 @@ class Hypothesis(crr_head: Predicate, var rules: Array[Rule]) extends Rule(crr_h
 
 
   //Consumes time do it efficiently
-  def similarity(targetHypothesis: Hypothesis, window: Int): Double =
+  def similarity(targetHypothesis: Hypothesis, window: Int = 3): Double =
     val currentRules = rules.map(_.getHeadName)
     val otherWindows = targetHypothesis.getRules.map(rule => rule.getHeadName).sliding(window, 1).toSet
     val otherSize = math.max(otherWindows.size, currentRules.length)

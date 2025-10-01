@@ -122,7 +122,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     Negative(name, array)
 
 
-  def isDefinite = false
+  override def isDefinite = false
   def isExecutable = false
 
   def isNegative = false
@@ -158,7 +158,7 @@ class Predicate(crr_name: String, var array: Array[Variable]) extends Variable(c
     name.hashCode * 7 + length()
 
   def identifier(index: Int): Int =
-    (name.hashCode * 7 + length()) * 7 + index
+    (name.hashCode * 31 + length()) * 31 + index
 
 
   override def hashCode(): Int =
