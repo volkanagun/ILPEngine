@@ -628,22 +628,24 @@ object DatabaseTest {
     val positives = experiment.getPositives
     val negatives = experiment.getNegatives
 
-    val engine = EngineLeap(db, 20)
+    val engine = EngineLeap(db, 50)
     val plan = Plan(db)
     val template = BinaryFunctional(engine).
       setPositives(positives)
       .setNegatives(negatives)
 
-    val containsHypothesis = Parser.parseHypothesis("func3198432(H,T) :- head(H,T).\n"+
-      "func98138(A) :- c_6(A).\n"+
-      "func3552336(L,T) :- tail(L,T).\n"+
-      "func2015540875(V0) :- func3198432(V1,V0) & func98138(V1).\n"+
-      "func2015540875(V0) :- func3552336(V0,V2) & func2015540875(V2).")
+    val containsHypothesis = Parser.parseHypothesis("func3552336(L,T) :- tail(L,T).\n" +
+        "func3198432(H,T) :- head(H,T).\n" +
+        "func98141(A) :- c_9(A).\n" +
+        "func98138(A) :- c_6(A).\n" +
+        "func651350039(V0) :- func3198432(V1,V0) & func98141(V1).\n" +
+        "func651350039(V0) :- func3552336(V0,V2) & func651350039(V2).\n" +
+        "func651350039(V0) :- func3198432(V1,V0) & func98138(V1).")
       .get.buildDependency().compact().buildOperational()
       .setRecursion(true)
       .buildRecursion()
 
-    val pp = containsHypothesis.print()
+    val pp = containsHypothesis.normalize().print()
     template.igFunctional(pp).print()
   }
 

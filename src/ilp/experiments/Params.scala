@@ -32,7 +32,7 @@ class Params(var experimentName: String = "zendo2") extends Serializable:
 
   def generateParams(): Array[Params] =
     Array(/*0.7, */0.98).flatMap(crrScoreThreshold => {
-      Array(20, 50, 100, 500).flatMap(crrFilterSize => {
+      Array(20, 50, 100, 5000).flatMap(crrFilterSize => {
         Array(2,3,5).flatMap(crrWindowSize => {
           Array(2, 3, 7).flatMap(crrIterationSize => {
             Array(1, 5, 10, 50).reverse.map(crrRecursionSize => {

@@ -4,14 +4,14 @@ import ilp.data.database.{EngineCache, EngineLeap, EngineParallel, EngineSerial}
 import ilp.data.program.{Hypothesis, Parser, Rule, Substitution}
 import ilp.invent.*
 
-import java.io.PrintWriter
+import java.io.{FileWriter, PrintWriter}
 
 
 object Invention:
 
 
   def experiment(): Unit = {
-    var results = Array[String]()
+    var results = LazyList[String]()
     //results ++= testKinshipPi()
     //results ++= testIMDB1()
     //results ++= testIMDB3()
@@ -22,21 +22,21 @@ object Invention:
     //results ++= testIGGPMinimalDecayScore()
     //results ++= testIGGPChickenGoalScore()
     //results ++= testIGGPSokobanGoalScore()
-    //results ++= Invention.testSynthesisContains()
+    //results ++= testSynthesisContains()
     //results ++= testPTC()
     //results ++= testPTE()
     //results ++= testYeast() //semi-success
     //results ++= testUWCS()
-    //results ++= testWebkb() //semi-success
+    //results ++= testWebkb()
     //results ++= testZendo1()
     //results ++= testZendo2()
     //results ++= testSynthesis()
     //results ++= testRobotsRecursion()
     results ++= testSynthesisContains()
-
-    val pw = new PrintWriter("resources/experiments/invention.csv")
+    val fw = new FileWriter("resources/experiments/invention.csv", true)
+    val pw = new PrintWriter(fw)
     pw.println(Params().toCSVHeaderLine())
-    results.foreach(line=> pw.println(line))
+    results.foreach(line=> {pw.println(line); pw.flush()})
     pw.close()
 
   }
@@ -79,7 +79,7 @@ object Invention:
       .maxOption.getOrElse(0d)
 
     val line = params.toLine(results.size, time, maxScore)
-    //println(line)
+
     val found = results.toArray.sortBy(_.score).reverse.head
     val rule = found.normalize()
     rule.print()
@@ -162,8 +162,6 @@ object Invention:
     val metaTransitionL1 = Parser.parseRule("r0(A,B) :- d(Z, B), a(Z,A).").get
 
     val parameters = Params("imdb3").generateParams()
-    val hypothesis = Parser.parseHypothesis("f(E870,L387) :- movie(K910,E870) & movie(K910,L387) & gender(E870,L902) & gender(L387,L902).")
-    //func294359557(C413,J547) :- gender(C57,C413) & gender(C57,J547) & movie(C413,D141) & movie(J547,D141).
     val results = parameters.map(params=>{
 
       params.scoreThreshold = 1.0
@@ -193,11 +191,6 @@ object Invention:
         .setResembleWindow(params.resembleWindow)
         .setPositiveThreshold(params.unionPositiveThreshold)
         .setNegativeThreshold(params.unionNegativeThreshold)
-
-      heBinary
-        .setPositives(experiment.getPositives)
-        .setNegatives(experiment.getNegatives)
-        .igParallel(hypothesis.get).print()
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
@@ -238,8 +231,8 @@ object Invention:
     results
   }
 
-  def testTrains2(): Array[String] = {
-    val parameters = Params("trains2").generateParams()
+  def testTrains2(): LazyList[String] = {
+    val parameters = Params("trains2").generateParams().to(LazyList)
 
     val metaTransition0 = Parser.parseRule("r0(V0,V1) :- g(V0,V1), f(V1), z(V1).").get
     val metaTransition1 = Parser.parseRule("r1(V0,V1) :- g(V0,V1), f(V1).").get
@@ -263,16 +256,12 @@ object Invention:
       measureResult(experiment, Array(heBinary))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/trains2.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
     results
 
   }
 
-  def testTrains3(): Array[String] = {
-    val parameters = Params("trains3-toy").generateParams()
+  def testTrains3(): LazyList[String] = {
+    val parameters = Params("trains3-toy").generateParams().to(LazyList)
     val metaTransition1 = Parser.parseRule("r1(V0,V1) :- l(V0,V1), f(V1).").get
     val metaTransition2 = Parser.parseRule("r2(V0) :- g(V0,V4), f(V4, V2).").get
     val metaTransition3 = Parser.parseRule("r3(V0) :- w(V0, V1), k(V0, V2).").get
@@ -302,15 +291,11 @@ object Invention:
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/trains3.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
     results
   }
 
-  def testIGGPAttritionNextScore(): Array[String] = {
-    val parameters = Params("iggp-attrition-next-score").generateParams()
+  def testIGGPAttritionNextScore(): LazyList[String] = {
+    val parameters = Params("iggp-attrition-next-score").generateParams().to(LazyList)
 
     val metaTransitionL0 = Parser.parseRule("p(G,Pl) :- s(Act), r(G,Opp,Act), u(Pl,Opp).").get
     val metaTransitionL1 = Parser.parseRule("p(G,Pl,Sc) :- k(G,Pl), q(G,Pl,Sc).").get
@@ -349,11 +334,6 @@ object Invention:
 
       measureResult(experiment, Array(heBinary, heUnion))
     })
-
-    val pw = new PrintWriter("resources/experiments/inventions/IGGPAttritionNextScore.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
     results
   }
 
@@ -565,13 +545,10 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
   }
 
 
-  def testPTC(): Array[String] = {
-    val parameters = Params("ptc").generateParams()
-    /*
-    * label(V0):- zn(V2),atom(V1,V0,V2).
-      label(V0):- cu(V2),atom(V1,V0,V2).
-      label(V0):- c(V4),connected(V3,V5,V2),atom(V5,V0,V4),p(V1),atom(V3,V0,V1).
-      label(V0):- connected(V3,V5,V2),atom(V5,V0,V4),p(V1),h(V4),atom(V3,V0,V1).*/
+  def testPTC(): LazyList[String] = {
+    val parameters = Params("ptc").generateParams().to(LazyList)
+
+
     val metaTransition0 = Parser.parseRule("r1(V0) :- t(V2),l(V1,V0,V2).").get
     val metaTransition1 = Parser.parseRule("r2(V0, V1, V2) :- t(V2),l(V1,V0,V2).").get
     val metaTransition2 = Parser.parseRule("r5(V0, V2, V3, V4, V5) :- c(V3,V5,V2), a(V5,V0,V4).").get
@@ -608,10 +585,6 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/ptc.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
     results
   }
 
@@ -659,19 +632,8 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
 
   }
 
-  def testYeast(): Array[String] = {
-    val parameters = Params("yeast").generateParams()
-    /*
-    proteins(V0):- path(V0,V2),location(V0,V1).
-    proteins(V0):- enzyme(V0,V1),renzyme(V0,V1).
-    proteins(V0):- path(V2,V3),interaction(V3,V0,V1).
-    proteins(V0):- protein_class(V0,V1),rprotein_class(V0,V1).
-    proteins(V0):- protein_class(V0,V4),interaction(V2,V0,V1),rprotein_class(V3,V4).
-    proteins(V0):- phenotype(V0,V3),renzyme(V0,V2),rphenotype(V1,V3).
-    proteins(V0):- protein_class(V0,V3),rprotein_class(V2,V3),enzyme(V2,V1).
-    proteins(V0):- interaction(V3,V0,V1),protein_class(V3,V2),rprotein_class(V3,V2).
-    proteins(V0):- path(V2,V1),interaction(V2,V0,V3),rprotein_class(V0,V4).
-     */
+  def testYeast(): LazyList[String] = {
+    val parameters = Params("yeast").generateParams().to(LazyList)
 
     val metaTransition1 = Parser.parseRule("rr(V0):- a(V0,V2), l(V0,V1).").get
     val metaTransition2 = Parser.parseRule("rr(V0):- e(V0,V1), r(V0,V1).").get
@@ -683,11 +645,6 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
     val metaTransition8 = Parser.parseRule("rr(V0):- p(V3,V0,V1), p(V3,V2), r(V3,V2).").get
     val metaTransition9 = Parser.parseRule("rr(V0):- p(V2,V1), i(V2,V0,V3), r(V0,V4).").get
 
-    /*val metaTransition1 = Parser.parseRule("r(V0) :- p(V0, V2), k(V0,V1).").get
-    val metaTransition2 = Parser.parseRule("r(V0) :- p(V0, V1), k(V0,V1).").get
-    val metaTransition3 = Parser.parseRule("r(V0) :- p(V0, V3), k(V0,V2), e(V2,V1).").get
-    val metaTransition4 = Parser.parseRule("r(V0) :- i(V3,V0,V1), p(V3,V2), rb(V3,V2).").get
-    val metaTransition5 = Parser.parseRule("r(V0) :- p(V2,V1), i(V2,V0,V3), rb(V0,V4).").get*/
 
     val results  = parameters.map(params=>{
       //params.filterSize = 5000000
@@ -725,16 +682,12 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/yeast.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
     results
 
   }
 
-  def testUWCS(): Array[String] = {
-    val parameters = Params("uwcs").generateParams()
+  def testUWCS(): LazyList[String] = {
+    val parameters = Params("uwcs").generateParams().to(LazyList)
 
     val hypothesis = Parser.parseHypothesis("advisedBy(V0,V1):- ta(V3,V0,V4),taughtBy(V3,V1,V4),taughtBy(V5,V0,V2).\n"+
       "advisedBy(V0,V1):- student(V0),tempAdvisedBy(V3,V1),taughtBy(V4,V0,V5),taughtBy(V4,V1,V2).\n"+
@@ -782,17 +735,13 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/uwcs.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
     results
 
   }
 
-  def testWebkb(): Array[String] = {
+  def testWebkb(): LazyList[String] = {
 
-    val parameters = Params("webkb").generateParams()
+    val parameters = Params("webkb").generateParams().to(LazyList)
     val metaTransition0 = Parser.parseRule("r(C,P) :- co(C, P), pr(P).").get
     val metaTransition1 = Parser.parseRule("r(C1,C2,P) :- co(C1,P), pr(C2,P).").get
     val metaTransition2 = Parser.parseRule("r(C1,P1,P2) :- co(C1,P1), pr(C1,P2).").get
@@ -830,16 +779,16 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/webkb.csv")
+/*    val pw = new PrintWriter("resources/experiments/inventions/webkb.csv")
     pw.println(Params().toCSVHeaderLine())
     results.foreach(line => pw.println(line))
-    pw.close()
+    pw.close()*/
     results
 
   }
 
-  def testZendo1(): Array[String] = {
-    val parameters = Params("zendo1").generateParams()
+  def testZendo1(): LazyList[String] = {
+    val parameters = Params("zendo1").generateParams().to(LazyList)
     val metaTransition1 = Parser.parseRule("r(V0, V1, V2) :- co(V0, V2), pr(V2, V1).").get
     val metaTransition2 = Parser.parseRule("r(V2, V3) :- t(V2, V3), a(V3).").get
     val metaTransition3 = Parser.parseRule("r(V0, V1, V2) :- r1(V0, V1, V2), a(V1).").get
@@ -871,10 +820,7 @@ goal(V0,V1,V2):- int_100(V2),role(V1),prop_p(V4),my_true(V0,V4),prop_7(V3),my_tr
       measureResult(experiment, Array(heBinary, heUnion))
     })
 
-    val pw = new PrintWriter("resources/experiments/inventions/zendo1.csv")
-    pw.println(Params().toCSVHeaderLine())
-    results.foreach(line => pw.println(line))
-    pw.close()
+
     results
 
   }
