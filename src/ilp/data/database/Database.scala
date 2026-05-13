@@ -6,7 +6,9 @@ import ilp.data.program.{Hypothesis, Operation, Position, Rule, Substitution}
 import ilp.data.variables.*
 import org.roaringbitmap.RoaringBitmap
 
-class Database(name: String) extends Serializable:
+class Database(val dbname: String) extends Serializable:
+
+  val name = dbname.substring(dbname.lastIndexOf("/") + 1).replaceAll("\\-","_")
 
   private var sets = Set[Predicate]()
   private var templates = Map[Int, Set[Predicate]]()
@@ -49,7 +51,7 @@ class Database(name: String) extends Serializable:
       !negatives.exists(variable=> predicate.containsValue(variable)))
     val includeVariables = primaryList.flatMap(predicate=> predicate.getVariables)
     val expandList = sets.filter(predicate => includeVariables.exists(variable=> predicate.containsValue(variable)) && !negatives.exists(variable=> predicate.containsValue(variable)))
-    Database(name)
+    Database(dbname)
       .add(primaryList)
       .add(expandList)
       .addPrimitives(primitives)
@@ -148,7 +150,7 @@ class Database(name: String) extends Serializable:
       .toMap
 
   def copy(): Database =
-    Database(name).add(sets.toSet)
+    Database(dbname).add(sets.toSet)
 
   override def toString: String = {
     sets.map(predicate => predicate.toString).mkString("\n")

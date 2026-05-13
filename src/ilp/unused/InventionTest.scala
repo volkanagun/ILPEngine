@@ -9,8 +9,6 @@ object InventionTest {
     .setPositives(experiment.positives)
     .setNegatives(experiment.negatives)
 
-  engine
-  val
 
   def testUnion(): Unit =
 

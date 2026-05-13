@@ -15,6 +15,12 @@ class Variable(var name: String) extends Serializable:
 
   override def toString: String = name.toUpperCase
 
+  def toValue():String = {
+    if isNumber then asNumber().item.toString
+    else if isSymbol then asSymbol().value
+    else "Nil"
+  }
+
   def getName: String = name
 
   def setName(name: String): Variable =
@@ -39,6 +45,7 @@ class Variable(var name: String) extends Serializable:
 
   def toSymbol(value: String): Sym =
     new Sym(name, value)
+
 
   def asPredicate(): Predicate =
     this.asInstanceOf[Predicate]

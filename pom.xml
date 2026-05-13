@@ -13,9 +13,33 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <hazelcast.version>5.5.0</hazelcast.version>
+        <jena.version>6.0.0</jena.version>
     </properties>
 
     <dependencies>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.openlinksw/virtjdbc4 -->
+        <dependency>
+            <groupId>com.openlinksw</groupId>
+            <artifactId>virtjdbc4_3</artifactId>
+            <version>3.123</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.11</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>apache-jena-libs</artifactId>
+            <version>${jena.version}</version>
+            <type>pom</type>
+        </dependency>
 
         <dependency>
             <groupId>org.scala-lang</groupId>
