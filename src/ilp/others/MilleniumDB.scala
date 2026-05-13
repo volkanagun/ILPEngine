@@ -84,23 +84,53 @@ class MilleniumDB(database: Database) extends ClientDB(database, "milleniumdb") 
   }
 
 
-  override def queryWebkb(): Unit = {
-
+  override def queryWebkb(): Double = {
+    val query = Queries.webkbSparql()
+    measureTime[Unit]({
+      val result = queryMilleniumDB(query)
+      val rows = parseRows(result)
+    })
   }
 
-  override def queryZendo(): Unit = {
+  override def queryZendo(): Double = {
     val query = Queries.zendoSparql()
-    val result = queryMilleniumDB(query)
-    val rows = parseRows(result)
+    measureTime[Unit]({
+      val result = queryMilleniumDB(query)
+      val rows = parseRows(result)
+    })
   }
 
-  override def queryCentipente(): Unit = ???
+  override def queryCentipente(): Double = {
+    val query = Queries.centipedeSparql()
+    measureTime[Unit]({
+      val result = queryMilleniumDB(query)
+      val rows = parseRows(result)
+    })
+  }
 
-  override def queryPTC(): Unit = ???
+  override def queryPTC(): Double = {
+    val query = Queries.ptcSparql()
+    measureTime[Unit]({
+      val result = queryMilleniumDB(query)
+      val rows = parseRows(result)
+    })
+  }
 
-  override def queryPTE(): Unit = ???
+  override def queryPTE(): Double = {
+    val query = Queries.pteSparql()
+    measureTime[Unit]({
+      val result = queryMilleniumDB(query)
+      val rows = parseRows(result)
+    })
+  }
 
-  override def queryYeast(): Unit = ???
+  override def queryYeast(): Double = {
+    val query = Queries.yeastSparql()
+    measureTime[Unit]({
+      val result = queryMilleniumDB(query)
+      val rows = parseRows(result)
+    })
+  }
 
   def queryMilleniumDB(sparql: String): String = {
     val endpoint = "http://localhost:1234/sparql"

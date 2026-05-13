@@ -2,6 +2,8 @@ package ilp.others
 
 import ilp.data.database.Database
 import ilp.data.predicates.Predicate
+import ilp.data.program.Substitution
+import ilp.data.variables.{Sym, Variable}
 
 import java.sql.{Connection, DriverManager, ResultSet}
 import java.util.UUID
@@ -130,14 +132,14 @@ class Virtuoso(val database: Database) extends ClientDB(database, "virtuoso") {
   }
 
 
-  def queryWebkb(): Unit = {
+  def queryWebkb(): Double = {
     val graphName = graphUri + database.dbname + "/"
     val querySparql = Queries.webkbVirtuoso(graphName)
     val conn = DriverManager.getConnection(jdbcUrl, user, password)
     queryDatabase(conn, querySparql)
   }
 
-  def queryZendo(): Unit = {
+  def queryZendo(): Double = {
     val graphName = graphUri + database.dbname + "/"
     val querySparql = Queries.zendoVirtuoso(graphName)
 
@@ -146,7 +148,7 @@ class Virtuoso(val database: Database) extends ClientDB(database, "virtuoso") {
     queryDatabase(conn, querySparql)
   }
 
-  def queryCentipente(): Unit = {
+  def queryCentipente(): Double = {
     val graphName = graphUri + database.dbname + "/"
     val querySparql = Queries.centipenteVirtuoso(graphName)
 
@@ -155,7 +157,7 @@ class Virtuoso(val database: Database) extends ClientDB(database, "virtuoso") {
     queryDatabase(conn, querySparql)
   }
 
-  def queryPTC(): Unit = {
+  def queryPTC(): Double = {
     val querySparql = Queries.ptcVirtuoso(graphUri)
     val graphName = graphUri + database.dbname + "/"
     val conn = DriverManager.getConnection(jdbcUrl, user, password)
@@ -163,7 +165,7 @@ class Virtuoso(val database: Database) extends ClientDB(database, "virtuoso") {
     queryDatabase(conn, querySparql)
   }
 
-  def queryPTE(): Unit = {
+  def queryPTE(): Double = {
     val querySparql = Queries.pteVirtuoso(graphUri)
     val graphName = graphUri + database.dbname + "/"
     val conn = DriverManager.getConnection(jdbcUrl, user, password)
@@ -171,7 +173,7 @@ class Virtuoso(val database: Database) extends ClientDB(database, "virtuoso") {
     queryDatabase(conn, querySparql)
   }
 
-  def queryYeast(): Unit = {
+  def queryYeast(): Double = {
     val querySparql = Queries.yeastVirtuoso(graphUri)
     val graphName = graphUri + database.dbname + "/"
     val conn = DriverManager.getConnection(jdbcUrl, user, password)
@@ -179,13 +181,16 @@ class Virtuoso(val database: Database) extends ClientDB(database, "virtuoso") {
     queryDatabase(conn, querySparql)
   }
 
-  def queryDatabase(conn: Connection, sql: String): Unit = {
+  def queryDatabase(conn: Connection, sql: String): Double = {
     val stmt = conn.createStatement()
-    val resultSet = stmt.executeQuery(sql)
-
-    while (resultSet.next()) {
-
+    measureTime {
+      val resultSet = stmt.executeQuery(sql)
+      var array = Array[Substitution]()
+      while (resultSet.next()) {
+        val next = resultSet.getString(1)
+        val substitution = Substitution().add(Variable("arg0"), Sym("arg0", next))
+        array :+= substitution
+      }
     }
-
   }
 }

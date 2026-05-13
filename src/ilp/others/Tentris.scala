@@ -68,41 +68,43 @@ class Tentris(database: Database) extends ClientDB(database, "tentris") {
     response.body()
   }
 
-  def queryDatabase(query: String): Unit = {
+  def queryDatabase(query: String): Double = {
 
-    val str = queryTentris(query)
-    return
-    val rows = parseRows(str)
-    var array = Array[Substitution]()
-    for (row <- rows) {
-      val solution = row
-      val iter = row.keysIterator
-      val substitution = Substitution()
-      while (iter.hasNext) {
-        val nm = iter.next()
-        val value = row(nm)
-        substitution.add(Variable(nm), Sym(nm, value))
+    measureTime {
+      val str = queryTentris(query)
+
+      val rows = parseRows(str)
+      var array = Array[Substitution]()
+      for (row <- rows) {
+        val solution = row
+        val iter = row.keysIterator
+        val substitution = Substitution()
+        while (iter.hasNext) {
+          val nm = iter.next()
+          val value = row(nm)
+          substitution.add(Variable(nm), Sym(nm, value))
+        }
+        array :+=substitution
       }
     }
-
   }
 
-  def queryWebkb(): Unit = {
+  def queryWebkb(): Double = {
     val querySparql = Queries.webkbSparql()
     queryDatabase(querySparql)
   }
 
-  def queryZendo(): Unit = {
+  def queryZendo(): Double = {
     val querySparql = Queries.zendoSparql()
     queryDatabase(querySparql)
   }
 
-  def queryCentipente(): Unit = {
+  def queryCentipente(): Double = {
     val querySparql = Queries.centipedeSparql()
     queryDatabase(querySparql)
   }
 
-  def queryPTC(): Unit = {
+  def queryPTC(): Double = {
     val querySparql = Queries.ptcSparql()
     queryDatabase(querySparql)
   }
@@ -217,14 +219,14 @@ class Tentris(database: Database) extends ClientDB(database, "tentris") {
     digest.take(8).map("%02x".format(_)).mkString
   }
 
-  override def queryPTE(): Unit = {
+  override def queryPTE(): Double = {
     val sparql = Queries.pteSparql()
-    queryDatabase(sparql)
+    measureTime(queryDatabase(sparql))
   }
 
-  override def queryYeast(): Unit = {
+  override def queryYeast(): Double = {
     val sparql = Queries.yeastSparql()
-    queryDatabase(sparql)
+    measureTime(queryDatabase(sparql))
   }
 
   def parseVariables(json: String): Seq[String] = {

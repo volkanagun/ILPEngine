@@ -31,67 +31,63 @@ class Jena(database: Database) extends ClientDB(database, "Jena") {
     this
   }
 
-  def queryCentipente(): Unit = {
+  def queryCentipente(): Double = {
     val sparql = Queries.centipedeSparql()
     query(sparql)
   }
-  def queryZendo(): Unit = {
+
+  def queryZendo(): Double = {
     val sparql = Queries.zendoSparql()
     query(sparql)
   }
 
-  def queryPTC(): Unit = {
+  def queryPTC(): Double = {
     val sparql = Queries.ptcSparql()
     query(sparql)
   }
 
-  def queryPTE(): Unit = {
+  def queryPTE(): Double = {
     val sparql = Queries.pteSparql()
     query(sparql)
   }
 
-  def queryYeast(): Unit = {
+  def queryYeast(): Double = {
     val sparql = Queries.yeastSparql()
     query(sparql)
   }
 
-  def queryWebkb(): Unit = {
+  def queryWebkb(): Double = {
     val sparql = Queries.webkbSparql()
     query(sparql)
   }
 
 
 
-  def query(sparql:String): Unit = {
-    val conn =
-      RDFConnectionFuseki
+  def query(sparql:String): Double = {
+    val conn = RDFConnectionFuseki
         .create()
         .destination(databaseUrl)
         .build()
 
-    try {
-      val qexec: QueryExecution = conn.query(sparql)
+      val elapsed =  measureTime[Unit]({
+        val qexec: QueryExecution = conn.query(sparql)
 
-      try {
-        val results = qexec.execSelect()
+        try {
+          val results = qexec.execSelect()
 
-        while (results.hasNext) {
-          val row = results.next()
+          while (results.hasNext) {
+            val row = results.next()
+            val v0 = row.get("V0")
+            val v1 = row.get("V1")
+            val v2 = row.get("V2")
+          }
 
-          val v0 = row.get("V0")
-          val v1 = row.get("V1")
-          val v2 = row.get("V2")
-
-          //println(s"goal($v0, $v1, $v2)")
+        } finally {
+          qexec.close()
         }
 
-      } finally {
-        qexec.close()
-      }
-
-    } finally {
-      conn.close()
-    }
+      })
+      elapsed
   }
 
   def toSparqlInsert(fact: Predicate): String = {
