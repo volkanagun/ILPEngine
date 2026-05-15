@@ -2,17 +2,23 @@ package ilp.data.database
 
 import ilp.data.program.Substitution
 import scala.collection.concurrent.TrieMap as ConcurrentMap
+
 class ProgramCache extends Serializable {
   var cache = ConcurrentMap[Int, Set[Substitution]]()
 
-  def contains(id:Int):Boolean =
+  def clear(): this.type = {
+    cache.clear()
+    this
+  }
+
+  def contains(id: Int): Boolean =
     cache.contains(id)
 
-  def update(id:Int, set:Set[Substitution]): Set[Substitution] = {
+  def update(id: Int, set: Set[Substitution]): Set[Substitution] = {
     cache.update(id, set)
     set
   }
 
-  def get(id:Int):Set[Substitution]=
+  def get(id: Int): Set[Substitution] =
     cache(id)
 }

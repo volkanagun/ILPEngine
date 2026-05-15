@@ -2,6 +2,8 @@ package ilp.others
 
 import ilp.data.database.Database
 import ilp.data.predicates.Predicate
+import ilp.data.program.Substitution
+import ilp.data.variables.{Sym, Variable}
 import org.apache.jena.query.{DatasetFactory, QueryExecution}
 import org.apache.jena.rdfconnection.{RDFConnection, RDFConnectionFuseki}
 
@@ -61,8 +63,6 @@ class Jena(database: Database) extends ClientDB(database, "Jena") {
     query(sparql)
   }
 
-
-
   def query(sparql:String): Double = {
     val conn = RDFConnectionFuseki
         .create()
@@ -71,7 +71,7 @@ class Jena(database: Database) extends ClientDB(database, "Jena") {
 
       val elapsed =  measureTime[Unit]({
         val qexec: QueryExecution = conn.query(sparql)
-
+        var array = Array[Substitution]()
         try {
           val results = qexec.execSelect()
 
@@ -80,11 +80,14 @@ class Jena(database: Database) extends ClientDB(database, "Jena") {
             val v0 = row.get("V0")
             val v1 = row.get("V1")
             val v2 = row.get("V2")
+            array :+= Substitution().add(Variable("arg0"), Sym("arg0", v0.toString))
           }
 
         } finally {
           qexec.close()
         }
+
+        println(s"Jena count for ${db.name} : ${array.length}")
 
       })
       elapsed

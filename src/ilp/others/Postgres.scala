@@ -10,11 +10,13 @@ import scala.sys.process.stringSeqToProcess
 
 class Postgres(val database: Database) extends ClientDB(database, "postgres") {
 
+
+
   val adminUrl = "jdbc:postgresql://localhost:5432/postgres"
   val user = "postgres"
   val password = "scala"
-
-  def clearDB(dbName: String): Unit = {
+  val dbName = database.name
+  override def clearDB(): ClientDB = {
     require(
       dbName.matches("[a-zA-Z_][a-zA-Z0-9_]*"),
       s"Invalid database name: $dbName"
@@ -52,6 +54,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
     }
 
     println(s"Database '$dbName' recreated.")
+    this
   }
 
 
@@ -65,7 +68,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
 
 
     distinctRules.foreach(table=>{
-      val variableNames = table.getVariables.map(variable => variable.name)
+      val variableNames = table.getVariables.zipWithIndex.map(pair => s"arg${pair._2 + 1}")
       val tableName = table.name
       createPredicateTable(dbUrl,tableName,variableNames)
     })
@@ -82,6 +85,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
     val sparql = "CREATE OR REPLACE VIEW goal AS\n\n-- Rule 1\nSELECT\n    tb.arg1 AS arg1,\n    ab.arg1 AS arg2,\n    tb.arg2 AS arg3\nFROM true_blackPayoff tb\nJOIN int_15 i15\n    ON i15.arg1 = tb.arg2\nJOIN agent_black ab\n    ON TRUE\nJOIN true_control tc\n    ON tc.arg1 = tb.arg1\nJOIN agent_white aw\n    ON aw.arg1 = tc.arg2\n\nUNION\n\n-- Rule 2\nSELECT\n    tc.arg1 AS arg1,\n    ab.arg1 AS arg2,\n    tb.arg2 AS arg3\nFROM agent_black ab\nJOIN true_control tc\n    ON tc.arg2 = ab.arg1\nJOIN true_blackPayoff tb\n    ON tb.arg1 = tc.arg1\nJOIN succ s\n    ON s.arg1 = tb.arg2\nJOIN true_whitePayoff tw\n    ON tw.arg1 = tc.arg1\n   AND tw.arg2 = s.arg2\n\nUNION\n\n-- Rule 3\nSELECT\n    tc.arg1 AS arg1,\n    tc.arg2 AS arg2,\n    i0.arg1 AS arg3\nFROM int_0 i0\nJOIN true_control tc\n    ON TRUE\nJOIN true_blackPayoff tb\n    ON tb.arg1 = tc.arg1\nJOIN succ s1\n    ON s1.arg2 = tb.arg2\nJOIN succ s2\n    ON s2.arg2 = s1.arg1\nJOIN succ s3\n    ON s3.arg2 = s2.arg1\n\nUNION\n\n-- Rule 4\nSELECT\n    tc.arg1 AS arg1,\n    r.arg1  AS arg2,\n    i0.arg1 AS arg3\nFROM int_0 i0\nJOIN role r\n    ON TRUE\nJOIN true_control tc\n    ON TRUE\nJOIN agent_white aw\n    ON aw.arg1 = tc.arg2\nJOIN true_whitePayoff tw\n    ON tw.arg1 = tc.arg1\nJOIN succ s\n    ON s.arg2 = tw.arg2\n\nUNION\n\n-- Rule 5\nSELECT\n    tb.arg1 AS arg1,\n    aw.arg1 AS arg2,\n    i0.arg1 AS arg3\nFROM int_0 i0\nJOIN agent_white aw\n    ON TRUE\nJOIN true_blackPayoff tb\n    ON TRUE\nJOIN succ s1\n    ON s1.arg2 = tb.arg2\nJOIN succ s2\n    ON s2.arg2 = s1.arg1\nJOIN succ s3\n    ON s3.arg2 = s2.arg1\n\nUNION\n\n-- Rule 6\nSELECT\n    tw.arg1 AS arg1,\n    aw.arg1 AS arg2,\n    tw.arg2 AS arg3\nFROM agent_white aw\nJOIN true_whitePayoff tw\n    ON TRUE\nJOIN succ s\n    ON s.arg1 = tw.arg2\nJOIN true_blackPayoff tb\n    ON tb.arg1 = tw.arg1\n   AND tb.arg2 = s.arg2\nJOIN agent_black ab\n    ON TRUE\nJOIN true_control tc\n    ON tc.arg1 = tw.arg1\n   AND tc.arg2 = ab.arg1;"
     val stmt = conn.createStatement()
     measureTime({
+      val drop = stmt.executeUpdate("DROP TABLE IF EXISTS goal")
       val up = stmt.executeUpdate(sparql)
       val rs = stmt.executeQuery("SELECT * FROM goal")
       try {
@@ -105,21 +109,26 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
     val dbUrl = s"jdbc:postgresql://localhost:5432/${database.name}"
     val conn = DriverManager.getConnection(dbUrl, user, password)
 
-    val sparql = "CREATE OR REPLACE VIEW zendos AS\n\n-- 1\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = m.arg1\nJOIN green g ON g.arg1 = p.arg2\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = m.arg1\n\nUNION\n\n-- 2\nSELECT DISTINCT p.arg1 AS arg1\nFROM piece p\nJOIN green g ON g.arg1 = p.arg2\nJOIN upright u ON u.arg1 = p.arg2\nJOIN coord1 c1 ON c1.arg1 = p.arg2\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = c1.arg2\n\nUNION\n\n-- 3\nSELECT DISTINCT p.arg1 AS arg1\nFROM piece p\nJOIN lhs l ON l.arg1 = p.arg2\nJOIN blue b ON b.arg1 = p.arg2\nJOIN coord1 c1 ON c1.arg1 = p.arg2\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = c1.arg2\n\nUNION\n\n-- 4\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = m.arg1\nJOIN rhs r ON r.arg1 = p.arg2\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = m.arg1\n\nUNION\n\n-- 5\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = m.arg1\nJOIN lhs l ON l.arg1 = p.arg2\nJOIN green g ON g.arg1 = p.arg2\n\nUNION\n\n-- 6\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm\nJOIN piece p ON TRUE\nJOIN size s1 ON s1.arg1 = p.arg2 AND s1.arg2 = sm.arg1\nJOIN contact c ON c.arg1 = p.arg2\nJOIN size s2 ON s2.arg1 = c.arg2 AND s2.arg2 = sm.arg1\n\nUNION\n\n-- 7\nSELECT DISTINCT p3.arg1 AS arg1\nFROM piece p3\nJOIN green g ON g.arg1 = p3.arg2\nJOIN size s3 ON s3.arg1 = p3.arg2\nJOIN coord1 c13 ON c13.arg1 = p3.arg2 AND c13.arg2 = s3.arg2\nJOIN piece p1 ON p1.arg1 = p3.arg1\nJOIN coord2 c21 ON c21.arg1 = p1.arg2 AND c21.arg2 = s3.arg2\n\nUNION\n\n-- 8\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m\nJOIN piece p ON TRUE\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = m.arg1\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = m.arg1\nJOIN red r ON r.arg1 = p.arg2\nJOIN strange st ON st.arg1 = p.arg2\n\nUNION\n\n-- 9\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm\nJOIN piece p ON TRUE\nJOIN strange st ON st.arg1 = p.arg2\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = sm.arg1\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = sm.arg1\nJOIN green g ON g.arg1 = p.arg2\n\nUNION\n\n-- 10\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = sm.arg1\nJOIN red r ON r.arg1 = p.arg2\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = sm.arg1\nJOIN upright u ON u.arg1 = p.arg2\n\nUNION\n\n-- 11\nSELECT DISTINCT p.arg1 AS arg1\nFROM large lg\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = lg.arg1\nJOIN strange st ON st.arg1 = p.arg2\nJOIN size s ON s.arg1 = p.arg2\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = s.arg2\n\nUNION\n\n-- 12\nSELECT DISTINCT p3.arg1 AS arg1\nFROM large lg\nJOIN piece p3 ON TRUE\nJOIN size s3 ON s3.arg1 = p3.arg2 AND s3.arg2 = lg.arg1\nJOIN piece p1 ON p1.arg1 = p3.arg1\nJOIN green g ON g.arg1 = p1.arg2\nJOIN contact c ON c.arg1 = p1.arg2\n\nUNION\n\n-- 13\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = sm.arg1\nJOIN lhs l ON l.arg1 = p.arg2\nJOIN size s ON s.arg1 = p.arg2\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = s.arg2\n\nUNION\n\n-- 14\nSELECT DISTINCT p.arg1 AS arg1\nFROM large lg\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = lg.arg1\nJOIN lhs l ON l.arg1 = p.arg2\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = lg.arg1\nJOIN red r ON r.arg1 = p.arg2\n\nUNION\n\n-- 15\nSELECT DISTINCT p3.arg1 AS arg1\nFROM piece p3\nJOIN size s3 ON s3.arg1 = p3.arg2\nJOIN coord1 c13 ON c13.arg1 = p3.arg2 AND c13.arg2 = s3.arg2\nJOIN piece p1 ON p1.arg1 = p3.arg1\nJOIN rhs r ON r.arg1 = p1.arg2\nJOIN coord2 c21 ON c21.arg1 = p1.arg2 AND c21.arg2 = s3.arg2\n\nUNION\n\n-- 16\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2\nJOIN green g2 ON g2.arg1 = p2.arg2\nJOIN lhs l2 ON l2.arg1 = p2.arg2\nJOIN piece p1 ON p1.arg1 = p2.arg1\nJOIN rhs r1 ON r1.arg1 = p1.arg2\nJOIN green g1 ON g1.arg1 = p1.arg2\n\nUNION\n\n-- 17\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m\nJOIN piece p ON TRUE\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = m.arg1\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = m.arg1\nJOIN blue b ON b.arg1 = p.arg2\nJOIN strange st ON st.arg1 = p.arg2\n\nUNION\n\n-- 18\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2\nJOIN green g2 ON g2.arg1 = p2.arg2\nJOIN lhs l2 ON l2.arg1 = p2.arg2\nJOIN piece p1 ON p1.arg1 = p2.arg1\nJOIN green g1 ON g1.arg1 = p1.arg2\nJOIN upright u1 ON u1.arg1 = p1.arg2\n\nUNION\n\n-- 19\nSELECT DISTINCT p3.arg1 AS arg1\nFROM piece p3\nJOIN green g3 ON g3.arg1 = p3.arg2\nJOIN lhs l3 ON l3.arg1 = p3.arg2\nJOIN coord1 c13 ON c13.arg1 = p3.arg2\nJOIN piece p1 ON p1.arg1 = p3.arg1\nJOIN size s1 ON s1.arg1 = p1.arg2 AND s1.arg2 = c13.arg2\n\nUNION\n\n-- 20\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m\nJOIN piece p ON TRUE\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = m.arg1\nJOIN coord2 c2 ON c2.arg1 = p.arg2 AND c2.arg2 = m.arg1\nJOIN red r ON r.arg1 = p.arg2\nJOIN upright u ON u.arg1 = p.arg2\n\nUNION\n\n-- 21\nSELECT DISTINCT p.arg1 AS arg1\nFROM large lg\nJOIN piece p ON TRUE\nJOIN coord1 c1 ON c1.arg1 = p.arg2 AND c1.arg2 = lg.arg1\nJOIN strange st ON st.arg1 = p.arg2\nJOIN green g ON g.arg1 = p.arg2\nJOIN size s ON s.arg1 = p.arg2 AND s.arg2 = lg.arg1\n\nUNION\n\n-- 22\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2\nJOIN red r2 ON r2.arg1 = p2.arg2\nJOIN lhs l2 ON l2.arg1 = p2.arg2\nJOIN piece p1 ON p1.arg1 = p2.arg1\nJOIN lhs l1 ON l1.arg1 = p1.arg2\nJOIN green g1 ON g1.arg1 = p1.arg2\n\nUNION\n\n-- 23\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2\nJOIN piece p1 ON p1.arg1 = p2.arg1\nJOIN green g2 ON g2.arg1 = p2.arg2\nJOIN coord1 c11 ON c11.arg1 = p1.arg2\nJOIN coord1 c12 ON c12.arg1 = p2.arg2 AND c12.arg2 = c11.arg2\nJOIN lhs l1 ON l1.arg1 = p1.arg2\n\nUNION\n\n-- 24\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2\nJOIN red r2 ON r2.arg1 = p2.arg2\nJOIN piece p3 ON p3.arg1 = p2.arg1\nJOIN green g3 ON g3.arg1 = p3.arg2\nJOIN piece p1 ON p1.arg1 = p2.arg1\nJOIN blue b1 ON b1.arg1 = p1.arg2;"
+    val sparql = "CREATE VIEW zendos AS\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m,\n     piece p,\n     coord1 c1,\n     green g,\n     coord2 c2\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = m.arg1\n  AND g.arg1 = p.arg2\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = m.arg1\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM piece p,\n     green g,\n     upright u,\n     coord1 c1,\n     coord2 c2\nWHERE g.arg1 = p.arg2\n  AND u.arg1 = p.arg2\n  AND c1.arg1 = p.arg2\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = c1.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM piece p,\n     lhs l,\n     blue b,\n     coord1 c1,\n     size s\nWHERE l.arg1 = p.arg2\n  AND b.arg1 = p.arg2\n  AND c1.arg1 = p.arg2\n  AND s.arg1 = p.arg2\n  AND s.arg2 = c1.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m,\n     piece p,\n     coord1 c1,\n     rhs r,\n     size s\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = m.arg1\n  AND r.arg1 = p.arg2\n  AND s.arg1 = p.arg2\n  AND s.arg2 = m.arg1\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m,\n     piece p,\n     coord1 c1,\n     lhs l,\n     green g\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = m.arg1\n  AND l.arg1 = p.arg2\n  AND g.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm,\n     piece p,\n     size s1,\n     contact c,\n     size s2\nWHERE s1.arg1 = p.arg2\n  AND s1.arg2 = sm.arg1\n  AND c.arg1 = p.arg2\n  AND s2.arg1 = c.arg2\n  AND s2.arg2 = sm.arg1\n\nUNION\n\nSELECT DISTINCT p3.arg1 AS arg1\nFROM piece p3,\n     green g,\n     size s3,\n     coord1 c13,\n     piece p1,\n     coord2 c21\nWHERE g.arg1 = p3.arg2\n  AND s3.arg1 = p3.arg2\n  AND c13.arg1 = p3.arg2\n  AND c13.arg2 = s3.arg2\n  AND p1.arg1 = p3.arg1\n  AND c21.arg1 = p1.arg2\n  AND c21.arg2 = s3.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m,\n     piece p,\n     size s,\n     coord1 c1,\n     red r,\n     strange st\nWHERE s.arg1 = p.arg2\n  AND s.arg2 = m.arg1\n  AND c1.arg1 = p.arg2\n  AND c1.arg2 = m.arg1\n  AND r.arg1 = p.arg2\n  AND st.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm,\n     piece p,\n     strange st,\n     coord2 c2,\n     size s,\n     green g\nWHERE st.arg1 = p.arg2\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = sm.arg1\n  AND s.arg1 = p.arg2\n  AND s.arg2 = sm.arg1\n  AND g.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm,\n     piece p,\n     coord1 c1,\n     red r,\n     size s,\n     upright u\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = sm.arg1\n  AND r.arg1 = p.arg2\n  AND s.arg1 = p.arg2\n  AND s.arg2 = sm.arg1\n  AND u.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM large lg,\n     piece p,\n     coord1 c1,\n     strange st,\n     size s,\n     coord2 c2\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = lg.arg1\n  AND st.arg1 = p.arg2\n  AND s.arg1 = p.arg2\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = s.arg2\n\nUNION\n\nSELECT DISTINCT p3.arg1 AS arg1\nFROM large lg,\n     piece p3,\n     size s3,\n     piece p1,\n     green g,\n     contact c\nWHERE s3.arg1 = p3.arg2\n  AND s3.arg2 = lg.arg1\n  AND p1.arg1 = p3.arg1\n  AND g.arg1 = p1.arg2\n  AND c.arg1 = p1.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM small sm,\n     piece p,\n     coord1 c1,\n     lhs l,\n     size s,\n     coord2 c2\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = sm.arg1\n  AND l.arg1 = p.arg2\n  AND s.arg1 = p.arg2\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = s.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM large lg,\n     piece p,\n     coord1 c1,\n     lhs l,\n     coord2 c2,\n     red r\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = lg.arg1\n  AND l.arg1 = p.arg2\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = lg.arg1\n  AND r.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p3.arg1 AS arg1\nFROM piece p3,\n     size s3,\n     coord1 c13,\n     piece p1,\n     rhs r,\n     coord2 c21\nWHERE s3.arg1 = p3.arg2\n  AND c13.arg1 = p3.arg2\n  AND c13.arg2 = s3.arg2\n  AND p1.arg1 = p3.arg1\n  AND r.arg1 = p1.arg2\n  AND c21.arg1 = p1.arg2\n  AND c21.arg2 = s3.arg2\n\nUNION\n\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2,\n     green g2,\n     lhs l2,\n     piece p1,\n     rhs r1,\n     green g1\nWHERE g2.arg1 = p2.arg2\n  AND l2.arg1 = p2.arg2\n  AND p1.arg1 = p2.arg1\n  AND r1.arg1 = p1.arg2\n  AND g1.arg1 = p1.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m,\n     piece p,\n     size s,\n     coord2 c2,\n     blue b,\n     strange st\nWHERE s.arg1 = p.arg2\n  AND s.arg2 = m.arg1\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = m.arg1\n  AND b.arg1 = p.arg2\n  AND st.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2,\n     green g2,\n     lhs l2,\n     piece p1,\n     green g1,\n     upright u1\nWHERE g2.arg1 = p2.arg2\n  AND l2.arg1 = p2.arg2\n  AND p1.arg1 = p2.arg1\n  AND g1.arg1 = p1.arg2\n  AND u1.arg1 = p1.arg2\n\nUNION\n\nSELECT DISTINCT p3.arg1 AS arg1\nFROM piece p3,\n     green g3,\n     lhs l3,\n     coord1 c13,\n     piece p1,\n     size s1\nWHERE g3.arg1 = p3.arg2\n  AND l3.arg1 = p3.arg2\n  AND c13.arg1 = p3.arg2\n  AND p1.arg1 = p3.arg1\n  AND s1.arg1 = p1.arg2\n  AND s1.arg2 = c13.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM medium m,\n     piece p,\n     size s,\n     coord2 c2,\n     red r,\n     upright u\nWHERE s.arg1 = p.arg2\n  AND s.arg2 = m.arg1\n  AND c2.arg1 = p.arg2\n  AND c2.arg2 = m.arg1\n  AND r.arg1 = p.arg2\n  AND u.arg1 = p.arg2\n\nUNION\n\nSELECT DISTINCT p.arg1 AS arg1\nFROM large lg,\n     piece p,\n     coord1 c1,\n     strange st,\n     green g,\n     size s\nWHERE c1.arg1 = p.arg2\n  AND c1.arg2 = lg.arg1\n  AND st.arg1 = p.arg2\n  AND g.arg1 = p.arg2\n  AND s.arg1 = p.arg2\n  AND s.arg2 = lg.arg1\n\nUNION\n\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2,\n     red r2,\n     lhs l2,\n     piece p1,\n     lhs l1,\n     green g1\nWHERE r2.arg1 = p2.arg2\n  AND l2.arg1 = p2.arg2\n  AND p1.arg1 = p2.arg1\n  AND l1.arg1 = p1.arg2\n  AND g1.arg1 = p1.arg2\n\nUNION\n\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2,\n     piece p1,\n     green g2,\n     coord1 c11,\n     coord1 c12,\n     lhs l1\nWHERE p1.arg1 = p2.arg1\n  AND g2.arg1 = p2.arg2\n  AND c11.arg1 = p1.arg2\n  AND c12.arg1 = p2.arg2\n  AND c12.arg2 = c11.arg2\n  AND l1.arg1 = p1.arg2\n\nUNION\n\nSELECT DISTINCT p2.arg1 AS arg1\nFROM piece p2,\n     red r2,\n     piece p3,\n     green g3,\n     piece p1,\n     blue b1\nWHERE r2.arg1 = p2.arg2\n  AND p3.arg1 = p2.arg1\n  AND g3.arg1 = p3.arg2\n  AND p1.arg1 = p2.arg1\n  AND b1.arg1 = p1.arg2"
     val stmt = conn.createStatement()
     measureTime({
+      val drop = stmt.executeUpdate("DROP TABLE IF EXISTS zendos")
       val up = stmt.executeUpdate(sparql)
       val rs = stmt.executeQuery("SELECT * FROM zendos")
+      var count = 0
       try {
         var array = Array[Substitution]()
+
         while (rs.next()) {
           val arg0 = rs.getString(1)
           array :+= Substitution().add(Variable("X"), Sym("X", arg0))
+          count+=1
         }
       } finally {
         rs.close()
         stmt.close()
         conn.close()
+        println(s"Posgres count for ${db.name} : ${count}")
       }
     })
 
@@ -132,10 +141,12 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
     val sparql = "CREATE OR REPLACE VIEW faculty AS\n\n-- Rule 1\nSELECT DISTINCT\n    cp.arg2 AS arg1\nFROM courseprof cp\nJOIN project p1\n    ON p1.arg2 = cp.arg2\nJOIN project p2\n    ON p2.arg1 = p1.arg1\nJOIN courseta ct\n    ON ct.arg2 = p2.arg2\n\nUNION\n\n-- Rule 2\nSELECT DISTINCT\n    cp1.arg2 AS arg1\nFROM courseprof cp1\nJOIN courseta ct1\n    ON ct1.arg1 = cp1.arg1\nJOIN courseta ct2\n    ON ct2.arg2 = ct1.arg2\nJOIN courseprof cp2\n    ON cp2.arg1 = ct2.arg1\nJOIN project p\n    ON p.arg2 = cp2.arg2;"
     val stmt = conn.createStatement()
     measureTime {
+      val drop = stmt.executeUpdate("DROP VIEW IF EXISTS faculty CASCADE")
       val up = stmt.executeUpdate(sparql)
       val rs = stmt.executeQuery("SELECT * FROM faculty")
+      var array = Array[Substitution]()
       try {
-        var array = Array[Substitution]()
+
         while (rs.next()) {
           val arg0 = rs.getString(1)
           array :+= Substitution().add(Variable("X"), Sym("X", arg0))
@@ -145,6 +156,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
         stmt.close()
         conn.close()
       }
+      println(s"Posgres count for ${db.name} : ${array.length}")
     }
   }
 
@@ -154,10 +166,12 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
     val sparql = "CREATE OR REPLACE VIEW label AS\n\n-- Rule 1\nSELECT DISTINCT\n    a.arg2 AS arg1\nFROM zn z\nJOIN atom a\n    ON a.arg3 = z.arg1\n\nUNION\n\n-- Rule 2\nSELECT DISTINCT\n    a.arg2 AS arg1\nFROM cu cu1\nJOIN atom a\n    ON a.arg3 = cu1.arg1\n\nUNION\n\n-- Rule 3\nSELECT DISTINCT\n    a5.arg2 AS arg1\nFROM c c1\nJOIN atom a5\n    ON a5.arg3 = c1.arg1\nJOIN connected conn\n    ON conn.arg2 = a5.arg1\nJOIN p p1\n    ON TRUE\nJOIN atom a3\n    ON a3.arg1 = conn.arg1\n   AND a3.arg2 = a5.arg2\n   AND a3.arg3 = p1.arg1\n\nUNION\n\n-- Rule 4\nSELECT DISTINCT\n    a5.arg2 AS arg1\nFROM connected conn\nJOIN atom a5\n    ON a5.arg1 = conn.arg2\nJOIN h h1\n    ON h1.arg1 = a5.arg3\nJOIN p p1\n    ON TRUE\nJOIN atom a3\n    ON a3.arg1 = conn.arg1\n   AND a3.arg2 = a5.arg2\n   AND a3.arg3 = p1.arg1;"
     val stmt = conn.createStatement()
     measureTime {
+      val drop = stmt.executeUpdate("DROP VIEW IF EXISTS label")
       val up = stmt.executeUpdate(sparql)
       val rs = stmt.executeQuery("SELECT * FROM label")
+      var array = Array[Substitution]()
       try {
-        var array = Array[Substitution]()
+
         while (rs.next()) {
           val arg0 = rs.getString(1)
           array :+= Substitution().add(Variable("X"), Sym("X", arg0))
@@ -167,6 +181,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
         rs.close()
         stmt.close()
         conn.close()
+        println(s"Posgres count for ${db.name} : ${array.length}")
       }
     }
   }
@@ -176,10 +191,12 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
     val sparql = "CREATE OR REPLACE VIEW pte_active AS\n\n-- 1\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_atm a\nJOIN pte_phenol ph\n  ON ph.arg2 = a.arg2\nJOIN pte_ketone k\n  ON k.arg1 = ph.arg1\n AND k.arg2 = a.arg2\n\nUNION\n\n-- 2\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_atm a\nJOIN pte_nitro n\n  ON n.arg2 = a.arg2\nJOIN pte_non_ar_hetero_5_ring r5\n  ON r5.arg1 = n.arg1\n AND r5.arg2 = a.arg2\n\nUNION\n\n-- 3\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_alkyl_halide ah\nJOIN pte_methyl m\n  ON m.arg1 = ah.arg1\n AND m.arg2 = ah.arg2\nJOIN pte_atm a\n  ON a.arg2 = ah.arg2\n\nUNION\n\n-- 4\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_alcohol al\nJOIN pte_ester e\n  ON e.arg1 = al.arg1\n AND e.arg2 = al.arg2\nJOIN pte_atm a\n  ON a.arg2 = al.arg2\n\nUNION\n\n-- 5\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_atm a\nJOIN pte_imine im\n  ON im.arg2 = a.arg2\nJOIN pte_ames am\n  ON am.arg1 = im.arg1\n\nUNION\n\n-- 6\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_sulfide s\nJOIN pte_alkyl_halide ah\n  ON ah.arg1 = s.arg1\n AND ah.arg2 = s.arg2\nJOIN pte_atm a\n  ON a.arg2 = s.arg2\n\nUNION\n\n-- 7\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_methyl m\nJOIN pte_five_ring fr\n  ON fr.arg1 = m.arg1\n AND fr.arg2 = m.arg2\nJOIN pte_ames am\n  ON am.arg1 = m.arg1\nJOIN pte_atm a\n  ON a.arg2 = m.arg2\n\nUNION\n\n-- 8\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_sulfo s\nJOIN pte_ames am\n  ON am.arg1 = s.arg1\nJOIN pte_mutagenic mu\n  ON mu.arg1 = s.arg1\nJOIN pte_atm a\n  ON a.arg2 = s.arg2\n\nUNION\n\n-- 9\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_six_ring sr\nJOIN pte_ames am\n  ON am.arg1 = sr.arg1\nJOIN pte_ester e\n  ON e.arg1 = sr.arg1\n AND e.arg2 = sr.arg2\nJOIN pte_atm a\n  ON a.arg2 = sr.arg2\n\nUNION\n\n-- 10\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_ether et\nJOIN pte_phenol ph\n  ON ph.arg1 = et.arg1\n AND ph.arg2 = et.arg2\nJOIN pte_ames am\n  ON am.arg1 = et.arg1\nJOIN pte_atm a\n  ON a.arg2 = et.arg2\n\nUNION\n\n-- 11\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_non_ar_hetero_6_ring r6\nJOIN pte_ames am\n  ON am.arg1 = r6.arg1\nJOIN pte_amine an\n  ON an.arg1 = r6.arg1\n AND an.arg2 = r6.arg2\nJOIN pte_atm a\n  ON a.arg2 = r6.arg2\n\nUNION\n\n-- 12\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_ketone k\nJOIN pte_mutagenic mu\n  ON mu.arg1 = k.arg1\nJOIN pte_methoxy mx\n  ON mx.arg1 = k.arg1\n AND mx.arg2 = k.arg2\nJOIN pte_atm a\n  ON a.arg2 = k.arg2\n\nUNION\n\n-- 13\nSELECT DISTINCT a.arg1 AS arg1\nFROM pte_ames am\nJOIN pte_amine an\n  ON an.arg1 = am.arg1\nJOIN pte_atm a\n  ON a.arg2 = an.arg2\nJOIN pte_methyl m\n  ON m.arg1 = am.arg1\n AND m.arg2 = an.arg2\nJOIN pte_mutagenic mu\n  ON mu.arg1 = am.arg1;"
     val stmt = conn.createStatement()
     measureTime {
+      val drop = stmt.executeUpdate("DROP VIEW IF EXISTS pte_active")
       val up = stmt.executeUpdate(sparql)
       val rs = stmt.executeQuery("SELECT * FROM pte_active")
+      var array = Array[Substitution]()
       try {
-        var array = Array[Substitution]()
+
         while (rs.next()) {
           val arg0 = rs.getString(1)
           array :+= Substitution().add(Variable("X"), Sym("X", arg0))
@@ -189,6 +206,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
         rs.close()
         stmt.close()
         conn.close()
+        println(s"Posgres count for ${db.name} : ${array.length}")
       }
     }
   }
@@ -196,18 +214,21 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
   def queryYeast():Double={
     val dbUrl = s"jdbc:postgresql://localhost:5432/${database.name}"
     val conn = DriverManager.getConnection(dbUrl, user, password)
-    val sparql = "CREATE OR REPLACE VIEW path AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'path' AND arity = 2;\n\nCREATE OR REPLACE VIEW location AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'location' AND arity = 2;\n\nCREATE OR REPLACE VIEW enzyme AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'enzyme' AND arity = 2;\n\nCREATE OR REPLACE VIEW renzyme AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'renzyme' AND arity = 2;\n\nCREATE OR REPLACE VIEW interaction AS\nSELECT arg1, arg2, arg3\nFROM predicates\nWHERE predicate_name = 'interaction' AND arity = 3;\n\nCREATE OR REPLACE VIEW protein_class AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'protein_class' AND arity = 2;\n\nCREATE OR REPLACE VIEW rprotein_class AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'rprotein_class' AND arity = 2;\n\nCREATE OR REPLACE VIEW phenotype AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'phenotype' AND arity = 2;\n\nCREATE OR REPLACE VIEW rphenotype AS\nSELECT arg1, arg2\nFROM predicates\nWHERE predicate_name = 'rphenotype' AND arity = 2;"
+
+    val sparql = s"CREATE OR REPLACE VIEW proteins AS SELECT DISTINCT p.arg1 AS arg1 FROM path p JOIN location l ON l.arg1 = p.arg1 UNION SELECT DISTINCT e.arg1 AS arg1 FROM enzyme e JOIN renzyme re ON re.arg1 = e.arg1 AND re.arg2 = e.arg2 UNION SELECT DISTINCT i.arg2 AS arg1 FROM path p JOIN interaction i ON i.arg1 = p.arg2 UNION SELECT DISTINCT pc.arg1 AS arg1 FROM protein_class pc JOIN rprotein_class rpc ON rpc.arg1 = pc.arg1 AND rpc.arg2 = pc.arg2 UNION SELECT DISTINCT pc.arg1 AS arg1 FROM protein_class pc JOIN interaction i ON i.arg2 = pc.arg1 JOIN rprotein_class rpc ON rpc.arg2 = pc.arg2 UNION SELECT DISTINCT ph.arg1 AS arg1 FROM phenotype ph JOIN renzyme re ON re.arg1 = ph.arg1 JOIN rphenotype rph ON rph.arg2 = ph.arg2 UNION SELECT DISTINCT pc.arg1 AS arg1 FROM protein_class pc JOIN rprotein_class rpc ON rpc.arg2 = pc.arg2 " +
+    "JOIN enzyme e ON e.arg1 = rpc.arg1 UNION SELECT DISTINCT i.arg2 AS arg1 FROM interaction i JOIN protein_class pc ON pc.arg1 = i.arg1 JOIN rprotein_class rpc ON rpc.arg1 = i.arg1 AND rpc.arg2 = pc.arg2 UNION SELECT DISTINCT i.arg2 AS arg1 FROM path p JOIN interaction i ON i.arg1 = p.arg1 JOIN rprotein_class rpc ON rpc.arg1 = i.arg2;"
     val stmt = conn.createStatement()
     measureTime {
+      val drop = stmt.executeUpdate("DROP VIEW IF EXISTS proteins CASCADE")
       val up = stmt.executeUpdate(sparql)
-      val rs = stmt.executeQuery("SELECT * FROM path")
+      val rs = stmt.executeQuery("SELECT * FROM proteins")
+      var array = Array[Substitution]()
       try {
-        var array = Array[Substitution]()
+
         while (rs.next()) {
           val arg1 = rs.getString(1)
-          val arg2 = rs.getString(2)
           val substitution = Substitution()
-            .add(Variable("X"), Sym("X", arg1)).add(Variable("Y"), Sym("Y", arg2))
+            .add(Variable("X"), Sym("X", arg1))
           array :+= substitution
         }
 
@@ -215,6 +236,7 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
         rs.close()
         stmt.close()
         conn.close()
+        println(s"Posgres count for ${db.name} : ${array.length}")
       }
     }
   }
@@ -248,13 +270,14 @@ class Postgres(val database: Database) extends ClientDB(database, "postgres") {
 
       val stmt = conn.createStatement()
 
-      val args = vars.zipWithIndex.map(pair => s"| arg${pair._2 + 1} VARCHAR(5000) NOT NULL").mkString(",\n")
+      val args = vars.zipWithIndex.map(pair => s" arg${pair._2 + 1} VARCHAR(5000) NOT NULL").mkString(",\n")
       val str = s"""
-                   |CREATE TABLE IF NOT EXISTS ${pred} (
-                   |  id SERIAL PRIMARY KEY,
-          ${args}
-                   |)
-                   |""".stripMargin
+                   CREATE TABLE ${pred} (
+                     id SERIAL PRIMARY KEY,
+                     ${args}
+                   )
+                   """.stripMargin
+      stmt.executeUpdate(s"DROP TABLE ${pred} CASCADE")
       stmt.executeUpdate(str)
       vars.zipWithIndex.map(pair => s"arg${pair._2 + 1}").foreach(arg=>{
         val ql = s"CREATE INDEX IF NOT EXISTS idx_predicates_${arg} ON ${pred} (${arg})";

@@ -18,6 +18,23 @@ class MilleniumDB(database: Database) extends ClientDB(database, "milleniumdb") 
   val Ex = "http://example.org/"
   val Xsd = "http://www.w3.org/2001/XMLSchema#"
 
+  def delete(file: File): Unit = {
+    if (file.exists()) {
+      if (file.isDirectory) {
+        val children = file.listFiles()
+        if (children != null) {
+          children.foreach(delete)
+        }
+      }
+
+      if (!file.delete()) {
+        throw new RuntimeException(
+          s"Could not delete: ${file.getAbsolutePath}"
+        )
+      }
+    }
+  }
+
   def createDB(): ClientDB = {
     val name = database.name
     val dbBinary = "/media/wolf/Corsair/java-projects/ILPEngine/resources/binary/MillenniumDB/build/bin/mdb"
@@ -25,6 +42,7 @@ class MilleniumDB(database: Database) extends ClientDB(database, "milleniumdb") 
     val ntfile = s"resources/caches/${name}.nt"
     val uriname = "http://example.org/graph/" + name
 
+    delete(new File(databaseDir))
     createBulkFile(database.getPredicates, ntfile)
 
     val binary = new File(dbBinary)
@@ -75,11 +93,12 @@ class MilleniumDB(database: Database) extends ClientDB(database, "milleniumdb") 
         val nm = iter.next()
         val value = row(nm)
         substitution.add(Variable(nm), Sym(nm, value))
-
       }
 
       array :+= substitution
     }
+
+    println(s"MilleniumDB count for ${db.name} : ${array.length}")
 
   }
 

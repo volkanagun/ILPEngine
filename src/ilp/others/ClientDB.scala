@@ -2,7 +2,7 @@ package ilp.others
 
 import ilp.data.database.Database
 
-abstract class ClientDB(val db:Database, val name:String) {
+abstract class ClientDB(val db:Database, var name:String) {
   def createDB():ClientDB
   def queryWebkb():Double
   def queryZendo():Double

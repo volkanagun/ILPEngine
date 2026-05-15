@@ -41,6 +41,12 @@
             <type>pom</type>
         </dependency>
 
+
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.17</version>
+        </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala3-library_3</artifactId>

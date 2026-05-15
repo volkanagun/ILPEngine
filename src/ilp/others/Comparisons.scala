@@ -5,12 +5,12 @@ import ilp.experiments.Performance
 
 object Comparisons {
 
-  val names = Array( //"/media/wolf/Corsair/java-projects/ILPEngine/examples/noisy-zendo2-10",
-    "/media/wolf/Corsair/java-projects/ILPEngine/examples/ptc" //,
-    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/pte",
-    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/webkb",
-    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/yeast",
-    /*"/media/wolf/Corsair/java-projects/ILPEngine/examples/iggp-gt_centipede-goal"*/)
+  val names = Array(//"/media/wolf/Corsair/java-projects/ILPEngine/examples/noisy-zendo2-10")
+    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/ptc")
+    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/pte")
+    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/webkb")
+    //"/media/wolf/Corsair/java-projects/ILPEngine/examples/yeast")
+    "/media/wolf/Corsair/java-projects/ILPEngine/examples/iggp-gt_centipede-goal")
 
   def measureTime[T](block: => T): Double = {
 
@@ -30,7 +30,7 @@ object Comparisons {
 
     val clients = names.foreach(name => {
         val db = Performance.loadDatabase(name)
-        val array = Array(new Jena(db).createDB())
+        val array = Array(/*new Jena(db).createDB(),new MilleniumDB(db).createDB()*/ new Virtuoso(db).createDB() /*,, new Postgres(db).createDB()*/)
         array.foreach(client=>{
           if (name.contains("centipede")) {
             val tcentipede = client.queryCentipente()
