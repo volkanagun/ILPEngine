@@ -35,7 +35,7 @@ The datasets in examples folder are used in experimental evaluations. These data
 additional predicates must be defined similarly to Average, Divide and etc. These are placed un predicates of the source folder. Defining new function types is not enough when loading a dataset from text because parsing of the predicate information must be proparly aligned with the databse content. After parsing is fixed dataset should work properly with new functional predicates.    
 
 # Dependencies
-There is not any primary dependency needed to be defined other than Java JDK21 and Scala SDK 3.8 for using the primary functionality in this code. However in order to experiment and use all the functionality of this project [pom.xml](pom.xml) - a maven file must be loaded and compiled proparly. 
+There is not any primary dependency needed to be defined other than Java JDK21 and Scala SDK 3.8 for using the primary functionality in this code. However in order to experiment and use all the functionality of this project [pom.xml](pom.xml) - a maven file must be loaded and compiled properly. 
 
 
 
