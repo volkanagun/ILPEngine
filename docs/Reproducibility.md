@@ -1,27 +1,76 @@
 # Reproducibility
 
-This document adds two runnable entry points under `ilp.commands`:
+## Title
+
+SiLP Reproducibility Guide
+
+## Description
+
+This document describes how to reproduce command-line query execution and predicate invention runs for the SiLP project. The executable source code for these workflows is in the `ilp.commands` package:
+
+- `src/ilp/commands/QueryCommand.java`
+- `src/ilp/commands/PredicateInventionCommand.java`
+
+The guide keeps the workflow in executable form and gives concrete example datasets, commands, options, and expected outputs.
+
+## Dataset Information
+
+The project datasets are stored under `examples/`. Each dataset directory typically contains:
+
+- `bk.pl`: background facts and primitive rules
+- `query.pl`: query program
+- `exs.pl`: positive and negative examples for learning
+- `bias.pl`: predicate declarations and typing information
+
+This reproducibility guide uses:
+
+- `examples/ptc/`
+- `examples/pte/`
+
+Referenced files:
+
+- query files:
+  - `examples/ptc/query.pl`
+  - `examples/pte/query.pl`
+- predicate invention examples file:
+  - `examples/pte/exs.pl`
+- predicate invention meta-rules file:
+  - `examples/pte/pi-meta-rules.pl`
+
+## Code Information
+
+The reproducibility entry points are:
 
 - `ilp.commands.QueryCommand`
 - `ilp.commands.PredicateInventionCommand`
 
-The query examples below use `ptc` and `pte`.
+Supporting executable code is under:
 
-## Environment
+- `src/ilp/commands/`
+- `src/ilp/data/database/`
+- `src/ilp/data/optimization/`
+- `src/ilp/invent/`
 
-- Java 11+ is required.
-- The runtime classpath uses the existing compiled classes in `out/production/ILPEngine` and the dependency jars in `target/lib`.
-- The new command sources live in `src/ilp/commands`.
+The runtime classpath uses:
 
-## Compile the commands
+- compiled project classes in `out/production/ILPEngine`
+- dependency jars in `target/lib`
 
-Run this from the repository root:
+## Requirements
+
+- Java 11 or newer
+- compiled project classes in `out/production/ILPEngine`
+- dependency jars in `target/lib`
+
+Compile the command-line entry points from the repository root:
 
 ```bash
 javac -cp 'out/production/ILPEngine:target/lib/*' -d out/production/ILPEngine src/ilp/commands/*.java
 ```
 
-## Query entry point
+## Usage Instructions
+
+### Query Command
 
 Entry point:
 
@@ -36,13 +85,6 @@ Supported arguments:
 - `--engine <name>`: one of `serial`, `parallel`, `bitmap-serial`, `bitmap-parallel`
 - `--optimizer <name>`: one of `none`, `iterative`, `bellman-ford`
 - `--recursion-depth <n>`: recursive depth for the engine, default `10`
-
-Reference query program files:
-
-```text
-examples/ptc/query.pl
-examples/pte/query.pl
-```
 
 Example command for `ptc`:
 
@@ -64,31 +106,31 @@ java -cp 'out/production/ILPEngine:target/lib/*' ilp.commands.QueryCommand \
   --optimizer iterative
 ```
 
-What it prints:
+What the query command prints:
 
-- database loading time in milliseconds
-- database indexing time in milliseconds
-- query execution time in milliseconds
-- result count
+- `loadTimeMs`: database loading time in milliseconds
+- `indexTimeMs`: database indexing time in milliseconds
+- `queryTimeMs`: query execution time in milliseconds
+- `resultCount`
 - result variable bindings for the query head variables
-- the instantiated head predicate for each result
+- instantiated head predicates
 
-The query time does not include database loading or database indexing.
+The query time does not include database loading or indexing time.
 
-Engine options:
+Engine choices:
 
 - `serial`: `EngineSerial`
 - `parallel`: `EngineParallel`
 - `bitmap-serial`: `EngineRoaringSerial`
 - `bitmap-parallel`: `EngineRoaringParallel`
 
-Optimizer options:
+Optimizer choices:
 
 - `none`: `plan.optimizeNone(query)`
 - `iterative`: `plan.optimizeExperimental(query)`
 - `bellman-ford`: `plan.optimizeBellmanFord(query)`
 
-## Predicate invention entry point
+### Predicate Invention Command
 
 Entry point:
 
@@ -109,11 +151,6 @@ Supported arguments:
 - `--score-threshold <x>`
 - `--recursion-depth <n>`
 
-Reference files:
-
-- examples file: `examples/pte/exs.pl`
-- meta-rules: `examples/pte/pi-meta-rules.pl`
-
 Example command:
 
 ```bash
@@ -129,16 +166,16 @@ java -cp 'out/production/ILPEngine:target/lib/*' ilp.commands.PredicateInvention
   --score-threshold 0.7
 ```
 
-The command reads the provided `exs.pl` file for both positive and negative examples, reads the meta-rules, runs predicate invention, and prints:
+What the predicate invention command prints:
 
-- total time in milliseconds
+- total execution time in milliseconds
 - result count
 - positive and negative sample counts
-- the configured execution parameters
-- the best result program
-- the best score, positive rate, and negative rate
+- configured execution parameters
+- best result program
+- best score, positive rate, and negative rate
 
-The execution parameters are applied exactly through:
+The execution parameters are applied through:
 
 ```scala
 .setMaxRules(params.maxRules)
@@ -148,6 +185,59 @@ The execution parameters are applied exactly through:
 .setUntestedSize(params.unTestedSize)
 .setScoreThreshold(params.scoreThreshold)
 ```
+
+## Methodology
+
+### Query Execution
+
+1. Load facts and primitive rules from `bk.pl`.
+2. Build database indexes and statistics with `database.build()`.
+3. Parse the query program from `query.pl`.
+4. Select the engine from the command-line `--engine` option.
+5. Select the optimizer from the command-line `--optimizer` option.
+6. Run the join pipeline and print timings and result bindings.
+
+### Predicate Invention
+
+1. Load the example dataset selected by `--example`.
+2. Parse positive and negative examples from the provided `exs.pl` file.
+3. Parse meta-rules from the provided meta-rule file.
+4. Configure predicate invention parameters from the command line.
+5. Run invention templates and print the best resulting program.
+
+## Verified Runs
+
+Verified query run for `ptc`:
+
+```text
+loadTimeMs=3775.336
+indexTimeMs=215.668
+queryTimeMs=1352.328
+```
+
+Verified query run for `pte`:
+
+```text
+loadTimeMs=3414.385
+indexTimeMs=387.489
+queryTimeMs=754.211
+```
+
+Verified predicate invention run for `pte`:
+
+```text
+timeMs=94255.114
+positives=162
+negatives=136
+```
+
+## Citations
+
+Please cite the SiLP project and any associated research articles that use this codebase. The repository README already points readers to Google Scholar references related to the project.
+
+## License & Contribution Guidelines
+
+This document does not define additional license or contribution terms beyond the repository’s existing project files. Follow the repository’s current conventions for code changes and documentation updates.
 
 ## Notes
 
