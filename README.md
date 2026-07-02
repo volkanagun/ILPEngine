@@ -25,6 +25,7 @@ There is  not installation setup for the source code, it can be important throug
 2. [Unification and predicates](https://github.com/volkanagun/ILPEngine/blob/master/docs/Unification.md)  : Unification examples and a guide for defining new predicates.
 3. [Query Optimization](https://github.com/volkanagun/ILPEngine/blob/master/docs/Query%20Optimization.md) : The documentation contains query optimization examples with a general overview of different optimization algorithms.
 4. [Predicate Invention](https://github.com/volkanagun/ILPEngine/blob/master/docs/Predicate%20Invention.md): It contains detailed examples including how to tune the parameters for predicate invention.
+5. [Reproducibility](docs/Reproducibility.md): Reproducible command-line examples for query execution and predicate invention.
 
 # Support
 
