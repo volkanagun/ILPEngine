@@ -205,6 +205,19 @@ The execution parameters are applied through:
 4. Configure predicate invention parameters from the command line.
 5. Run invention templates and print the best resulting program.
 
+## Data Preprocessing
+
+No external preprocessing pipeline is required for the reproduced command-line runs.
+
+For the datasets distributed in this repository, preprocessing is limited to the representation and loading steps already encoded in the executable workflow:
+
+1. Each dataset is stored as plain-text Prolog-style files under `examples/<dataset>/`.
+2. Background knowledge, query programs, examples, and bias declarations are separated into `bk.pl`, `query.pl`, `exs.pl`, and `bias.pl`.
+3. The loader parses these files into internal predicate, rule, and database objects.
+4. The database then builds indexes with `database.build()` before query execution.
+
+This means the manuscript can state that no additional feature engineering, normalization, or external cleaning script was applied beyond parsing the provided `.pl` files into the engine's in-memory structures.
+
 ## Verified Runs
 
 Verified query run for `ptc`:
